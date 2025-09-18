@@ -1,4 +1,4 @@
-# SR-16 Custom BMS
+# R&D Custom BMS(ADBMS6830B)
 
 ## Environment Setup / Tools Needed
 
