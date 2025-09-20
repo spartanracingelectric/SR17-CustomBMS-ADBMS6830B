@@ -323,5 +323,13 @@
 			<resource resourceType="PROJECT" workspacePath="/SR16_BMS"/>
 		</configuration>
 	</storageModule>
-	<storageModule moduleId="scannerConfiguration"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1147186481;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1147186481.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.716552244;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.70630654">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.804461323;com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.release.804461323.;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.251410241;com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.413875449">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+	</storageModule>
 </cproject>

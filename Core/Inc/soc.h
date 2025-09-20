@@ -13,7 +13,7 @@
 #define SHUNT_OPAMP_RATIO SHUNT_R1 / SHUNT_R2
 #define SHUNT_OFFSET 500  // 500 mA
 
-void SOC_getInitialCharge(batteryModule *batt);
-void SOC_updateCharge(batteryModule *batt, uint32_t elapsed_time);
+void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
+void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
 
 #endif

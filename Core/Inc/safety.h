@@ -42,16 +42,16 @@
 
 #define SLAVE_VOLT_WARNING_MARGIN 	100			//10 mV
 
-void Cell_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings);
+void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings);
 
-void Cell_Balance_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings);
+void Cell_Balance_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings);
 
-void Cell_Temperature_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings);
+void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings);
 
-void High_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings);
+void High_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings);
 
-void Module_Voltage_Averages(struct batteryModule *batt);
+void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod);
 
-void Module_Temperature_Averages(struct batteryModule *batt);
+void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod);
 
 #endif /* INC_SAFETY_H_ */

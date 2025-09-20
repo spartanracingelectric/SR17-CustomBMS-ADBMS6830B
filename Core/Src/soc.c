@@ -8,7 +8,7 @@
 #include "main.h"
 #include "usart.h"
 
-void SOC_updateCurrent(batteryModule *batt);
+void SOC_updateCurrent(AccumulatorData *batt);
 
 uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX,
                           uint16_t lowerY, uint16_t upperY);
@@ -18,7 +18,7 @@ uint16_t SOC_getChargeData0C(uint16_t voltage);
 uint16_t SOC_getChargeData25C(uint16_t voltage);
 uint16_t SOC_getChargeData40C(uint16_t voltage);
 
-void SOC_getInitialCharge(batteryModule *batt) {
+void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
     uint32_t voltage = 0;
     uint32_t pack_voltage = batt->sum_pack_voltage;
     voltage = pack_voltage * 10 / NUM_CELLS;
@@ -28,7 +28,7 @@ void SOC_getInitialCharge(batteryModule *batt) {
 
     uint16_t temperature = 0;
     for (int i = 0; i < NUM_THERM_TOTAL; ++i) {
-        temperature += batt->cell_temp[i];
+        temperature += mod->cell_temp[i];
     }
     temperature /= NUM_THERM_TOTAL;
 //    printf("temp:%d", temperature);
@@ -46,19 +46,19 @@ void SOC_getInitialCharge(batteryModule *batt) {
 
     switch (selectTemp) {
         case 0:
-            batt->soc = SOC_getChargeData0C((uint16_t) voltage) * NUM_DEVICES * 1000;
+            batt->soc = SOC_getChargeData0C((uint16_t) voltage) * NUM_MOD * 1000;
             break;
         case 25:
-            batt->soc = SOC_getChargeData25C((uint16_t) voltage) * NUM_DEVICES * 1000;
+            batt->soc = SOC_getChargeData25C((uint16_t) voltage) * NUM_MOD * 1000;
             break;
         default:
-            batt->soc = SOC_getChargeData40C((uint16_t) voltage) * NUM_DEVICES * 1000;
+            batt->soc = SOC_getChargeData40C((uint16_t) voltage) * NUM_MOD * 1000;
             break;
     }
 //    printf("this is running");
 }
 
-void SOC_updateCurrent(batteryModule *batt) {
+void SOC_updateCurrent(AccumulatorData *batt) {
     uint32_t adcValue = 0;
 	float vRef = getVref();
 
@@ -67,7 +67,7 @@ void SOC_updateCurrent(batteryModule *batt) {
     batt->current = (voltage / (MAX_SHUNT_VOLTAGE * SHUNT_OPAMP_RATIO)) * MAX_SHUNT_AMPAGE + SHUNT_OFFSET;
 }
 
-void SOC_updateCharge(batteryModule *batt, uint32_t elapsed_time) {
+void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
 	if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
 		batt->current = 0;
 	} else {

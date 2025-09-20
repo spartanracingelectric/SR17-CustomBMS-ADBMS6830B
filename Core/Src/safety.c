@@ -11,21 +11,21 @@ uint8_t low_volt_fault_lock = 0;
 uint8_t cell_imbalance_hysteresis = 0;
 uint8_t high_temp_hysteresis = 0;
 
-void Cell_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings){
+void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
 //finding highest and lowest cell voltage
-	batt->cell_volt_highest = batt->cell_volt[0];
-	batt->cell_volt_lowest = batt->cell_volt[0];
+	batt->cell_volt_highest = mod->cell_volt[0];
+	batt->cell_volt_lowest = mod->cell_volt[0];
 
 	for (int i = 0; i < NUM_CELLS; i++) {
 //find highest volt
-		if (batt->cell_volt[i] > batt->cell_volt_highest) {
-			batt->cell_volt_highest = batt->cell_volt[i];
+		if (mod->cell_volt[i] > batt->cell_volt_highest) {
+			batt->cell_volt_highest = mod->cell_volt[i];
 //			printf("high voltage fault: %d\n", batt->cell_volt_highest);
 		}
 
 //find lowest volt
-		if (batt->cell_volt[i] < batt->cell_volt_lowest) {
-			batt->cell_volt_lowest = batt->cell_volt[i];
+		if (mod->cell_volt[i] < batt->cell_volt_lowest) {
+			batt->cell_volt_lowest = mod->cell_volt[i];
 		}
   }
 //high cell volt warning
@@ -80,25 +80,25 @@ void Cell_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *war
 			}
 		}
 }
-void Cell_Balance_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings) {
-	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
-//cell volt imbalance warning
-	if (batt->cell_difference >= CELL_VOLT_IMBALANCE_WARNING) {
-		*warnings |= WARNING_BIT_IMBALANCE;
-	}
-}
+//void Cell_Balance_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings) {
+//	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
+////cell volt imbalance warning
+//	if (batt->cell_difference >= CELL_VOLT_IMBALANCE_WARNING) {
+//		*warnings |= WARNING_BIT_IMBALANCE;
+//	}
+//}
 
-void Cell_Temperature_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings) {
-	batt->cell_temp_highest = batt->cell_temp[0];
-	batt->cell_temp_lowest = batt->cell_temp[0];
+void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings) {
+	batt->cell_temp_highest = mod->cell_temp[0];
+	batt->cell_temp_lowest = mod->cell_temp[0];
 
 	for (int i = 0; i < NUM_THERM_TOTAL; i++) {
 		//find highest temp
-		if (batt->cell_temp_highest < batt->cell_temp[i]) {
-			batt->cell_temp_highest = batt->cell_temp[i];
+		if (batt->cell_temp_highest < mod->cell_temp[i]) {
+			batt->cell_temp_highest = mod->cell_temp[i];
 		}
-		if (batt->cell_temp_lowest > batt->cell_temp[i]) {
-			batt->cell_temp_lowest = batt->cell_temp[i];
+		if (batt->cell_temp_lowest > mod->cell_temp[i]) {
+			batt->cell_temp_lowest = mod->cell_temp[i];
 		}
 	}
 
@@ -159,16 +159,16 @@ void Cell_Temperature_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t 
 
 
 //void Module_Voltage_Averages(struct batteryModule *batt) {
-//    for (int i = 0; i < NUM_CELLS; i += NUM_CELL_SERIES_GROUP) {
+//    for (int i = 0; i < NUM_CELLS; i += NUM_CELL_PER_MOD) {
 //        uint16_t volt_sum = 0;
 //
-//        for (int j = i; j < i + NUM_CELL_SERIES_GROUP && j < NUM_CELLS; j++) {
+//        for (int j = i; j < i + NUM_CELL_PER_MOD && j < NUM_CELLS; j++) {
 //            volt_sum += batt->cell_volt[j];
 //        }
 //
-//        uint16_t average = volt_sum / NUM_CELL_SERIES_GROUP;
+//        uint16_t average = volt_sum / NUM_CELL_PER_MOD;
 //
-//        batt->average_volt[i / NUM_CELL_SERIES_GROUP] = average;
+//        batt->average_volt[i / NUM_CELL_PER_MOD] = average;
 //    }
 //}
 //

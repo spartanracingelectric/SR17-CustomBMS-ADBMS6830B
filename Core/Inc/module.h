@@ -32,12 +32,12 @@ void Atmos_Temp_To_Celsius(uint8_t dev_idx, uint16_t *pressure, uint16_t adc_dat
 
 void ADC_To_Humidity(uint8_t dev_idx, uint16_t *humidity, uint16_t adc_data);
 
-void Read_Pressure(batteryModule *batt);
+void Read_Pressure(ModuleData *batt);
 
-void Read_Atmos_Temp(batteryModule *batt);
+void Read_Atmos_Temp(ModuleData *batt);
 
-void Read_Humidity(batteryModule *batt);
+void Read_Humidity(ModuleData *batt);
 
-void Get_Dew_Point(batteryModule *batt);
+void Get_Dew_Point(ModuleData *batt);
 
 #endif /* INC_MODULE_H_ */

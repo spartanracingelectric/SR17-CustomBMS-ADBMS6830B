@@ -100,7 +100,8 @@ int main(void)
     TimerPacket cycleTimeCap;
     TimerPacket canReconnection;
 
-    batteryModule modPackInfo;
+    ModuleData modData;
+    AccumulatorData accmData;
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
@@ -154,32 +155,32 @@ int main(void)
 
 	Wakeup_Sleep();
 
-    Read_Volt(modPackInfo.cell_volt);
+    Read_Volt(modData.cell_volt);
 
     for (uint8_t i = 0; i < 8; i++) {
 //				HAL_Delay(300);
-        Read_Temp(i, modPackInfo.cell_temp, modPackInfo.read_auxreg);
+        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
     }
-    LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX_PAUSE[0]);
+    LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[0]);
     LTC_SPI_requestData(2);
 //				HAL_Delay(1); //this delay is for stablize mux
     for (uint8_t i = 8; i < NUM_THERM_PER_MOD; i++) {
 //				HAL_Delay(300);
-        Read_Temp(i, modPackInfo.cell_temp, modPackInfo.read_auxreg);
+        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
     }
-    LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX_PAUSE[1]);
+    LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[1]);
     LTC_SPI_requestData(2);
 //				HAL_Delay(1); //this delay is for stablize mux
-    Balance_init(modPackInfo.balance_status);
+    Balance_init(accmData.balance_status);
 
-    ReadHVInput(&modPackInfo);
-    getSumPackVoltage(&modPackInfo);
+    ReadHVInput(&accmData);
+    getSumPackVoltage(&accmData, &modData);
 
-	SOC_getInitialCharge(&modPackInfo);
+	SOC_getInitialCharge(&accmData, &modData);
 	uint32_t prev_soc_time = HAL_GetTick();
 
   /* USER CODE END 2 */
@@ -192,13 +193,13 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
 		if (TimerPacket_FixedPulse(&cycleTimeCap)) {
-			ADBMS_ReadSID(modPackInfo.sid);
+			ADBMS_ReadSID(modData.sid);
 			 HAL_ADCEx_Calibration_Start(&hadc1);
 			 HAL_ADCEx_Calibration_Start(&hadc2);
 		printf("hello\n");
 			//reading cell voltages
 //			printf("volt start\n");
-			Read_Volt(modPackInfo.cell_volt);
+			Read_Volt(modData.cell_volt);
 //			printf("volt end\n");
 //			printf("Cell voltages:\n");
 //			for (int i = 0; i < NUM_CELLS; i++) {
@@ -208,23 +209,23 @@ int main(void)
 			//reading cell temperatures
 			for (uint8_t i = tempindex; i < indexpause; i++) {
 //				HAL_Delay(300);
-				Read_Temp(i, modPackInfo.cell_temp, modPackInfo.read_auxreg);
+				Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
 			}
 			if (indexpause == 8) {
-				LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX_PAUSE[0]);
+				LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[0]);
 				LTC_SPI_requestData(2);
 				tempindex = 8;
 				indexpause = NUM_THERM_PER_MOD;
 //				HAL_Delay(1); //this delay is for stablize mux
 			}
 			else if (indexpause == NUM_THERM_PER_MOD) {
-				Read_Pressure(&modPackInfo);
-				Read_Humidity(&modPackInfo);
-				Read_Atmos_Temp(&modPackInfo);
-				Get_Dew_Point(&modPackInfo);
-				LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX_PAUSE[1]);
+				Read_Pressure(&modData);
+				Read_Humidity(&modData);
+				Read_Atmos_Temp(&modData);
+				Get_Dew_Point(&modData);
+				LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[1]);
 				LTC_SPI_requestData(2);
 				indexpause = 8;
 				tempindex = 0;
@@ -235,26 +236,26 @@ int main(void)
 //				printf("Temp[%d]: %d\n",i, modPackInfo.cell_temp[i]);
 //			}
 //			printf("pack volt start\n");
-			ReadHVInput(&modPackInfo);
-			getSumPackVoltage(&modPackInfo);
+			ReadHVInput(&accmData);
+			getSumPackVoltage(&accmData, &modData);
 //			printf("pack volt end\n");
 
-			SOC_updateCharge(&modPackInfo,(HAL_GetTick() - prev_soc_time));
+			SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			prev_soc_time = HAL_GetTick();
 			//getting the summary of all cells in the pack
-            Cell_Voltage_Fault(	&modPackInfo, &safetyFaults, &safetyWarnings);
-			Cell_Temperature_Fault(&modPackInfo, &safetyFaults, &safetyWarnings);
+            Cell_Voltage_Fault(	&accmData, &modData, &safetyFaults, &safetyWarnings);
+			Cell_Temperature_Fault(&accmData, &modData, &safetyFaults, &safetyWarnings);
 //			Passive balancing is called unless a fault has occurred
 //			if (safetyFaults == 0 && BALANCE
 //					&& ((modPackInfo.cell_volt_highest
 //							- modPackInfo.cell_volt_lowest) > 50)) {
 //				Start_Balance((uint16_t*) modPackInfo.cell_volt,
-//				NUM_DEVICES, modPackInfo.cell_volt_lowest);
+//				NUM_MOD, modPackInfo.cell_volt_lowest);
 
 //			} else if (BALANCE) {
 //				End_Balance(&safetyFaults);
 //			}
-            if(modPackInfo.cell_difference > BALANCE_THRESHOLD){
+            if(&accmData.cell_difference > BALANCE_THRESHOLD){
 				Start_Balance(modPackInfo.cell_volt, modPackInfo.cell_volt_lowest, modPackInfo.balance_status);
 			}
 

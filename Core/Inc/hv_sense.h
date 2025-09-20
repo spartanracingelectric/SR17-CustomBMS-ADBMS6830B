@@ -9,8 +9,8 @@
 #define R2 6761.5f     			//6863kΩ is the spec, but it might be parallel to other components. measured value was 6660kΩ, but it was too low, so I took average of them and it works well.
 #define DIVIDER_RATIO (R1 + R2) / R2
 
-void ReadHVInput(batteryModule *batt);
+void ReadHVInput(AccumulatorData *batt);
 
-void getSumPackVoltage(batteryModule *batt);
+void getSumPackVoltage(AccumulatorData *batt, ModuleData *mod);
 
 #endif /* INC_HV_SENSE_H_ */

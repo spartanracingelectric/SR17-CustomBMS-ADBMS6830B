@@ -167,7 +167,7 @@ HAL_StatusTypeDef CAN_Send(CANMessage *ptr) {
 	 if(ptr->TxHeader.StdId >= CAN_ID_VOLTAGE &&  ptr->TxHeader.StdId < CAN_ID_VOLTAGE + (NUM_CELLS * 2 / CAN_BYTE_NUM)) {//(NUM_CELLS * 2 / CAN_BYTE_NUM is just a number of can message
 	   dataPtr = (uint8_t *)ptr->voltageBuffer;
 	 }
-	 else if(ptr->TxHeader.StdId >= CAN_ID_THERMISTOR &&  ptr->TxHeader.StdId < CAN_ID_THERMISTOR + ((NUM_THERM_TOTAL + (4 * NUM_DEVICES)) / CAN_BYTE_NUM)) {//(NUM_THERM_TOTAL + (4 * NUM_DEVICES)) is a total num of thermistor + sensor, (4 * NUM_DEVICES) is number of sensors
+	 else if(ptr->TxHeader.StdId >= CAN_ID_THERMISTOR &&  ptr->TxHeader.StdId < CAN_ID_THERMISTOR + ((NUM_THERM_TOTAL + (4 * NUM_MOD)) / CAN_BYTE_NUM)) {//(NUM_THERM_TOTAL + (4 * NUM_MOD)) is a total num of thermistor + sensor, (4 * NUM_MOD) is number of sensors
 	   dataPtr = (uint8_t *)ptr->thermistorBuffer;
 	 }
 	 else if (ptr->TxHeader.StdId == CAN_ID_SUMMARY) {
@@ -270,7 +270,7 @@ void CAN_Send_Temperature(CANMessage *buffer, uint16_t *read_temp, uint16_t *pre
 //	}
 }
 
-void CAN_Send_Cell_Summary(CANMessage *buffer, batteryModule *batt) {
+void CAN_Send_Cell_Summary(CANMessage *buffer, AccumulatorData *batt) {
 	uint32_t CAN_ID = (uint32_t)CAN_ID_SUMMARY;
 	Set_CAN_Id(buffer, CAN_ID);
 	buffer->summaryBuffer[0] =  batt->cell_volt_highest         & 0xFF;
@@ -286,7 +286,7 @@ void CAN_Send_Cell_Summary(CANMessage *buffer, batteryModule *batt) {
 //	printf("Summary\n");
 }
 
-void CAN_Send_Safety_Checker(CANMessage *buffer, batteryModule *batt, uint8_t *faults, uint8_t *warnings) {
+void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t *faults, uint8_t *warnings) {
 	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
 	uint32_t CAN_ID = (uint32_t)CAN_ID_SAFETY;
 	Set_CAN_Id(buffer, CAN_ID);
@@ -303,7 +303,7 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, batteryModule *batt, uint8_t *f
 //	printf("Faults\n");
 }
 
-void CAN_Send_SOC(CANMessage *buffer, batteryModule *batt,
+void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt,
                   uint16_t max_capacity) {
 	uint32_t CAN_ID = (uint32_t)CAN_ID_SOC;
     uint8_t percent = (uint8_t)((float) (batt->soc / 1000) * 100 / (float) max_capacity);  // 1000 for micro->milli
@@ -353,7 +353,7 @@ void CAN_Send_Balance_Status(CANMessage *buffer, uint16_t *balance_status){
 //    uint16_t CAN_ID = 0x602;
 //	Set_CAN_Id(ptr, CAN_ID);
 //
-//	for (int i = 0; i < NUM_DEVICES; ++i) {
+//	for (int i = 0; i < NUM_MOD; ++i) {
 //		ptr->data[0] = batt->pressure  [i];
 //		ptr->data[1] = batt->pressure  [i] >> 8;
 //		ptr->data[2] = batt->atmos_temp[i];

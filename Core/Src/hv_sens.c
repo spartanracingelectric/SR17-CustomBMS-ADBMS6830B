@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "usart.h"
 
-	void ReadHVInput(batteryModule *batt) {
+	void ReadHVInput(AccumulatorData *batt) {
 		uint32_t adcValue = 0;
 		float vRef = 0;
 
@@ -26,11 +26,11 @@
 
 	}
 
-	void getSumPackVoltage(batteryModule *batt){
+	void getSumPackVoltage(AccumulatorData *batt, ModuleData *mod){
 		uint32_t sum_voltage = 0;
 
 		for (int i = 0; i < NUM_CELLS; i++) {
-			 sum_voltage += batt->cell_volt[i]; //get sum voltage
+			 sum_voltage += mod->cell_volt[i]; //get sum voltage
 		}
 		batt->sum_pack_voltage = (uint16_t)(sum_voltage / 100);
 	}

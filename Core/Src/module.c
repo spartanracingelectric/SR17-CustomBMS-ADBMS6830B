@@ -74,7 +74,7 @@ void Read_Volt(uint16_t *read_volt) {
 void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
 
 //	printf("Temperature read start\n");
-	LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX[tempindex]);
+	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[tempindex]);
 	LTC_SPI_requestData(2);
 	//end sending to mux to read temperatures
 	if (tempindex == 0) {
@@ -86,7 +86,7 @@ void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
 	}
 	if (!LTC_readGPIOs((uint16_t*) read_auxreg)) // Set to read back all aux registers
 			{
-		for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 			//Wakeup_Idle();
 			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
 			// PEC for each device is the last two bytes of its data segment
@@ -99,23 +99,23 @@ void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
 }
 
 
-void Read_Pressure(batteryModule *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX[12]);
+void Read_Pressure(ModuleData *batt) {
+	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[12]);
 	LTC_SPI_requestData(2);
 
 	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
     HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
 
     if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
             uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
             ADC_To_Pressure(dev_idx, batt->pressure, data);
     	}
     }
 }
 
-void Read_Atmos_Temp(batteryModule *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX[14]);
+void Read_Atmos_Temp(ModuleData *batt) {
+	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[14]);
 	LTC_SPI_requestData(2);
 
 	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
@@ -123,7 +123,7 @@ void Read_Atmos_Temp(batteryModule *batt) {
 
     if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
 
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 
             uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
             Atmos_Temp_To_Celsius(dev_idx, batt->atmos_temp, data);
@@ -135,9 +135,9 @@ void Read_Atmos_Temp(batteryModule *batt) {
 
 // this function calculates dew point from the properties of a battery module object
 // Dew Point: temperature (in Celsius) that air needs to be cooled to reach 100% humidity
-void Get_Dew_Point(batteryModule *batt) {
+void Get_Dew_Point(ModuleData *batt) {
 
-	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 
 		uint16_t humidity = batt->humidity[dev_idx];
 		uint16_t atmos_temp = batt->atmos_temp[dev_idx];
@@ -151,15 +151,15 @@ void Get_Dew_Point(batteryModule *batt) {
 
 }
 
-void Read_Humidity(batteryModule *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_DEVICES, BMS_MUX[13]);
+void Read_Humidity(ModuleData *batt) {
+	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[13]);
 	LTC_SPI_requestData(2);
 
 	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
     HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
 
     if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
         uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
         ADC_To_Humidity(dev_idx, batt->humidity, data);
     	}

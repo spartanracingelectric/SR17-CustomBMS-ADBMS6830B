@@ -33,7 +33,7 @@ void Balance_init(uint16_t *balanceStatus){
 	balance_finish = 0;
 	Balance_reset(balanceStatus);
 	Wakeup_Sleep();
-	LTC_writeCFG(NUM_DEVICES, defaultConfig);
+	LTC_writeCFG(NUM_MOD, defaultConfig);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
@@ -60,7 +60,7 @@ void Start_Balance(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus
 	if(balance > 0){
 		Discharge_Algo(read_volt, lowest , balanceStatus);
 		Wakeup_Sleep();
-		LTC_writeCFG(NUM_DEVICES, config);
+		LTC_writeCFG(NUM_MOD, config);
 	}
 	else{
 		return;
@@ -71,7 +71,7 @@ void End_Balance(uint16_t *balanceStatus) {
 	if(balance_finish == 1){
 		Balance_reset(balanceStatus);
 		Wakeup_Sleep();
-		LTC_writeCFG(NUM_DEVICES, defaultConfig);
+		LTC_writeCFG(NUM_MOD, defaultConfig);
 		balance_finish = 0;
 	}
 	else{
@@ -87,11 +87,11 @@ void End_Balance(uint16_t *balanceStatus) {
  * @param lowest read_volt's lowest cell reading
  */
 void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus) {
-	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 		// check if each cell is close within 0.005V of the lowest cell.
 		uint8_t DCC[12];
-		for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_SERIES_GROUP; cell_idx++) {
-			if (read_volt[dev_idx * NUM_CELL_SERIES_GROUP + cell_idx] - lowest > BALANCE_THRESHOLD) {
+		for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
+			if (read_volt[dev_idx * NUM_CELL_PER_MOD + cell_idx] - lowest > BALANCE_THRESHOLD) {
 				DCC[cell_idx] = 1;
 				balanceStatus[dev_idx] |= (1 << cell_idx);
 			} else {
@@ -105,7 +105,7 @@ void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatu
 
 void Balance_reset(uint16_t *balanceStatus) {
 	uint8_t DCC[12] = {0};  //reset all DCC to 0
-	for (uint8_t dev_idx = 0; dev_idx < NUM_DEVICES; dev_idx++) {
+	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 		balanceStatus[dev_idx] = 0;
 //		printf("balanceStaus[%d]: %d\n", dev_idx, balanceStatus[dev_idx]);
 
@@ -120,7 +120,7 @@ void Balance_reset(uint16_t *balanceStatus) {
  * @param array of DCC bits
  */
 void Set_Cfg(uint8_t dev_idx, uint8_t *DCC) {
-	for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_SERIES_GROUP; cell_idx++) {
+	for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
 		if (DCC[cell_idx]) {
 			if (cell_idx < 8) {
 				config[dev_idx][4] |= (1 << cell_idx);

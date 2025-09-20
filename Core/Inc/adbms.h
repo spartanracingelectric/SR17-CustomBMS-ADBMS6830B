@@ -10,10 +10,12 @@
 
 #endif /* INC_6811_H_ */
 
-#define LTC_CMD_RDCVA 0x0004
-#define LTC_CMD_RDCVB 0x0006
-#define LTC_CMD_RDCVC 0x0008
-#define LTC_CMD_RDCVD 0x000A
+#define RDACA 0x0044
+#define RDACB 0x0046
+#define RDACC 0x0048
+#define RDACD 0x004A
+#define RDACE 0x0049
+#define RDACF 0x004B
 
 #define LTC_CMD_RDAUXA 0x000C
 #define LTC_CMD_RDAUXB 0x000E
@@ -23,7 +25,7 @@
 #define REG_LEN 8// number of bytes in the register + 2 bytes for the PEC
 #define PEC_LEN 2
 #define DATA_LEN 6
-#define LTC_SERIES_GROUPS_PER_RDCV 3 // Number of cell voltage groups per 8 byte register
+#define ADBMS_SERIES_GROUPS_PER_RDCV 3 // Number of cell voltage groups per 8 byte register
 #define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6 // Number of series groups
 
@@ -37,13 +39,17 @@ typedef enum {
 	LTC_SPI_RX_TIMEOUT = 0x80U	 //0b10000000
 } LTC_SPI_StatusTypeDef;
 
-extern uint8_t wrpwm_buffer[4 + (8 * NUM_DEVICES)];
-extern uint8_t wrcfg_buffer[4 + (8 * NUM_DEVICES)];
-extern uint8_t wrcomm_buffer[4 + (8 * NUM_DEVICES)];
+extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
+extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
+extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 
 void Wakeup_Idle(void);
 
 void Wakeup_Sleep(void);
+
+void ADBMS_UNSNAP();
+
+void ADBMS_UNSNAP();
 
 LTC_SPI_StatusTypeDef LTC_getCellVoltages(uint16_t *read_voltages);
 
