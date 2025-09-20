@@ -29,6 +29,61 @@
 #define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6 // Number of series groups
 
+//------------------------------------------------------------------------------
+// RD: Redundant Measurement Enable
+//   0 = C-ADC only
+//   1 = Redundant measurement (C-ADC + S-ADC for safety comparison)
+//------------------------------------------------------------------------------
+typedef enum {
+    RD_OFF = 0, // Redundancy disabled (C-ADC only)
+    RD_ON  = 1  // Redundancy enabled (C-ADC and S-ADC both measure)
+} AdcRD;
+
+//------------------------------------------------------------------------------
+// CONT: Continuous Conversion
+//   0 = One-shot conversion (triggered by each ADCV command)
+//   1 = Continuous conversion (C-ADC runs continuously after start)
+//------------------------------------------------------------------------------
+typedef enum {
+    CONT_OFF = 0, // Single conversion only
+    CONT_ON  = 1  // Continuous conversion mode
+} AdcCONT;
+
+//------------------------------------------------------------------------------
+// DCP: Discharge Permit During Measurement
+//   0 = Disable cell discharge during measurement (pause balancing)
+//   1 = Permit cell discharge during measurement (keep balancing active)
+//   *Effective mainly in S-ADC related modes; has no effect in C-ADC continuous mode
+//------------------------------------------------------------------------------
+typedef enum {
+    DCP_OFF = 0, // Pause PWM discharge during conversion
+    DCP_ON  = 1  // Allow PWM discharge during conversion
+} AdcDCP;
+
+//------------------------------------------------------------------------------
+// RSTF: Reset IIR Filter
+//   0 = Keep current IIR filter state
+//   1 = Reset IIR filter (normally set only on the first ADCV command)
+//------------------------------------------------------------------------------
+typedef enum {
+    RSTF_OFF = 0, // Do not reset the filter
+    RSTF_ON  = 1  // Reset the filter (first command only)
+} AdcRSTF;
+
+//------------------------------------------------------------------------------
+// OW[1:0]: Open-Wire Test Mode (cell connection diagnostics)
+//   00 = Open-wire test disabled
+//   01 = Even cells only
+//   10 = Odd cells only
+//   11 = All cells
+//------------------------------------------------------------------------------
+typedef enum {
+    OW_ALL_OFF = 0b00, // No open-wire detection
+    OW_EVEN_ON = 0b01, // Check even-numbered cells
+    OW_ODD_ON  = 0b10, // Check odd-numbered cells
+    OW_ALL_ON  = 0b11  // Check all cells
+} AdcOW;
+
 typedef enum {
 	LTC_SPI_OK = 0x00U, //0b00000000
 	LTC_SPI_TX_ERROR = 0x02U, //0b00000010
@@ -43,9 +98,13 @@ extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 
-void Wakeup_Idle(void);
+void isoSPI_Idle_to_Ready(void);
 
 void Wakeup_Sleep(void);
+
+void ADBMS_inIt();
+
+void ADBMS_startADCVoltage();
 
 void ADBMS_UNSNAP();
 
@@ -67,11 +126,6 @@ void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, //The number of ICs bei
 void LTC_SPI_requestData(uint8_t len);
 
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
-
-void LTC_startADCVoltage(uint8_t MD, //ADC Mode
-		uint8_t DCP, //Discharge Permit
-		uint8_t CH //Cell Channels to be measured
-		);
 
 void LTC_startADC_GPIO(uint8_t MD, //ADC Mode
 		uint8_t CHG //GPIO Channels to be measured)

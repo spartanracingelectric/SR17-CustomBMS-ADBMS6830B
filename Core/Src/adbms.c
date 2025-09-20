@@ -15,13 +15,12 @@ static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, R
 static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
 
 /* Wake LTC up from IDLE state into READY state */
-void Wakeup_Idle(void) {
+void isoSPI_Idle_to_Ready(void) {
 	uint8_t hex_ff = 0xFF;
-	for (int i = 0; i < NUM_MOD; i++) {
-		ADBMS_nCS_Low();							   // Pull CS low
-		HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100); // Send byte 0xFF to wake LTC up
-		ADBMS_nCS_High();							   // Pull CS high
-	}
+	ADBMS_nCS_Low();							   // Pull CS low
+	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send byte 0xFF to wake LTC up
+	ADBMS_nCS_High();							   // Pull CS high
+	HAL_Delay(1);
 }
 
 // wake up sleep
@@ -35,6 +34,54 @@ void Wakeup_Sleep(void) {
 	}
 }
 
+void ADBMS_inIt(){
+	ADBMS_UNSNAP();
+	ADBMS_startADCVoltage();
+}
+
+/*
+ Starts cell voltage conversion
+ */
+void ADBMS_startADCVoltage() {
+	uint8_t cmd[4];
+	uint16_t cmd_pec;
+
+	AdcRD RD = RD_OFF;
+	AdcCONT CONT = CONT_ON;
+	AdcDCP DCP = DCP_OFF;
+	AdcRSTF RSTF = RSTF_ON;
+	AdcOW OW = OW_ALL_OFF;
+
+	uint16_t commandWord = 0;
+
+	//pack the command bit's in the commandWord
+	commandWord |= (0    << 10);    // bit10 = 0
+	commandWord |= (1    << 9);     // bit9  = 1
+	commandWord |= (RD   << 8);     // bit8  = RD
+	commandWord |= (CONT << 7);     // bit7  = CONT
+	commandWord |= (1    << 6);     // bit6  = 1
+	commandWord |= (1    << 5);     // bit5  = 1
+	commandWord |= (DCP  << 4);     // bit4  = DCP
+	commandWord |= (0    << 3);     // bit3  = 0
+	commandWord |= (RSTF << 2);     // bit2  = RSTF
+	commandWord |= (OW & 0x03);     // bit1-0 = OW[1:0]
+
+	//split into bytes and pack it to cmd
+	uint8_t firstCmdByte  = (uint8_t)(commandWord >> 8);
+	uint8_t secondCmdByte = (uint8_t)(commandWord & 0xFF);
+
+	cmd[0] = firstCmdByte;
+	cmd[1] = secondCmdByte;
+	cmd_pec = ADBMS_calcPec15(cmd, 2);
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
+
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	ADBMS_nCS_Low();
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	ADBMS_nCS_High();
+}
+
 void ADBMS_SNAP(){
 	uint8_t  cmd[4];
 	uint16_t cmd_pec;
@@ -45,7 +92,7 @@ void ADBMS_SNAP(){
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	Wakeup_Idle(); // Wake LTC up
+	isoSPI_Idle_to_Ready(); // Wake LTC up
 
 	ADBMS_nCS_Low(); // Pull CS low
 
@@ -64,7 +111,7 @@ void ADBMS_UNSNAP(){
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	Wakeup_Idle(); // Wake LTC up
+	isoSPI_Idle_to_Ready(); // Wake LTC up
 
 	ADBMS_nCS_Low(); // Pull CS low
 
@@ -95,7 +142,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		Wakeup_Idle(); // Wake LTC up
+		isoSPI_Idle_to_Ready(); // Wake LTC up
 
 		ADBMS_nCS_Low(); // Pull CS low
 
@@ -140,7 +187,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 				uint8_t hi = voltData[2 * dataIndex + 1];
 
 				//convert the raw data to mV
-				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack law data to uint16_t
+				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
 				if (ILOVEBMS == 0x8000u) { mod[devIndex].cell_volt[cellInMod] = 0xFFFF; } //ADBMS will reset register to 8000 after clear command or power cycle
 				else {
 				    uint32_t mv = 1500u + (uint32_t)ILOVEBMS * 150u;             // 1.5V + 0.150mV/LSB
@@ -206,7 +253,7 @@ void LTC_writePWM(uint8_t total_ic, uint8_t pwm) {
 		cmd_index = cmd_index + 2;
 	}
 
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrpwm_buffer, CMD_LEN, 100);
 	ADBMS_nCS_High();
@@ -246,14 +293,14 @@ void LTC_writeCFG(uint8_t total_ic, //The number of ICs being written to
 		cmd_index = cmd_index + 2;
 	}
 
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, CMD_LEN, 100);
 	ADBMS_nCS_High();
 }
 
 /**
- * 
+ *
  * @param total_ic	The number of ICs being written to
  * @param comm[6]	A two dimensional array of the comm data that will be written
  */
@@ -289,7 +336,7 @@ void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]) {
 		cmd_index = cmd_index + 2;
 	}
 
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcomm_buffer, CMD_LEN, 100);
 	ADBMS_nCS_High();
@@ -309,7 +356,7 @@ void LTC_SPI_requestData(uint8_t len) {
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
 	for (int i = 0; i < len * 3; i++) {
@@ -335,7 +382,7 @@ LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		Wakeup_Idle(); // Wake LTC up
+		isoSPI_Idle_to_Ready(); // Wake LTC up
 
 		ADBMS_nCS_Low(); // Pull CS low
 
@@ -369,30 +416,7 @@ LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
 	return ret;
 }
 
-/*
- Starts cell voltage conversion
- */
-void LTC_startADCVoltage(uint8_t MD,  // ADC Mode
-		uint8_t DCP, // Discharge Permit
-		uint8_t CH   // Cell Channels to be measured
-		) {
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-	uint8_t md_bits;
 
-	md_bits = (MD & 0x02) >> 1;
-	cmd[0] = md_bits + 0x02;
-	md_bits = (MD & 0x01) << 7;
-	cmd[1] = md_bits + 0x60 + (DCP << 4) + CH;
-	cmd_pec = ADBMS_calcPec15(cmd, 2);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
-	ADBMS_nCS_High();
-}
 
 void LTC_startADC_GPIO(uint8_t MD, // ADC Mode
 		uint8_t CHG // GPIO Channels to be measured)
@@ -410,12 +434,12 @@ void LTC_startADC_GPIO(uint8_t MD, // ADC Mode
 	cmd[3] = (uint8_t) (cmd_pec);
 
 	/*
-	 Wakeup_Idle (); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	 isoSPI_Idle_to_Ready (); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	 output_low(LTC6811_CS);
 	 spi_write_array(4,cmd);
 	 output_high(LTC6811_CS);
 	 */
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
 	ADBMS_nCS_High();
@@ -435,7 +459,7 @@ int32_t LTC_POLLADC() {
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	Wakeup_Idle(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	//Send PLADC command to LTC6811
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
@@ -536,7 +560,7 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
     cmd[2] = (uint8_t)(cmd_pec >> 8);
     cmd[3] = (uint8_t)(cmd_pec);
 
-    Wakeup_Idle();
+    isoSPI_Idle_to_Ready();
 
     ADBMS_nCS_Low();
     hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
