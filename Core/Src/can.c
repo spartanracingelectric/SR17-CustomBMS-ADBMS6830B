@@ -202,14 +202,14 @@ void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
     for (int i = 0; i < NUM_MOD; i ++) {  //pack every 4 cell group in 1 CAN message
     	for (int j = 0; j < NUM_CELL_PER_MOD; j += 4) {
     		if(j + 3 < NUM_CELL_PER_MOD){
-				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]        & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
-				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ]  >> 8) & 0xFF;
-				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]        & 0xFF;
-				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1]  >> 8) & 0xFF;
-				buffer->voltageBuffer[4] =  mod[i].cell_volt[j + 2]        & 0xFF;
-				buffer->voltageBuffer[5] = (mod[i].cell_volt[j + 2]  >> 8) & 0xFF;
-				buffer->voltageBuffer[6] =  mod[i].cell_volt[j + 3]        & 0xFF;
-				buffer->voltageBuffer[7] = (mod[i].cell_volt[j + 3]  >> 8) & 0xFF;
+				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]       & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
+				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ] >> 8) & 0xFF;
+				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]       & 0xFF;
+				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1] >> 8) & 0xFF;
+				buffer->voltageBuffer[4] =  mod[i].cell_volt[j + 2]       & 0xFF;
+				buffer->voltageBuffer[5] = (mod[i].cell_volt[j + 2] >> 8) & 0xFF;
+				buffer->voltageBuffer[6] =  mod[i].cell_volt[j + 3]       & 0xFF;
+				buffer->voltageBuffer[7] = (mod[i].cell_volt[j + 3] >> 8) & 0xFF;
 		//        printf("can id for voltage: %d\n", CAN_ID);
 
 				Set_CAN_Id(buffer, CAN_ID);
@@ -218,14 +218,14 @@ void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
     		}
 
 			else{
-				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]        & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
-				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ]  >> 8) & 0xFF;
-				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]        & 0xFF;
-				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1]  >> 8) & 0xFF;
-				buffer->voltageBuffer[4] =  mod[i].cell_volt[j + 2]        & 0xFF;
-				buffer->voltageBuffer[5] = (mod[i].cell_volt[j + 2]  >> 8) & 0xFF;
-				buffer->voltageBuffer[6] =  mod[i].average_volt            & 0xFF;
-				buffer->voltageBuffer[7] =  mod[i].sum_volt_module         & 0xFF;
+				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]       & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
+				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ] >> 8) & 0xFF;
+				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]       & 0xFF;
+				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1] >> 8) & 0xFF;
+				buffer->voltageBuffer[4] =  mod[i].average_volt           & 0xFF;
+				buffer->voltageBuffer[5] = (mod[i].average_volt     >> 8) & 0xFF;
+				buffer->voltageBuffer[6] =  mod[i].sum_volt_module        & 0xFF;
+				buffer->voltageBuffer[7] = (mod[i].sum_volt_module  >> 8) & 0xFF;
 		//        printf("can id for voltage: %d\n", CAN_ID);
 
 				Set_CAN_Id(buffer, CAN_ID);
@@ -236,19 +236,19 @@ void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
     }
 }
 
-void CAN_Send_Temperature(CANMessage *buffer, uint16_t *read_temp, uint16_t *pressure, uint16_t *atmos_temp, uint16_t *humidity, uint16_t *dew_point) {
+void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
     uint32_t CAN_ID = (uint32_t)CAN_ID_THERMISTOR;
 
     for (int i = 0; i < NUM_THERM_TOTAL; i += 12) {
         Set_CAN_Id(buffer, CAN_ID);
-        buffer->thermistorBuffer[0] = (uint8_t)(read_temp[  i  ] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(read_temp[i + 1] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(read_temp[i + 2] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(read_temp[i + 3] & 0xFF);
-		buffer->thermistorBuffer[4] = (uint8_t)(read_temp[i + 4] & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(read_temp[i + 5] & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(read_temp[i + 6] & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(read_temp[i + 7] & 0xFF);
+        buffer->thermistorBuffer[0] = (uint8_t)(mod[i].cell_temp[  i  ] & 0xFF);
+		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].cell_temp[i + 1] & 0xFF);
+		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].cell_temp[i + 2] & 0xFF);
+		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].cell_temp[i + 3] & 0xFF);
+		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].cell_temp[i + 4] & 0xFF);
+		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].cell_temp[i + 5] & 0xFF);
+		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].cell_temp[i + 6] & 0xFF);
+		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].cell_temp[i + 7] & 0xFF);
 
 //		printf("temp1 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp2 in 8 bits:%d\n", ptr->data[1]);
@@ -264,14 +264,14 @@ void CAN_Send_Temperature(CANMessage *buffer, uint16_t *read_temp, uint16_t *pre
 
 		Set_CAN_Id(buffer, CAN_ID);
 
-		buffer->thermistorBuffer[0] = (uint8_t)(read_temp [i +  8] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(read_temp [i +  9] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(read_temp [i + 10] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(read_temp [i + 11] & 0xFF);
-		buffer->thermistorBuffer[4] = (uint8_t)(pressure  [i / 12] & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(atmos_temp[i / 12] & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(humidity  [i / 12] & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(dew_point [i / 12] & 0xFF);
+		buffer->thermistorBuffer[0] = (uint8_t)(mod[i].cell_temp [i +  8] & 0xFF);
+		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].cell_temp [i +  9] & 0xFF);
+		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].cell_temp [i + 10] & 0xFF);
+		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].cell_temp [i + 11] & 0xFF);
+		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].pressure           & 0xFF);
+		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].atmos_temp         & 0xFF);
+		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].humidity           & 0xFF);
+		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].dew_point          & 0xFF);
 
 //		printf("temp9 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp10 in 8 bits:%d\n", ptr->data[1]);

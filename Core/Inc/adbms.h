@@ -43,8 +43,6 @@ extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 
-extern ModuleData modData[NUM_MOD];
-
 void Wakeup_Idle(void);
 
 void Wakeup_Sleep(void);

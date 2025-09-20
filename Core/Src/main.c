@@ -154,7 +154,7 @@ int main(void)
 
 	Wakeup_Sleep();
 
-    Read_Volt();
+    Read_Volt(modData);
 
     for (uint8_t i = 0; i < 8; i++) {
 //				HAL_Delay(300);
@@ -198,7 +198,7 @@ int main(void)
 		printf("hello\n");
 			//reading cell voltages
 //			printf("volt start\n");
-			Read_Volt();
+			Read_Volt(modData);
 //			printf("volt end\n");
 //			printf("Cell voltages:\n");
 //			for (int i = 0; i < NUM_CELLS; i++) {
@@ -220,10 +220,10 @@ int main(void)
 //				HAL_Delay(1); //this delay is for stablize mux
 			}
 			else if (indexpause == NUM_THERM_PER_MOD) {
-				Read_Pressure(modData);
-				Read_Humidity(modData);
-				Read_Atmos_Temp(modData);
-				Get_Dew_Point(modData);
+//				Read_Pressure(modData);
+//				Read_Humidity(modData);
+//				Read_Atmos_Temp(modData);
+//				Get_Dew_Point(modData);
 				LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[1]);
 				LTC_SPI_requestData(2);
 				indexpause = 8;
@@ -268,8 +268,8 @@ int main(void)
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 			CAN_Send_Cell_Summary(&msg, &accmData);
-			CAN_Send_Voltage(&msg, modData.cell_volt);
-			CAN_Send_Temperature(&msg, modData.cell_temp, modData.pressure, modData.atmos_temp, modData.humidity, modData.dew_point);
+			CAN_Send_Voltage(&msg, modData);
+			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_Send_Balance_Status(&msg, accmData.balance_status);
 		}

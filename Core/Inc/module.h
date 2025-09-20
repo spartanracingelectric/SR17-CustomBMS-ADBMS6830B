@@ -19,28 +19,25 @@
 
 #define LTC6811_Vdd 51450.0f
 
-extern AccumulatorData accmData;
-extern ModuleData modata[NUM_MOD];
-
-void Read_Volt();
+void Read_Volt(ModuleData *mod);
 
 void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp,
 		uint16_t data);
 
 void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg);
 
-void Convert_Analog_To_Pressure(uint8_t dev_idx, uint16_t *pressure, uint16_t adc_data);
+void Convert_Analog_To_Pressure(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
 
-void Atmos_Temp_To_Celsius(uint8_t dev_idx, uint16_t *pressure, uint16_t adc_data);
+void Atmos_Temp_To_Celsius(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
 
-void ADC_To_Humidity(uint8_t dev_idx, uint16_t *humidity, uint16_t adc_data);
+void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
 
-void Read_Pressure(ModuleData *batt);
+void Read_Pressure(ModuleData *mod);
 
-void Read_Atmos_Temp(ModuleData *batt);
+void Read_Atmos_Temp(ModuleData *mod);
 
-void Read_Humidity(ModuleData *batt);
+void Read_Humidity(ModuleData *mod);
 
-void Get_Dew_Point(ModuleData *batt);
+void Get_Dew_Point(ModuleData *mod);
 
 #endif /* INC_MODULE_H_ */

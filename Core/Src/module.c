@@ -22,26 +22,26 @@ static uint8_t BMS_MUX[][6] = {{ 0x69, 0x28, 0x0F, 0xF9, 0x7F, 0xF9 }, { 0x69, 0
 							 	 { 0x69, 0x08, 0x0F, 0xB9, 0x7F, 0xF9 }, { 0x69, 0x08, 0x0F, 0xA9, 0x7F, 0xF9 },
 								 { 0x69, 0x08, 0x0F, 0x99, 0x7F, 0xF9 }, { 0x69, 0x08, 0x0F, 0x89, 0x7F, 0xF9 } };
 
-void ADC_To_Pressure(uint8_t dev_idx, uint16_t *pressure, uint16_t adc_data) {
+void ADC_To_Pressure(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data) {
     float psi = (float) adc_data / 325.0;  // convert the adc value based on Vref
 
-    pressure[dev_idx] = (uint16_t)(psi * 100);  // relative to atmospheric pressure
+    mod[dev_idx].pressure = (uint16_t)(psi * 100);  // relative to atmospheric pressure
 }
 
-void Atmos_Temp_To_Celsius(uint8_t dev_idx, uint16_t *read_atmos_temp, uint16_t adc_data) {
+void Atmos_Temp_To_Celsius(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data) {
     float voltage_ratio = (float) adc_data / LTC6811_Vdd;  // convert the adc value based on Vref
 
     float temperature_value = -66.875 + 218.75 * voltage_ratio;  //Calculate pressure
 
-    read_atmos_temp[dev_idx] = (uint16_t)temperature_value;
+    mod[dev_idx].atmos_temp = (uint16_t)temperature_value;
 }
 
-void ADC_To_Humidity(uint8_t dev_idx, uint16_t *humidity, uint16_t adcValue) {
+void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adcValue) {
     float voltage_ratio = (float)adcValue / LTC6811_Vdd;
 
     float humidity_value = (-12.5 + 125.0 * voltage_ratio);  //Calculate pressure
 
-    humidity[dev_idx] = (uint16_t)(humidity_value);
+    mod[dev_idx].humidity = (uint16_t)(humidity_value);
 }
 
 void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp, uint16_t data) {
@@ -63,108 +63,108 @@ void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp,
     actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = steinhart;
 }
 
-void Read_Volt() {
+void Read_Volt(ModuleData *mod) {
 //	printf("volt start\n");
 	LTC_startADCVoltage(MD_NORMAL, DCP_DISABLED, CELL_CH_ALL);//ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
 	HAL_Delay(NORMAL_DELAY);	//FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-	ADBMS_getAVGCellVoltages(&modData);
+	ADBMS_getAVGCellVoltages(mod);
 //	printf("volt end\n");
 }
+//TODO: gpio read
+//void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
+//
+////	printf("Temperature read start\n");
+//	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[tempindex]);
+//	LTC_SPI_requestData(2);
+//	//end sending to mux to read temperatures
+//	if (tempindex == 0) {
+//		LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
+//		HAL_Delay(NORMAL_DELAY + 2); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
+//	} else {
+//		LTC_startADC_GPIO(MD_FAST, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
+//		HAL_Delay(FAST_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
+//	}
+//	if (!LTC_readGPIOs((uint16_t*) read_auxreg)) // Set to read back all aux registers
+//			{
+//		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//			//Wakeup_Idle();
+//			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
+//			// PEC for each device is the last two bytes of its data segment
+//			uint16_t data = read_auxreg[dev_idx * NUM_AUX_GROUP];
+//			//read_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = data;
+//			Get_Actual_Temps(dev_idx, tempindex, (uint16_t*) read_temp, data); //+5 because vref is the last reg
+//		}
+//	}
+////	printf("Temperature read end\n");
+//}
+//
+//
+//void Read_Pressure(ModuleData *mod) {
+//	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[12]);
+//	LTC_SPI_requestData(2);
+//
+//	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
+//    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
+//
+//    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
+//    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//            uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
+//            ADC_To_Pressure(dev_idx, batt->pressure, data);
+//    	}
+//    }
+//}
+//
+//void Read_Atmos_Temp(ModuleData *mod) {
+//	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[14]);
+//	LTC_SPI_requestData(2);
+//
+//	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
+//    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
+//
+//    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
+//
+//    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//
+//            uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
+//            Atmos_Temp_To_Celsius(dev_idx, batt->atmos_temp, data);
+//
+//    	}
+//    }
+//}
+//
+//
+//// this function calculates dew point from the properties of a battery module object
+//// Dew Point: temperature (in Celsius) that air needs to be cooled to reach 100% humidity
+//void Get_Dew_Point(ModuleData *mod) {
+//
+//	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//
+//		uint16_t humidity = mod[dev_idx].humidity;
+//		uint16_t atmos_temp = mod[dev_idx].atmos_temp;
+//
+//		// simple approximation that is accurate to within 1 deg C
+//		// Only works well when Relative Humidity is above 50%
+//
+//		mod[dev_idx].dew_point = atmos_temp - ((float)(100 - humidity) / 5);
+//
+//	}
+//
+//}
 
-void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
-
-//	printf("Temperature read start\n");
-	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[tempindex]);
-	LTC_SPI_requestData(2);
-	//end sending to mux to read temperatures
-	if (tempindex == 0) {
-		LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-		HAL_Delay(NORMAL_DELAY + 2); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-	} else {
-		LTC_startADC_GPIO(MD_FAST, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-		HAL_Delay(FAST_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-	}
-	if (!LTC_readGPIOs((uint16_t*) read_auxreg)) // Set to read back all aux registers
-			{
-		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-			//Wakeup_Idle();
-			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
-			// PEC for each device is the last two bytes of its data segment
-			uint16_t data = read_auxreg[dev_idx * NUM_AUX_GROUP];
-			//read_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = data;
-			Get_Actual_Temps(dev_idx, tempindex, (uint16_t*) read_temp, data); //+5 because vref is the last reg
-		}
-	}
-//	printf("Temperature read end\n");
-}
-
-
-void Read_Pressure(ModuleData *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[12]);
-	LTC_SPI_requestData(2);
-
-	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-
-    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-            uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
-            ADC_To_Pressure(dev_idx, batt->pressure, data);
-    	}
-    }
-}
-
-void Read_Atmos_Temp(ModuleData *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[14]);
-	LTC_SPI_requestData(2);
-
-	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-
-    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
-
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-
-            uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
-            Atmos_Temp_To_Celsius(dev_idx, batt->atmos_temp, data);
-
-    	}
-    }
-}
-
-
-// this function calculates dew point from the properties of a battery module object
-// Dew Point: temperature (in Celsius) that air needs to be cooled to reach 100% humidity
-void Get_Dew_Point(ModuleData *batt) {
-
-	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-
-		uint16_t humidity = batt->humidity[dev_idx];
-		uint16_t atmos_temp = batt->atmos_temp[dev_idx];
-
-		// simple approximation that is accurate to within 1 deg C
-		// Only works well when Relative Humidity is above 50%
-
-		batt->dew_point[dev_idx] = atmos_temp - ((float)(100 - humidity) / 5);
-
-	}
-
-}
-
-void Read_Humidity(ModuleData *batt) {
-	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[13]);
-	LTC_SPI_requestData(2);
-
-	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-
-    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
-    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-        uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
-        ADC_To_Humidity(dev_idx, batt->humidity, data);
-    	}
-    }
-}
+//void Read_Humidity(ModuleData *mod) {
+//	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[13]);
+//	LTC_SPI_requestData(2);
+//
+//	LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
+//    HAL_Delay(NORMAL_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
+//
+//    if (!LTC_readGPIOs((uint16_t*) batt->read_auxreg)) {
+//    	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//        uint16_t data = batt->read_auxreg[dev_idx * NUM_AUX_GROUP];
+//        ADC_To_Humidity(dev_idx, batt->humidity, data);
+//    	}
+//    }
+//}
 
 
 
