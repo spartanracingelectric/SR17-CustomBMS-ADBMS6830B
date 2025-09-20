@@ -95,7 +95,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		Wakeup_Idle(); // Wake LTC up`
+		Wakeup_Idle(); // Wake LTC up
 
 		ADBMS_nCS_Low(); // Pull CS low
 
@@ -138,7 +138,15 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 				// if LSB and MSB is opposite, flip this two
 				uint8_t lo = voltData[2 * dataIndex + 0];
 				uint8_t hi = voltData[2 * dataIndex + 1];
-				mod[devIndex].cell_volt[cellInMod] = ((uint16_t)hi << 8)|(uint16_t)lo;
+
+				//convert the raw data to mV
+				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack law data to uint16_t
+				if (ILOVEBMS == 0x8000u) { mod[devIndex].cell_volt[cellInMod] = 0xFFFF; } //ADBMS will reset register to 8000 after clear command or power cycle
+				else {
+				    uint32_t mv = 1500u + (uint32_t)ILOVEBMS * 150u;             // 1.5V + 0.150mV/LSB
+				    if (mv > 65535u) mv = 65535u;                                //
+				    mod[devIndex].cell_volt[cellInMod] = (uint16_t)mv;           //store in mV
+				}
 			}
 		}
 	}
