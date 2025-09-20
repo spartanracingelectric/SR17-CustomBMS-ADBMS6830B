@@ -138,7 +138,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 				// if LSB and MSB is opposite, flip this two
 				uint8_t lo = voltData[2 * dataIndex + 0];
 				uint8_t hi = voltData[2 * dataIndex + 1];
-				moduleData[devIndex].cell_volt[cellInMod] = ((uint16_t)hi << 8)|(uint16_t)lo;
+				modData[devIndex].cell_volt[cellInMod] = ((uint16_t)hi << 8)|(uint16_t)lo;
 			}
 		}
 	}

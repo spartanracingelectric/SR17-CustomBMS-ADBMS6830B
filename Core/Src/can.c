@@ -197,22 +197,42 @@ void CAN_SettingsInit(CANMessage *ptr) {
 
 void Set_CAN_Id(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
 
-void CAN_Send_Voltage(CANMessage *buffer, uint16_t *read_volt) {
+void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
 	uint32_t CAN_ID = (uint32_t)CAN_ID_VOLTAGE;
-    for (int i = 0; i < NUM_CELLS; i += 4) {  //pack every 4 cell group in 1 CAN message
-        buffer->voltageBuffer[0] =  read_volt[  i  ]       & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
-		buffer->voltageBuffer[1] = (read_volt[  i  ] >> 8) & 0xFF;
-		buffer->voltageBuffer[2] =  read_volt[i + 1]       & 0xFF;
-		buffer->voltageBuffer[3] = (read_volt[i + 1] >> 8) & 0xFF;
-		buffer->voltageBuffer[4] =  read_volt[i + 2]       & 0xFF;
-		buffer->voltageBuffer[5] = (read_volt[i + 2] >> 8) & 0xFF;
-		buffer->voltageBuffer[6] =  read_volt[i + 3]       & 0xFF;
-		buffer->voltageBuffer[7] = (read_volt[i + 3] >> 8) & 0xFF;
-//        printf("can id for voltage: %d\n", CAN_ID);
+    for (int i = 0; i < NUM_MOD; i ++) {  //pack every 4 cell group in 1 CAN message
+    	for (int j = 0; j < NUM_CELL_PER_MOD; j += 4) {
+    		if(j + 3 < NUM_CELL_PER_MOD){
+				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]        & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
+				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ]  >> 8) & 0xFF;
+				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]        & 0xFF;
+				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1]  >> 8) & 0xFF;
+				buffer->voltageBuffer[4] =  mod[i].cell_volt[j + 2]        & 0xFF;
+				buffer->voltageBuffer[5] = (mod[i].cell_volt[j + 2]  >> 8) & 0xFF;
+				buffer->voltageBuffer[6] =  mod[i].cell_volt[j + 3]        & 0xFF;
+				buffer->voltageBuffer[7] = (mod[i].cell_volt[j + 3]  >> 8) & 0xFF;
+		//        printf("can id for voltage: %d\n", CAN_ID);
 
-        Set_CAN_Id(buffer, CAN_ID);
-        CAN_Send(buffer);
-        CAN_ID++;
+				Set_CAN_Id(buffer, CAN_ID);
+				CAN_Send(buffer);
+				CAN_ID++;
+    		}
+
+			else{
+				buffer->voltageBuffer[0] =  mod[i].cell_volt[  j  ]        & 0xFF; 			//To ensure the data type is uint8_t, use & 0xFF
+				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ]  >> 8) & 0xFF;
+				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]        & 0xFF;
+				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1]  >> 8) & 0xFF;
+				buffer->voltageBuffer[4] =  mod[i].cell_volt[j + 2]        & 0xFF;
+				buffer->voltageBuffer[5] = (mod[i].cell_volt[j + 2]  >> 8) & 0xFF;
+				buffer->voltageBuffer[6] =  mod[i].average_volt            & 0xFF;
+				buffer->voltageBuffer[7] =  mod[i].sum_volt_module         & 0xFF;
+		//        printf("can id for voltage: %d\n", CAN_ID);
+
+				Set_CAN_Id(buffer, CAN_ID);
+				CAN_Send(buffer);
+				CAN_ID++;
+			}
+    	}
     }
 }
 

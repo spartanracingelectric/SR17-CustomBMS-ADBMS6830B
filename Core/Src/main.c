@@ -158,7 +158,7 @@ int main(void)
 
     for (uint8_t i = 0; i < 8; i++) {
 //				HAL_Delay(300);
-        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
+//        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
     }
@@ -167,7 +167,7 @@ int main(void)
 //				HAL_Delay(1); //this delay is for stablize mux
     for (uint8_t i = 8; i < NUM_THERM_PER_MOD; i++) {
 //				HAL_Delay(300);
-        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
+//        Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
     }
@@ -192,7 +192,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
 		if (TimerPacket_FixedPulse(&cycleTimeCap)) {
-			ADBMS_ReadSID(modData.sid);
+//			ADBMS_ReadSID(modData.sid);
 			 HAL_ADCEx_Calibration_Start(&hadc1);
 			 HAL_ADCEx_Calibration_Start(&hadc2);
 		printf("hello\n");
@@ -208,7 +208,7 @@ int main(void)
 			//reading cell temperatures
 			for (uint8_t i = tempindex; i < indexpause; i++) {
 //				HAL_Delay(300);
-				Read_Temp(i, modData.cell_temp, modData.read_auxreg);
+//				Read_Temp(i, modData.cell_temp, modData.read_auxreg);
 
 //				printf(" Cell: %d, Temp: %d\n", i, modPackInfo.cell_temp[i]);
 			}
@@ -254,9 +254,9 @@ int main(void)
 //			} else if (BALANCE) {
 //				End_Balance(&safetyFaults);
 //			}
-            if(&accmData.cell_difference > BALANCE_THRESHOLD){
-				Start_Balance(modData.cell_volt, accmData.cell_volt_lowest, accmData.balance_status);
-			}
+//            if(&accmData.cell_difference > BALANCE_THRESHOLD){
+//				Start_Balance(modData.cell_volt, accmData.cell_volt_lowest, accmData.balance_status);
+//			}
 
 			End_Balance(accmData.balance_status);//end the balance if CAN RX recieve 0
 

@@ -45,6 +45,10 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_BYTE_NUM				8
 #define CAN_MESSAGE_NUM_VOLTAGE 	NUM_CELLS * 2 / CAN_BYTE_NUM
 #define CAN_MESSAGE_NUM_THERMISTOR 	NUM_THERM_TOTAL / CAN_BYTE_NUM
+#define CAN_16BIT_SIZE				2
+#define CAN_8BIT_SIZE 				1
+
+extern ModuleData modData[NUM_MOD];
 
 extern uint8_t can_skip_flag;
 /* USER CODE END Private defines */
@@ -59,7 +63,7 @@ HAL_StatusTypeDef CAN_Send(CANMessage *ptr);
 void CAN_SettingsInit(CANMessage *ptr);
 void Set_CAN_Id(CANMessage *ptr, uint32_t id);
 
-void CAN_Send_Voltage(CANMessage *ptr, uint16_t *read_volt);
+void CAN_Send_Voltage(CANMessage *ptr, ModuleData *mod);
 void CAN_Send_Temperature(CANMessage *ptr, uint16_t *read_temp, uint16_t *pressure, uint16_t *atmos_temp, uint16_t *humidity, uint16_t *dew_point);
 void CAN_Send_Cell_Summary(CANMessage *ptr, struct AccumulatorData *batt);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings);
