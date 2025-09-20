@@ -1,3 +1,18 @@
+/** @file adbms.c
+ *  @brief Host-side helpers for ADBMS68xx/LTC6811 battery monitor chains over isoSPI/SPI.
+ *
+ *  @details
+ *  - Powers/wakes the daisy chain and issues commands (ADCV/ADSV/SNAP/UNSNAP/etc.).
+ *  - Reads cell averages (RDACx), GPIO/AUX pages, and 6-byte Serial IDs (SID).
+ *  - Writes PWM/CFG/COMM register groups to all devices in a chain.
+ *  - Verifies link and payload integrity using command PEC15 and data PEC10.
+ *
+ *  @note Requires:
+ *    - HAL SPI handle `hspi1`
+ *    - Chip select helpers `ADBMS_nCS_Low()` / `ADBMS_nCS_High()`
+ *    - Topology macros: `NUM_MOD`, `NUM_CELL_PER_MOD`
+ *  @warning All functions are blocking and not thread-safe.
+ */
 #include <ADBMS.h>
 #include "spi.h"
 #include "main.h"
