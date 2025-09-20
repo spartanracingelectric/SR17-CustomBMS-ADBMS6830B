@@ -1,9 +1,41 @@
+/**
+ * @file    safety.c
+ * @brief   Pack/cell safety evaluation: voltage & temperature checks with hysteresis.
+ *
+ * This file provides:
+ *  - Cell_Voltage_Fault(): per-cell UV/OV evaluation, warning/fault latching,
+ *                          and fault line assertion/clear with hysteresis.
+ *  - Cell_Temperature_Fault(): per-sensor high-temp evaluation with hysteresis.
+ *  - (commented examples) Pack-level checks and module averages.
+ *
+ * Conventions:
+ *  - Cell voltage units: deci-millivolts (0.1 mV). Example: 42_000 → 4.200 V.
+ *  - Pack voltage fields used elsewhere (e.g., hvsens_pack_voltage) are centivolts (cV).
+ *  - Temperatures are in degrees Celsius (°C).
+ *  - Warning/fault summary bits are defined in safety.h.
+ *
+ * Hysteresis & Latching:
+ *  - *_hysteresis counters debounce conditions across multiple cycles
+ *    (e.g., >16) before asserting a fault bit.
+ *  - *_fault_lock flags keep faults latched until the signal clears by the
+ *    specified margin (FAULT_LOCK_MARGIN_*), at which point ClearFaultSignal()
+ *    is invoked and bits are deasserted.
+ *
+ * Assumptions:
+ *  - SendFaultSignal()/ClearFaultSignal() drive an external shutdown/fault line.
+ *  - NUM_CELLS / NUM_THERM_TOTAL and thresholds are defined in headers.
+ */
 #include "safety.h"
 #include "main.h"
 #include "stdio.h"
 #include "gpio.h"
+
 // ! Fault Thresholds
 
+/* ===== Global Latches / Hysteresis Counters =================================
+ * These persist across calls to provide debounce and latch behavior for
+ * over-voltage, under-voltage, imbalance, and temperature conditions.
+ */
 uint8_t high_volt_fault_lock = 0;
 uint8_t high_volt_hysteresis = 0;
 uint8_t low_volt_hysteresis = 0;
@@ -11,6 +43,15 @@ uint8_t low_volt_fault_lock = 0;
 uint8_t cell_imbalance_hysteresis = 0;
 uint8_t high_temp_hysteresis = 0;
 
+/* ===== Cell Voltage Evaluation ==============================================
+ * Cell_Voltage_Fault():
+ *  - Scans all cells to determine highest and lowest voltages.
+ *  - Applies WARN thresholds for OV/UV.
+ *  - Applies FAULT thresholds with counter-based hysteresis; asserts a latched
+ *    fault and calls SendFaultSignal() once the counter exceeds its threshold.
+ *  - Clears/relaxes a latched fault only after the measurement crosses back by
+ *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
+ */
 void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
 //finding highest and lowest cell voltage
 	batt->cell_volt_highest = mod->cell_volt[0];
@@ -88,6 +129,14 @@ void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, 
 //	}
 //}
 
+/* ===== Cell Temperature Evaluation ==========================================
+ * Cell_Temperature_Fault():
+ *  - Scans all thermistor readings to find highest/lowest temperatures.
+ *  - Sets warning when above CELL_HIGH_TEMP_WARNING but below FAULT threshold.
+ *  - Uses a small hysteresis counter (e.g., >2) to assert a latched high-temp
+ *    fault and SendFaultSignal(); clears once temperature falls below the
+ *    threshold by FAULT_LOCK_MARGIN_HIGH_TEMP and calls ClearFaultSignal().
+ */
 void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings) {
 	batt->cell_temp_highest = mod->cell_temp[0];
 	batt->cell_temp_lowest = mod->cell_temp[0];
@@ -126,6 +175,10 @@ void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fau
 	}
 }
 
+/* ===== (Examples/Disabled) Pack-Level & Module Aggregates ====================
+ * Illustrative routines for pack HV thresholds and per-module averages. These
+ * remain commented until needed on your hardware/software path.
+ */
 //void High_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings){
 //	uint32_t sum_voltage = 0;
 //

@@ -180,23 +180,14 @@ void ADBMS_UNSNAP();
  * ADBMS_ReadSID():            read 6-byte silicon ID per IC (PEC10 verified).
  */
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
-
 void LTC_writePWM(uint8_t total_ic, uint8_t pwm);
-
 void LTC_writeCFG(uint8_t total_ic, uint8_t config[][6]);
-
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
-
 void LTC_SPI_requestData(uint8_t len);
-
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
-
 void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
-
 int32_t LTC_POLLADC();
-
 int Calc_Pack_Voltage(uint16_t *read_voltages);
-
 LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]);
 
 /* ===== Public API: PEC Helpers ==============================================
@@ -204,7 +195,6 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]);
  * ADBMS_calcPec10(): compute CRC10 (PEC10) for data bytes; can fold 6-bit CC.
  * ADBMS_checkRxPec(): extract CC+CRC10 from 2-byte field and verify against data.
  */
-
 uint16_t ADBMS_calcPec15(uint8_t *data, uint8_t len);
 uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter);
 bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2]);

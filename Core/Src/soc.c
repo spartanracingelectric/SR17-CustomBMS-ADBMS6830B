@@ -1,3 +1,32 @@
+/**
+ * @file    soc.c
+ * @brief   State-of-charge (SoC) initialization and coulomb counting for the BMS.
+ *
+ * This file provides:
+ *  - SOC_getInitialCharge(): estimate initial SoC from pack OCV vs. temperature
+ *  - SOC_updateCurrent():     convert shunt ADC reading → pack current (mA)
+ *  - SOC_updateCharge():      integrate current over elapsed time into SoC (µAh)
+ *  - OCV helpers:             binary-search lookup + OCV tables at 0/25/40 °C
+ *
+ * Conventions:
+ *  - Units:
+ *      batt->current : mA (derived from shunt scaling and MAX_SHUNT_* constants)
+ *      batt->soc     : microamp-hours (µAh). In CAN formatting, (soc/1000) = mAh.
+ *      pack voltage  : centivolts (cV) elsewhere in the codebase.
+ *  - Initial SoC:
+ *      * Average per-cell OCV is computed from batt->sum_pack_voltage and NUM_CELLS.
+ *      * Temperature selection picks the nearest of {0, 25, 40} °C from ModuleData.
+ *      * OCV tables return per-cell capacity in mAh; code scales by NUM_MOD and ×1000
+ *        to store in µAh aggregate (project convention).
+ *  - Coulomb counting:
+ *      * If HV sense ≤ 100.00 V, current is forced to 0 (disconnected condition).
+ *      * Otherwise read shunt ADC and scale by MAX_SHUNT_VOLTAGE and SHUNT_OPAMP_RATIO.
+ *      * SoC update subtracts discharge: soc -= 1000 * I[mA] * (Δt[ms] / 3600000).
+ *
+ * Notes:
+ *  - Forward declarations SOC_offsetFilter() remain for future use; not implemented here.
+ *  - ADC_RESOLUTION, MAX_SHUNT_VOLTAGE, SHUNT_OPAMP_RATIO, SHUNT_OFFSET are defined in headers.
+ */
 #include "soc.h"
 
 #include <math.h>
@@ -8,6 +37,10 @@
 #include "main.h"
 #include "usart.h"
 
+/* ===== Internal Prototypes ===================================================
+ * SOC_updateCurrent(): acquire/scale shunt reading → batt->current (mA).
+ * OCV helpers: mapping ADC/OCV to capacities via piecewise tables and search.
+ */
 void SOC_updateCurrent(AccumulatorData *batt);
 
 uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX,
@@ -18,6 +51,12 @@ uint16_t SOC_getChargeData0C(uint16_t voltage);
 uint16_t SOC_getChargeData25C(uint16_t voltage);
 uint16_t SOC_getChargeData40C(uint16_t voltage);
 
+/* ===== Initial SoC from OCV & Temperature ===================================
+ * SOC_getInitialCharge():
+ *  - Compute average per-cell voltage from pack centivolts and NUM_CELLS.
+ *  - Average module thermistors to choose the nearest OCV curve (0/25/40 °C).
+ *  - Look up per-cell capacity (mAh) and scale to pack and µAh storage.
+ */
 void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
     uint32_t voltage = 0;
     uint32_t pack_voltage = batt->sum_pack_voltage;
@@ -58,6 +97,13 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
 //    printf("this is running");
 }
 
+
+/* ===== Shunt ADC → Current (mA) =============================================
+ * SOC_updateCurrent():
+ *  - Reads ADC channel, converts to volts using runtime Vref and ADC_RESOLUTION.
+ *  - Scales by MAX_SHUNT_VOLTAGE and SHUNT_OPAMP_RATIO to compute current (mA).
+ *  - Applies SHUNT_OFFSET bias compensation (project convention).
+ */
 void SOC_updateCurrent(AccumulatorData *batt) {
     uint32_t adcValue = 0;
 	float vRef = getVref();
@@ -67,6 +113,14 @@ void SOC_updateCurrent(AccumulatorData *batt) {
     batt->current = (voltage / (MAX_SHUNT_VOLTAGE * SHUNT_OPAMP_RATIO)) * MAX_SHUNT_AMPAGE + SHUNT_OFFSET;
 }
 
+/* ===== Coulomb Counter Update (µAh) =========================================
+ * SOC_updateCharge():
+ *  - Gate current to 0 if HV sense ≤ 100.00 V (centivolt field ≤ 10000).
+ *  - Else refresh current via SOC_updateCurrent().
+ *  - Integrate discharge:
+ *      ΔQ[µAh] = 1000 * I[mA] * (Δt[ms] / 3600000)
+ *      soc_new = soc_old - ΔQ
+ */
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
 	if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
 		batt->current = 0;
@@ -77,6 +131,11 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
 	batt->soc -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
 }
 
+/* ===== OCV Table Binary Search ==============================================
+ * SOC_searchCapacity():
+ *  - Input ‘data’ is an array of {voltage_mV, capacity_mAh}.
+ *  - Returns nearest capacity for the provided per-cell voltage (mV).
+ */
 uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t target, uint16_t size) {
     // Get the two closest capacities
     uint16_t left = 0;
@@ -111,6 +170,11 @@ uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t target, uint16_t size) 
     return data[right][1];
 }
 
+/* ===== OCV Table Binary Search ==============================================
+ * SOC_searchCapacity():
+ *  - Input ‘data’ is an array of {voltage_mV, capacity_mAh}.
+ *  - Returns nearest capacity for the provided per-cell voltage (mV).
+ */
 uint16_t SOC_getChargeData0C(uint16_t voltage) {
     int datalen = 203;
     uint16_t data[][2] = {

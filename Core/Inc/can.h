@@ -2,18 +2,17 @@
 /**
   ******************************************************************************
   * @file    can.h
-  * @brief   This file contains all the function prototypes for
-  *          the can.c file
-  ******************************************************************************
-  * @attention
+  * @brief   Public interface for CAN1 configuration and BMS CAN helpers.
   *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
+  * This header collects:
+  *  - ID map and constants for BMS CAN payloads (voltages, temps, summary, etc.)
+  *  - External state (handles, flags, module arrays) used by the CAN layer
+  *  - Prototypes for init/start/notify wrappers and high-level send helpers
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
+  * Conventions:
+  *  - All frames use Standard ID (11-bit) and DLC=8 unless noted.
+  *  - Multi-byte values in payloads are serialized little-endian (LSB first).
+  *  - Array sizes derive from NUM_MOD / NUM_CELLS / NUM_THERM_TOTAL (see main.h).
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -36,6 +35,20 @@ extern "C" {
 extern CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN Private defines */
+/* ===== CAN ID Map & Serialization ===========================================
+ * Base IDs:
+ *  - CAN_ID_VOLTAGE:     start ID for voltage frames (groups of four cells).
+ *  - CAN_ID_THERMISTOR:  start ID for thermistor/ambient frames (two per block).
+ *  - CAN_ID_SUMMARY:     pack-level extremes (voltage/temperature).
+ *  - CAN_ID_SAFETY:      warnings/faults, delta, pack voltages.
+ *  - CAN_ID_SOC:         state of charge and pack current.
+ *  - CAN_ID_BALANCE_STATUS: two frames with DCC bitmaps for 8 modules.
+ *
+ * Payload sizes:
+ *  - CAN_BYTE_NUM:       8 bytes per frame (DLC=8).
+ *  - CAN_MESSAGE_NUM_*:  helper counts derived from pack topology.
+ *  - *_SIZE:             width helpers for packing 16-bit / 8-bit values.
+ */
 #define CAN_ID_VOLTAGE 				0x630
 #define CAN_ID_THERMISTOR 			0x680
 #define CAN_ID_SUMMARY				0x622
@@ -56,13 +69,35 @@ extern uint8_t can_skip_flag;
 void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+/* ===== Public API: Runtime Control ==========================================
+ * CAN_Start():      Start the CAN peripheral.
+ * CAN_Activate():   Enable RX FIFO0 pending-message notifications.
+ * CAN_Send():       Queue a frame; auto-selects payload buffer by ID range.
+ * CAN_SettingsInit(): Initialize runtime header defaults (IDE/RTR/DLC) and IRQs.
+ * Set_CAN_Id():     Convenience setter for Standard ID.
+ */
 HAL_StatusTypeDef CAN_Start();
+
 HAL_StatusTypeDef CAN_Activate();
+
 HAL_StatusTypeDef CAN_Send(CANMessage *ptr);
+
 void CAN_SettingsInit(CANMessage *ptr);
+
 void Set_CAN_Id(CANMessage *ptr, uint32_t id);
 
+/* ===== Public API: High-Level TX Helpers ====================================
+ * CAN_Send_Voltage():        voltages in groups of 4 cells per frame.
+ * CAN_Send_Temperature():    thermistors (0..11) + ambient sensors per block.
+ * CAN_Send_Cell_Summary():   extremes of cell voltage/temperature.
+ * CAN_Send_Safety_Checker(): warnings/faults, delta, pack voltages.
+ * CAN_Send_SOC():            state-of-charge (milli-units) and current.
+ * CAN_Send_Balance_Status(): two frames of per-module DCC bitmaps.
+ *
+ * Notes:
+ *  - All helpers serialize multi-byte fields little-endian into 8-byte payloads.
+ *  - Caller should set or rely on contiguous IDs starting at the defined bases.
+ */
 void CAN_Send_Voltage(CANMessage *ptr, ModuleData *mod);
 void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod);
 void CAN_Send_Cell_Summary(CANMessage *ptr, struct AccumulatorData *batt);
