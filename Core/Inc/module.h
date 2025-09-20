@@ -19,8 +19,11 @@
 
 #define LTC6811_Vdd 51450.0f
 
+extern AccumulatorData accmData;
+extern ModuleData modata[NUM_MOD];
 
-void Read_Volt(uint16_t *read_volt);
+void Read_Volt();
+
 void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp,
 		uint16_t data);
 

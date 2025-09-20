@@ -74,11 +74,11 @@ void ADBMS_UNSNAP(){
 }
 
 /* Read and store raw cell voltages at uint8_t 2d pointer */
-LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(uint16_t *read_voltages) {
+LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
 	HAL_StatusTypeDef hal_ret;
-	const uint8_t  RX_BYTES_PER_IC    = DATA_LEN + PEC_LEN;      // 6+2=8
-	const uint16_t RX_LEN          = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6+2=8
+	const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
 	uint8_t rx_buffer[RX_LEN];
 
 	uint8_t  cmd[4];
@@ -102,6 +102,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(uint16_t *read_voltages) {
 	    hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
 	    if (hal_ret != HAL_OK) {
 	        ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET));
+	        ADBMS_UNSNAP();
 	        ADBMS_nCS_High();
 	        return ret;
 	    }
@@ -109,12 +110,14 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(uint16_t *read_voltages) {
 	    hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
 	    if (hal_ret != HAL_OK) {
 	        ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
+	        ADBMS_UNSNAP();
 	        ADBMS_nCS_High();
 	        return ret;
 	    }
 
 	    ADBMS_nCS_High();// Pull CS high
 
+	    //check pec using pec10 for rx
 	    for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
 			uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
 
@@ -126,15 +129,25 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(uint16_t *read_voltages) {
 				printf("M%d failed\n", devIndex + 1);
 				continue; // if pec is wrong ignore that chip
 			}
-			memcpy(read_voltages[devIndex], (uint16_t)voltData, DATA_LEN);
+
+			//put data into array
+			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDCV; dataIndex++) {
+				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDCV + dataIndex);
+				if (cellInMod >= NUM_CELL_PER_MOD) break;  //cell number is 14, so last register only have 2 data
+
+				// if LSB and MSB is opposite, flip this two
+				uint8_t lo = voltData[2 * dataIndex + 0];
+				uint8_t hi = voltData[2 * dataIndex + 1];
+				moduleData[devIndex].cell_volt[cellInMod] = ((uint16_t)hi << 8)|(uint16_t)lo;
+			}
 		}
 	}
 
-	for (int i = 0; i < NUM_MOD; i++){
-		for(int j = 0; j < NUM_CELL_PER_MOD; j++){
-			printf("Cell Voltage\n M%d:%d\n", (i + 1), read_voltages[j]);
-		}
-	}
+//	for (int i = 0; i < NUM_MOD; i++){
+//		for(int j = 0; j < NUM_CELL_PER_MOD; j++){
+//			printf("Cell Voltage\n M%d:%d\n", (i + 1), mod->cell_volt[i][j]);
+//		}
+//	}
 
 	ADBMS_UNSNAP();
 

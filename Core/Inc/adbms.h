@@ -43,6 +43,8 @@ extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 
+extern ModuleData modData[NUM_MOD];
+
 void Wakeup_Idle(void);
 
 void Wakeup_Sleep(void);
@@ -51,7 +53,7 @@ void ADBMS_UNSNAP();
 
 void ADBMS_UNSNAP();
 
-LTC_SPI_StatusTypeDef LTC_getCellVoltages(uint16_t *read_voltages);
+LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
 
 /* write to PWM register to control balancing functionality */
 void LTC_writePWM(uint8_t total_ic, uint8_t pwm);

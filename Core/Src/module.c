@@ -63,11 +63,11 @@ void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp,
     actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = steinhart;
 }
 
-void Read_Volt(uint16_t *read_volt) {
+void Read_Volt() {
 //	printf("volt start\n");
 	LTC_startADCVoltage(MD_NORMAL, DCP_DISABLED, CELL_CH_ALL);//ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
 	HAL_Delay(NORMAL_DELAY);	//FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-	LTC_getCellVoltages((uint16_t*) read_volt);
+	ADBMS_getAVGCellVoltages(&modData);
 //	printf("volt end\n");
 }
 

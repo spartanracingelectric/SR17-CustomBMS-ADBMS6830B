@@ -67,7 +67,7 @@ typedef struct AccumulatorData {
 } AccumulatorData;
 
 typedef struct ModuleData {
-	uint16_t cell_volt[NUM_MOD][NUM_CELL_PER_MOD];
+	uint16_t cell_volt[NUM_CELL_PER_MOD];
 	uint16_t cell_temp[NUM_THERM_TOTAL];
 	uint16_t average_volt[NUM_MOD];
 	uint16_t average_temp[NUM_MOD];
@@ -78,8 +78,6 @@ typedef struct ModuleData {
     uint16_t dew_point[NUM_MOD];
     uint8_t sid[NUM_MOD][6];
 } ModuleData;
-
-
 
 typedef struct CANMessage{
     CAN_TxHeaderTypeDef TxHeader;
