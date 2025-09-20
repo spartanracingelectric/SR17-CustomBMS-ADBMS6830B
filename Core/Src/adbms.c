@@ -14,16 +14,26 @@ static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, R
 
 static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
 
-/* Wake LTC up from IDLE state into READY state */
+/**
+ * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
+ *
+ * Some ADBMS/LTC parts require a short SPI activity (while nCS is low) to exit IDLE.
+ * Sending 0xFF with nCS asserted is a safe way to provide clocks without issuing a command.
+ */
 void isoSPI_Idle_to_Ready(void) {
 	uint8_t hex_ff = 0xFF;
-	ADBMS_nCS_Low();							   // Pull CS low
-	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send byte 0xFF to wake LTC up
-	ADBMS_nCS_High();							   // Pull CS high
-	HAL_Delay(1);
+	ADBMS_nCS_Low();							   // Assert CS to address the chain
+	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send a dummy byte to toggle SCK and wake isoSPI
+	ADBMS_nCS_High();							   // Deassert CS
+	HAL_Delay(1);                                  // Small guard delay to ensure READY state
 }
 
-// wake up sleep
+/**
+ * @brief Wake devices from SLEEP by toggling nCS (no clocks required in sleep wake).
+ *
+ * Many LTC/ADBMS devices detect wake on nCS edges while asleep.
+ * Two low-high toggles with small delays are commonly recommended.
+ */
 void Wakeup_Sleep(void) {
     for (int i = 0; i < 2; i++) {
         ADBMS_nCS_Low();
@@ -33,14 +43,36 @@ void Wakeup_Sleep(void) {
     }
 }
 
+/**
+ * @brief Basic init sequence: wake from sleep, exit SNAP mode, and start cell ADC.
+ *
+ * Order:
+ *  1) Ensure devices are awake.
+ *  2) UNSNAP so that live registers are accessible.
+ *  3) Start voltage conversions (continuous or as configured by your fields).
+ */
 void ADBMS_init(){
 	Wakeup_Sleep();
 	ADBMS_UNSNAP();
 	ADBMS_startADCVoltage();
 }
 
-/*
- Starts cell voltage conversion
+/**
+ * @brief Start cell-voltage conversion by emitting the packed ADCV command.
+ *
+ * The command is built bit-by-bit into a 11-bit (here packed into 16-bit) command word:
+ *  bit10: 0 (fixed)
+ *  bit9 : 1 (fixed)
+ *  bit8 : RD   (redundant samples / data rate select; enum AdcRD)
+ *  bit7 : CONT (continuous conversion enable; enum AdcCONT)
+ *  bit6 : 1 (fixed)
+ *  bit5 : 1 (fixed)
+ *  bit4 : DCP  (discharge-permit during conversion; enum AdcDCP)
+ *  bit3 : 0 (fixed)
+ *  bit2 : RSTF (reset filter/averager; enum AdcRSTF)
+ *  bit1:0: OW[1:0] (open-wire test mode; enum AdcOW)
+ *
+ * After packing, compute PEC15 over the 2 command bytes and transmit 4 bytes total.
  */
 void ADBMS_startADCVoltage() {
 	uint8_t cmd[4];
@@ -54,106 +86,141 @@ void ADBMS_startADCVoltage() {
 
 	uint16_t commandWord = 0;
 
-	//pack the command bit's in the commandWord
-	commandWord |= (0    << 10);    // bit10 = 0
-	commandWord |= (1    << 9);     // bit9  = 1
-	commandWord |= (RD   << 8);     // bit8  = RD
-	commandWord |= (CONT << 7);     // bit7  = CONT
-	commandWord |= (1    << 6);     // bit6  = 1
-	commandWord |= (1    << 5);     // bit5  = 1
-	commandWord |= (DCP  << 4);     // bit4  = DCP
-	commandWord |= (0    << 3);     // bit3  = 0
-	commandWord |= (RSTF << 2);     // bit2  = RSTF
-	commandWord |= (OW & 0x03);     // bit1-0 = OW[1:0]
+	// Pack command bits into the 16-bit container (MSB first on wire)
+	commandWord |= (0    << 10);    // bit10 = 0        (fixed)
+	commandWord |= (1    << 9);     // bit9  = 1        (fixed sync bit)
+	commandWord |= (RD   << 8);     // bit8  = RD       (rate/redundancy)
+	commandWord |= (CONT << 7);     // bit7  = CONT     (continuous mode)
+	commandWord |= (1    << 6);     // bit6  = 1        (fixed)
+	commandWord |= (1    << 5);     // bit5  = 1        (fixed)
+	commandWord |= (DCP  << 4);     // bit4  = DCP      (balance during conv)
+	commandWord |= (0    << 3);     // bit3  = 0        (fixed)
+	commandWord |= (RSTF << 2);     // bit2  = RSTF     (reset digital filter)
+	commandWord |= (OW & 0x03);     // bit1-0 = OW[1:0] (open-wire mode)
 
-	//split into bytes and pack it to cmd
+	// Split command word into two bytes (big-endian: high byte first)
 	uint8_t firstCmdByte  = (uint8_t)(commandWord >> 8);
 	uint8_t secondCmdByte = (uint8_t)(commandWord & 0xFF);
 
+	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
 	cmd[0] = firstCmdByte;
 	cmd[1] = secondCmdByte;
-	cmd_pec = ADBMS_calcPec15(cmd, 2);
+	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+	// Ensure the isoSPI port is awake before issuing the command
+	isoSPI_Idle_to_Ready();
+
 	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
 	ADBMS_nCS_High();
 }
 
+/**
+ * @brief Issue SNAP command to latch a coherent “snapshot” of measurement registers.
+ *
+ * SNAP freezes a consistent set of measurement results so you can read them across
+ * multiple RDCV/RDAUX/etc. transactions without internal updates racing your reads.
+ * Typical flow: SNAP -> read all needed registers -> UNSNAP when done.
+ */
 void ADBMS_SNAP(){
 	uint8_t  cmd[4];
 	uint16_t cmd_pec;
 
-	cmd[0] = SNAP[0]; // RDAC Register
-	cmd[1] = SNAP[1];	    // RDAC Register
+	cmd[0] = SNAP[0];       // Command high byte
+	cmd[1] = SNAP[1];	    // Command low byte
 	cmd_pec = ADBMS_calcPec15(cmd, 2);
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	isoSPI_Idle_to_Ready(); // Wake LTC up
+	isoSPI_Idle_to_Ready(); // Make sure link is awake
 
-	ADBMS_nCS_Low(); // Pull CS low
-
+	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-
 	ADBMS_nCS_High();
 }
 
+/**
+ * @brief Issue UNSNAP command to resume live register updates after a SNAP.
+ *
+ * Call this once you’ve finished reading all latched measurement pages.
+ */
 void ADBMS_UNSNAP(){
 	uint8_t  cmd[4];
 	uint16_t cmd_pec;
 
-	cmd[0] = UNSNAP[0]; // RDAC Register
-	cmd[1] = UNSNAP[1];	    // RDAC Register
+	cmd[0] = UNSNAP[0];       // Command high byte
+	cmd[1] = UNSNAP[1];	      // Command low byte
 	cmd_pec = ADBMS_calcPec15(cmd, 2);
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	isoSPI_Idle_to_Ready(); // Wake LTC up
+	isoSPI_Idle_to_Ready();   // Ensure link is awake
 
-	ADBMS_nCS_Low(); // Pull CS low
-
+	ADBMS_nCS_Low();
 	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-
 	ADBMS_nCS_High();
 }
 
-/* Read and store raw cell voltages at uint8_t 2d pointer */
+/**
+ * @brief Read averaged cell voltages for all modules in the daisy chain.
+ *
+ * Flow:
+ *  1) SNAP to latch a coherent set of voltage registers across modules.
+ *  2) For each RDAC page (RDCV group), send RDAC command and receive data.
+ *  3) For each device (“module”) in the chain:
+ *     - Verify RX PEC10.
+ *     - Unpack 12-bit/16-bit raw words (device-specific width) from the 6-byte data block.
+ *     - Convert raw counts to millivolts (here: 1.5 V offset + 0.150 mV/LSB).
+ *     - Store into mod[devIndex].cell_volt[cellInMod].
+ *  4) UNSNAP to resume live updates.
+ *
+ * Notes:
+ *  - RX_BYTES_PER_IC = DATA_LEN + PEC_LEN (6 + 2 = 8 bytes per device per read).
+ *  - The loop over regIndex covers however many cell groups are mapped per RDAC page.
+ *  - A raw value of 0x8000 indicates “invalid/reset” per the device convention; we store 0xFFFF.
+ *  - PEC failures are logged and that device’s data for the page is skipped.
+ *
+ * @param[out] mod  Array of ModuleData; each entry receives cell voltages in mV.
+ * @return LTC_SPI_StatusTypeDef  Bitfield with TX/RX error flags set on HAL failures.
+ */
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
 	HAL_StatusTypeDef hal_ret;
-	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6+2=8
+	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC per IC
 	const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
 	uint8_t rx_buffer[RX_LEN];
-
 	uint8_t  cmd[4];
 	uint16_t cmd_pec;
 
-	ADBMS_SNAP();
+	ADBMS_SNAP(); // Latch a consistent dataset across all modules
 
+	// We have 14 cells per module; ADBMS_SERIES_GROUPS_PER_RDCV indicates how many cells per RDAC page.
 	for (uint8_t regIndex = 0; regIndex < ((NUM_CELL_PER_MOD + ADBMS_SERIES_GROUPS_PER_RDCV - 1)
-			/ ADBMS_SERIES_GROUPS_PER_RDCV); regIndex++) { //We have 14 cells, so we need to read 5 registers
+			/ ADBMS_SERIES_GROUPS_PER_RDCV); regIndex++) {
 
-		cmd[0] = (0xFF & (ADBMS_CMD_RDAC[regIndex] >> 8)); // RDAC Register
-		cmd[1] = (0xFF & (ADBMS_CMD_RDAC[regIndex]));	    // RDAC Register
+		// Build RDAC command for the current voltage-register page
+		cmd[0] = (0xFF & (ADBMS_CMD_RDAC[regIndex] >> 8));
+		cmd[1] = (0xFF & (ADBMS_CMD_RDAC[regIndex]));
 		cmd_pec = ADBMS_calcPec15(cmd, 2);
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		isoSPI_Idle_to_Ready(); // Wake LTC up
+		isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
 
-		ADBMS_nCS_Low(); // Pull CS low
+		ADBMS_nCS_Low();
 
+		// Transmit the RDAC command
 	    hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
 	    if (hal_ret != HAL_OK) {
-	        ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET));
+	        ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
 	        ADBMS_UNSNAP();
 	        ADBMS_nCS_High();
 	        return ret;
 	    }
 
+	    // Receive one page from every device in the chain (concatenated)
 	    hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
 	    if (hal_ret != HAL_OK) {
 	        ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
@@ -162,36 +229,40 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	        return ret;
 	    }
 
-	    ADBMS_nCS_High();// Pull CS high
+	    ADBMS_nCS_High();
 
-	    //check pec using pec10 for rx
+	    // Validate and unpack each device’s 6-byte data + 2-byte PEC10
 	    for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
 			uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
 
-			uint8_t *voltData    = &rx_buffer[offset];
-			uint8_t *voltDataPec = &rx_buffer[offset + DATA_LEN];
+			uint8_t *voltData    = &rx_buffer[offset];            // 6 data bytes
+			uint8_t *voltDataPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
 
+			// Check RX PEC10 for data integrity
 			bool pec10Check = ADBMS_checkRxPec(voltData, DATA_LEN, voltDataPec);
 			if (!pec10Check) {
 				printf("M%d failed\n", devIndex + 1);
-				continue; // if pec is wrong ignore that chip
+				continue; // Skip this device’s page if PEC fails
 			}
 
-			//put data into array
+			// Each page provides ADBMS_SERIES_GROUPS_PER_RDCV cells (2 bytes per cell)
 			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDCV; dataIndex++) {
 				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDCV + dataIndex);
-				if (cellInMod >= NUM_CELL_PER_MOD) break;  //cell number is 14, so last register only have 2 data
+				if (cellInMod >= NUM_CELL_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
 
-				// if LSB and MSB is opposite, flip this two
+				// Device transmits LSB then MSB; re-pack into a 16-bit sample
 				uint8_t lo = voltData[2 * dataIndex + 0];
 				uint8_t hi = voltData[2 * dataIndex + 1];
 
-				//convert the raw data to mV
 				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
-				if (ILOVEBMS == 0x8000u) { mod[devIndex].cell_volt[cellInMod] = 0xFFFF; } //ADBMS will reset register to 8000 after clear command or power cycle
+
+				// 0x8000 is a device “cleared/invalid” code; store 0xFFFF as a sentinel for “no data”
+				if (ILOVEBMS == 0x8000u) { mod[devIndex].cell_volt[cellInMod] = 0xFFFF; }
 				else {
-				    uint32_t mv = 1500u + (uint32_t)ILOVEBMS * 150u;             // 1.5V + 0.150mV/LSB
-				    if (mv > 65535u) mv = 65535u;                                //
+					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
+                    // (Adjust this formula to the exact datasheet scaling for your part/mode.)
+				    uint32_t mv = 1500u + (uint32_t)ILOVEBMS * 150u;             // in 0.01 mV units => here stored in mV
+				    if (mv > 65535u) mv = 65535u;                                // Clamp to 16-bit storage field
 				    mod[devIndex].cell_volt[cellInMod] = (uint16_t)mv;           //store in mV
 				}
 			}
@@ -493,6 +564,11 @@ int Calc_Pack_Voltage(uint16_t *read_voltages) {
 	return packvoltage;
 }
 
+/** CRC15 lookup table for command PEC15 (Linear/ADI LTC/ADBMS family).
+ *  - Polynomial: 0x4599 (x^15 + x^14 + x^10 + x^8 + x^7 + x^4 + x^3 + 1)
+ *  - Seed: 0x0010 (decimal 16)
+ *  - Implementation detail: returned value is left-shifted by 1 so LSB is 0.
+ */
 const uint16_t Crc15Table[256] =
 {
     0x0000, 0xc599, 0xceab, 0xb32,  0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
@@ -521,6 +597,11 @@ const uint16_t Crc15Table[256] =
 	0x4e3e, 0x450c, 0x8095
 };
 
+/** CRC10 lookup table for data PEC10 (used by RX frames from devices).
+ *  - Polynomial: x^10 + x^7 + x^3 + x^2 + x + 1
+ *  - Represented here with helper constant 0x08F during the final bit-walk.
+ *  - Seed: 0x0010 (decimal 16)
+ */
 static const uint16_t crc10Table[256] =
 {
     0x000, 0x08f, 0x11e, 0x191, 0x23c, 0x2b3, 0x322, 0x3ad, 0x0f7, 0x078, 0x1e9, 0x166, 0x2cb, 0x244, 0x3d5, 0x35a,
@@ -541,30 +622,45 @@ static const uint16_t crc10Table[256] =
     0x3e4, 0x36b, 0x2fa, 0x275, 0x1d8, 0x157, 0x0c6, 0x049, 0x313, 0x39c, 0x20d, 0x282, 0x12f, 0x1a0, 0x031, 0x0be
 };
 
-
+/**
+ * @brief Read 6-byte Serial IDs (SID) from each module in the daisy chain.
+ *
+ * Protocol:
+ *  1) Build RDSID command and append PEC15 (cmd bytes only).
+ *  2) Transmit command once; then receive (6 data + 2 PEC10) bytes per module.
+ *  3) For each module:
+ *     - Verify RX PEC10.
+ *     - If OK, copy 6-byte SID to read_sid[devIndex][] and print it.
+ *
+ * @param[out] read_sid  [NUM_MOD][DATA_LEN] destination for per-module 6-byte SIDs.
+ * @return LTC_SPI_StatusTypeDef with TX/RX error bits set on HAL failures (PEC errors are logged only).
+ */
 LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
     LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
     HAL_StatusTypeDef hal_ret;
 
-    const uint8_t  RX_BYTES_PER_IC    = DATA_LEN + PEC_LEN;      // 6+2=8
-    const uint16_t RX_LEN          = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+    const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC10 = 8 per device
+    const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
 
-    uint8_t rx_buffer[RX_LEN];
+    uint8_t rx_buffer[RX_LEN];  // Concatenated receive buffer for the whole chain
 
-    uint8_t  cmd[4];
+    uint8_t  cmd[4];   // [CMD_H][CMD_L][PEC15_H][PEC15_L]
     uint16_t cmd_pec;
 
+    // 1) Build command frame with PEC15 over the two command bytes
     cmd[0] = RDSID[0];
     cmd[1] = RDSID[1];
     cmd_pec = ADBMS_calcPec15(cmd, 2);
     cmd[2] = (uint8_t)(cmd_pec >> 8);
     cmd[3] = (uint8_t)(cmd_pec);
 
+    // 2) Transmit command, then receive concatenated response from all modules
     isoSPI_Idle_to_Ready();
 
     ADBMS_nCS_Low();
     hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
     if (hal_ret != HAL_OK) {
+    	// Map HAL error code into our bitfield (TX error region)
         ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET));
         ADBMS_nCS_High();
         return ret;
@@ -572,25 +668,29 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
 
     hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
     if (hal_ret != HAL_OK) {
+    	// Map HAL error code into our bitfield (RX error region)
         ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
         ADBMS_nCS_High();
         return ret;
     }
     ADBMS_nCS_High();
 
-
+    // 3) Validate and unpack each module's payload
     for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
         uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
 
-        uint8_t *sid    = &rx_buffer[offset];
-        uint8_t *sidpec = &rx_buffer[offset + DATA_LEN];
+        uint8_t *sid    = &rx_buffer[offset];            // 6-byte SID
+        uint8_t *sidpec = &rx_buffer[offset + DATA_LEN]; // 2-byte PEC10 (packed with CC)
 
+        // Verify 10-bit PEC computed over the 6 SID bytes (+ command counter if present)
         bool pec10Check = ADBMS_checkRxPec(sid, DATA_LEN, sidpec);
         if (!pec10Check) {
         	printf("M%d failed\n", devIndex + 1);
-            continue; // if pec is wrong ignore that chip
+            continue; // Skip copying this module’s SID if PEC fails
         }
         memcpy(read_sid[devIndex], sid, DATA_LEN);
+
+        // Pretty print the 6-byte SID for this module
         printf("SID M%u: %02X %02X %02X %02X %02X %02X\r\n",
                        (unsigned)(devIndex + 1),
                        sid[0], sid[1], sid[2], sid[3], sid[4], sid[5]);
@@ -601,48 +701,72 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
 }
 
 /**
- * error calculation and handling for poor command use. 
- * @param 	len		Number of bytes that will be used to calculate a PEC
- * @param	data	Array of data that will be used to calculate a PEC
+ * @brief Compute PEC15 (CRC15) for command frames using a 256-entry lookup table.
+ *
+ * Details:
+ *  - Seed (remainder) starts at 0x0010.
+ *  - Each input byte indexes into Crc15Table using (remainder >> 7) ^ data[i].
+ *  - The final remainder is left-shifted by 1 (LSB = 0 per LTC/ADI convention).
+ *
+ * @param data Pointer to the bytes over which PEC15 is calculated (typically 2-byte command).
+ * @param len  Number of bytes included in the PEC calculation.
+ * @return 16-bit PEC value (with LSB cleared).
  */
-
 uint16_t ADBMS_calcPec15(uint8_t *data, uint8_t len)
 {
     uint16_t remainder, addr;
-    remainder = 16; /* initialize the PEC */
-    for (uint8_t i = 0; i<len; i++) /* loops for each byte in data array */
+    remainder = 16; // PEC seed = 0x0010
+    for (uint8_t i = 0; i < len; i ++)
     {
-        addr = (((remainder>>7)^data[i])&0xff);/* calculate PEC table address */
+    	// Table index uses top 9 bits of remainder (>>7 gives 9 bits but we AND 0xFF for 8-bit index here)
+        addr = (((remainder >> 7) ^ data[i]) & 0xff);
         remainder = ((remainder<<8)^Crc15Table[addr]);
     }
-    return(remainder*2);/* The CRC15 has a 0 in the LSB so the remainder must be multiplied by 2 */
+    // CRC15 for LTC devices is 15-bit with a zero LSB; multiply by 2 to force bit0 = 0
+    return(remainder*2);
 }
 
-
+/**
+ * @brief Compute PEC10 (CRC10) used on received data blocks from the device.
+ *
+ * The device appends a 10-bit CRC (plus a 6-bit command counter in the same 2-byte field).
+ * We first run bytes through a 256-entry table (seed = 0x0010), then (optionally) fold in
+ * the 6-bit command counter (CC) by XORing it into the top bits, and finally “walk” 6 bits
+ * to align the 10-bit remainder (per datasheet convention).
+ *
+ * Polynomial: x^10 + x^7 + x^3 + x^2 + x + 1.
+ *
+ * @param pDataBuf        Pointer to received data bytes to check (e.g., 6-byte SID or 6-byte voltage page).
+ * @param nLength         Number of bytes to include in the CRC calculation.
+ * @param commandCounter  Optional pointer to a 6-bit CC value (0..63). Pass NULL if not used.
+ * @return 10-bit CRC value in the low bits of the return (mask with 0x03FF if needed).
+ */
 uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter)
 {
-    uint16_t nRemainder = 16u; /* PEC_SEED */
-    /* x10 + x7 + x3 + x2 + x + 1 <- the CRC10 polynomial 100 1000 1111 */
-    uint16_t nPolynomial = 0x8Fu;
+    uint16_t nRemainder = 16u; // Seed 0x0010
+    uint16_t nPolynomial = 0x8Fu; // Helper constant used during final 6-bit modulation
     uint8_t nByteIndex, nBitIndex;
     uint16_t nTableAddr;
 
+    // Table-driven accumulation over data bytes
     for (nByteIndex = 0u; nByteIndex < nLength; ++nByteIndex)
     {
-        /* calculate PEC table address */
+    	// Index = ((remainder >> 2) ^ dataByte) & 0xFF
         nTableAddr = (uint16_t)(((uint16_t)(nRemainder >> 2) ^ (uint8_t)pDataBuf[nByteIndex]) & (uint8_t)0xff);
         nRemainder = (uint16_t)(((uint16_t)(nRemainder << 8)) ^ crc10Table[nTableAddr]);
     }
-    /* If array is from received buffer add command counter to crc calculation */
+
+    // Some frames encode a 6-bit command counter (CC) alongside CRC10 in the 2-byte PEC field.
+    // If caller provides CC, fold it in before the final 6-bit “bit-walk.”
     if (commandCounter != NULL)
     {
         nRemainder ^= (uint16_t)(*commandCounter << 4u);
     }
-    /* Perform modulo-2 division, a bit at a time */
+
+    // Finish with a 6-bit modulo-2 division to land on the 10-bit remainder
     for (nBitIndex = 6u; nBitIndex > 0u; --nBitIndex)
     {
-        /* Try to divide the current data bit */
-        if ((nRemainder & 0x200u) > 0u)
+        if ((nRemainder & 0x200u) > 0u) // If MSB (bit9) is set
         {
             nRemainder = (uint16_t)((nRemainder << 1u));
             nRemainder = (uint16_t)(nRemainder ^ nPolynomial);
@@ -652,15 +776,37 @@ uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter
             nRemainder = (uint16_t)((nRemainder << 1u));
         }
     }
+
+    // Return only the 10 valid bits
     return ((uint16_t)(nRemainder & 0x3FFu));
 }
 
-
+/**
+ * @brief Check a received frame’s PEC10 against the two PEC bytes from the device.
+ *
+ * The device’s 2-byte PEC field packs:
+ *   - Bits [15:10]: 6-bit command counter (CC)
+ *   - Bits [9:0]  : 10-bit CRC (DPEC)
+ *
+ * We extract CC and DPEC, recompute CRC10 over the data (including CC),
+ * and compare the 10 LSBs.
+ *
+ * @param rxBuffer Pointer to the received data bytes (e.g., 6-byte SID or 6-byte data block).
+ * @param len      Number of data bytes.
+ * @param pec      Pointer to the two PEC bytes from the device (big-endian: pec[0] first, pec[1] second).
+ * @return true if CRC matches; false on mismatch.
+ */
 bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2])
 {
-    uint8_t  cc   = (uint8_t)((pec[0] >> 2) & 0x3F); //get cc(6bits) from the first 6 bits of pec
+	// Extract 6-bit command counter from the top 6 bits of pec[0]
+    uint8_t  cc   = (uint8_t)((pec[0] >> 2) & 0x3F);
+
+    // Extract 10-bit CRC from the bottom 2 bits of pec[0] and all 8 bits of pec[1]
     uint16_t dpec = (uint16_t)(((pec[0] & 0x03) << 8) | pec[1]);  // 10bit
 
+    // Recompute CRC10 over rxBuffer, including the same CC if present
     uint16_t calc = (uint16_t)(ADBMS_calcPec10((uint8_t*)rxBuffer, len, &cc) & 0x03FF);
+
+    // Compare only the 10 LSBs
     return ((dpec & 0x03FF) == calc);
 }
