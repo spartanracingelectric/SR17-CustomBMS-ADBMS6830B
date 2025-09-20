@@ -25,16 +25,16 @@ void isoSPI_Idle_to_Ready(void) {
 
 // wake up sleep
 void Wakeup_Sleep(void) {
-
-	for (int i = 0; i < NUM_MOD; i++) {
-		ADBMS_nCS_Low();
-		HAL_Delay(1);
-		ADBMS_nCS_High();
-		HAL_Delay(1);
-	}
+    for (int i = 0; i < 2; i++) {
+        ADBMS_nCS_Low();
+        HAL_Delay(1);
+        ADBMS_nCS_High();
+        HAL_Delay(1);
+    }
 }
 
-void ADBMS_inIt(){
+void ADBMS_init(){
+	Wakeup_Sleep();
 	ADBMS_UNSNAP();
 	ADBMS_startADCVoltage();
 }

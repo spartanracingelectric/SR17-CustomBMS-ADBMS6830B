@@ -102,7 +102,7 @@ void isoSPI_Idle_to_Ready(void);
 
 void Wakeup_Sleep(void);
 
-void ADBMS_inIt();
+void ADBMS_init();
 
 void ADBMS_startADCVoltage();
 

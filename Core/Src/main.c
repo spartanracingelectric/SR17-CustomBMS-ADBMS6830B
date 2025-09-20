@@ -143,6 +143,8 @@ int main(void)
     // Pull SPI1 nCS HIGH (deselect)
     ADBMS_nCS_High();
 
+    ADBMS_init();
+
 //	//Sending a fault signal and reseting it
 //	HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
 	HAL_Delay(1000);
