@@ -256,7 +256,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 			// Check RX PEC10 for data integrity
 			bool pec10Check = ADBMS_checkRxPec(voltData, DATA_LEN, voltDataPec);
 			if (!pec10Check) {
-				printf("M%d failed\n", devIndex + 1);
+//				printf("M%d failed for voltage reading\n", devIndex + 1);
 				continue; // Skip this device’s page if PEC fails
 			}
 
@@ -270,23 +270,25 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 				uint8_t hi = voltData[2 * dataIndex + 1];
 
 				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
-
+//				printf("M%d, cell:%d raw Value:%d\n", devIndex+1,  cellInMod +1 ,ILOVEBMS);
 				// 0x8000 is a device “cleared/invalid” code; store 0xFFFF as a sentinel for “no data”
 				if (ILOVEBMS == 0x8000u) { mod[devIndex].cell_volt[cellInMod] = 0xFFFF; }
 				else {
 					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
                     // (Adjust this formula to the exact datasheet scaling for your part/mode.)
-				    uint32_t mv = 1500u + (uint32_t)ILOVEBMS * 150u;             // in 0.01 mV units => here stored in mV
-				    if (mv > 65535u) mv = 65535u;                                // Clamp to 16-bit storage field
-				    mod[devIndex].cell_volt[cellInMod] = (uint16_t)mv;           //store in mV
+				    uint32_t uV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
+				    uint16_t mV = (uint16_t)((uV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
+				    if (mV > 65535u) mV = 65535u;                       // Clamp to 16-bit storage field
+				    mod[devIndex].cell_volt[cellInMod] = mV;  //store in mV
 				}
 			}
 		}
 	}
-
+//
 //	for (int i = 0; i < NUM_MOD; i++){
+//		printf("Cell Voltage\n");
 //		for(int j = 0; j < NUM_CELL_PER_MOD; j++){
-//			printf("Cell Voltage\n M%d:%d\n", (i + 1), mod->cell_volt[i][j]);
+//			printf("M%d, cell %d: %uV\n", (0 + 1), (j + 1), mod[0].cell_volt[j]);
 //		}
 //	}
 
@@ -650,7 +652,7 @@ static const uint16_t crc10Table[256] =
  * @param[out] read_sid  [NUM_MOD][DATA_LEN] destination for per-module 6-byte SIDs.
  * @return LTC_SPI_StatusTypeDef with TX/RX error bits set on HAL failures (PEC errors are logged only).
  */
-LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
+LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod) {
     LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
     HAL_StatusTypeDef hal_ret;
 
@@ -700,15 +702,15 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]) {
         // Verify 10-bit PEC computed over the 6 SID bytes (+ command counter if present)
         bool pec10Check = ADBMS_checkRxPec(sid, DATA_LEN, sidpec);
         if (!pec10Check) {
-        	printf("M%d failed\n", devIndex + 1);
+//        	printf("M%d failed\n", devIndex + 1);
             continue; // Skip copying this module’s SID if PEC fails
         }
-        memcpy(read_sid[devIndex], sid, DATA_LEN);
+        memcpy(mod[devIndex].sid, sid, DATA_LEN);
 
         // Pretty print the 6-byte SID for this module
-        printf("SID M%u: %02X %02X %02X %02X %02X %02X\r\n",
-                       (unsigned)(devIndex + 1),
-                       sid[0], sid[1], sid[2], sid[3], sid[4], sid[5]);
+//        printf("SID M%u: %02X %02X %02X %02X %02X %02X\r\n",
+//                       (unsigned)(devIndex + 1),
+//                       sid[0], sid[1], sid[2], sid[3], sid[4], sid[5]);
 
     }
 

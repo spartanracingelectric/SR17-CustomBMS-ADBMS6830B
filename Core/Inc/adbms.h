@@ -188,7 +188,7 @@ LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
 void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
 int32_t LTC_POLLADC();
 int Calc_Pack_Voltage(uint16_t *read_voltages);
-LTC_SPI_StatusTypeDef ADBMS_ReadSID(uint8_t read_sid[][DATA_LEN]);
+LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).
