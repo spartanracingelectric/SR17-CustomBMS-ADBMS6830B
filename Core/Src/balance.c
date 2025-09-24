@@ -16,7 +16,7 @@
  *  - isoSPI must be awake (Wakeup_Sleep / 0xFF tick) before any write command.
  *  - This file DOES NOT alter ADC sampling state; it only toggles DCC via CFG.
  */
-#include <ADBMS.h>
+#include <adbms6830b.h>
 #include "balance.h"
 #include "can.h"
 #include <stdio.h>

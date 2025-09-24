@@ -17,6 +17,7 @@
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <adbms6830b.h>
 #include "main.h"
 #include "adc.h"
 #include "can.h"
@@ -36,7 +37,6 @@
 #include "soc.h"
 #include <stdint.h>
 #include "hv_sense.h"
-#include "ADBMS.h"
 
 /* USER CODE END Includes */
 

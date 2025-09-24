@@ -13,7 +13,7 @@
  *    - Topology macros: `NUM_MOD`, `NUM_CELL_PER_MOD`
  *  @warning All functions are blocking and not thread-safe.
  */
-#include <ADBMS.h>
+#include <adbms6830b.h>
 #include "spi.h"
 #include "main.h"
 #include <stdio.h>
