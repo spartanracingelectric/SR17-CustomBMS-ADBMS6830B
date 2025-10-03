@@ -67,6 +67,9 @@
 #define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6
 
+#define WRCFGA 0x0001
+#define WRCFGB 0x0024
+
 /* ===== ADC Control Field Enums ==============================================
  * These map directly to bitfields inside the ADCV (start conversion) command.
  * See datasheet for exact bit positions; your .c packs them into a command word.

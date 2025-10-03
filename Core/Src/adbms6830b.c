@@ -21,9 +21,11 @@
 uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
-const uint8_t RDSID[2] = { 0x00, 0x2C };
-const uint8_t SNAP[2] = {0x00, 0x2D};
+const uint8_t RDSID[2]  = {0x00, 0x2C};
+const uint8_t SNAP[2]   = {0x00, 0x2D};
 const uint8_t UNSNAP[2] = {0x00, 0x2F};
+const uint16_t VUV       = 0x01A1;
+const uint16_t VOV       = 0x0465;
 
 static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 
@@ -128,7 +130,7 @@ void ADBMS_startADCVoltage() {
 	isoSPI_Idle_to_Ready();
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
 	ADBMS_nCS_High();
 }
 
@@ -296,6 +298,55 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 
 	return ret;
 }
+
+
+void ADBMS_writeCFGB(BalanceStatus *blst) {
+	uint8_t cmd[4];
+	uint8_t cfg[8];
+	uint16_t cmd_pec;
+	uint16_t cfg_pec;
+
+	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF); // VUV[7:0]
+	uint8_t CFGBR1 = (uint8_t)(((VUV >> 8) & 0x0F) << 4 | (VOV & 0x0F)); // VUV[11:8], VOV[3:0]
+    uint8_t CFGBR2 = (uint8_t)((VOV >> 4) & 0xFF); // VOV[11:4];
+    uint8_t CFGBR3 = 0x00; //settings for discharge timer
+	uint8_t CFGBR4 = 0;
+	uint8_t CFGBR5 = 0;
+
+	// Pack command bits into the register CFGBR4
+	for (int i = 0; i < NUM_CELL_PER_MOD; i++) {
+	    if (i < 8) CFGBR4 |= (blst->balance_cells[i] & 0x01) << i;
+	    else       CFGBR5 |= (blst->balance_cells[i] & 0x01) << (i - 8);
+	}
+
+	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
+	cmd[0] = (uint8_t) (WRCFGB >> 8);
+	cmd[1] = (uint8_t) (WRCFGB);
+	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
+
+	// Ensure the isoSPI port is awake before issuing the command
+	isoSPI_Idle_to_Ready();
+
+	ADBMS_nCS_Low();
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
+
+	cfg[0] = CFGBR0;
+	cfg[1] = CFGBR1;
+	cfg[2] = CFGBR2;
+	cfg[3] = CFGBR3;
+	cfg[4] = CFGBR4;
+	cfg[5] = CFGBR5;
+	cfg_pec = ADBMS_calcPec15(cfg, 6);
+	cfg[6] = (uint8_t) (cfg_pec >> 8);
+	cfg[7] = (uint8_t) (cfg_pec);
+
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cfg, sizeof(cfg), 100);
+
+	ADBMS_nCS_High();
+}
+
 
 /**
  * 	write command to all pwm registers. This setup only allows to use 4b'1111 (HIGH) or 4b'0000 (LOW). 

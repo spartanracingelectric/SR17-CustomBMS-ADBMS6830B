@@ -101,6 +101,7 @@ int main(void)
     TimerPacket canReconnection;
     AccumulatorData accmData;
     ModuleData modData[NUM_MOD];
+    BalanceStatus blst[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
