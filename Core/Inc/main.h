@@ -118,6 +118,7 @@ typedef struct ModuleData {
 
 typedef struct BalanceStatus {
 	uint8_t balance_cells[NUM_CELL_PER_MOD];
+	uint8_t balancing_cells[NUM_CELL_PER_MOD];
 }BalanceStatus;
 
 /**

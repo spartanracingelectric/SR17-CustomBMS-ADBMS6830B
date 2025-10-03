@@ -356,6 +356,65 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	ADBMS_nCS_High();
 }
 
+LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
+	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
+	HAL_StatusTypeDef hal_ret;
+	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC per IC
+	const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+	uint8_t rx_buffer[RX_LEN];
+	uint8_t  cmd[4];
+	uint16_t cmd_pec;
+
+	// Build RDCFGB command to get the cfg on the chip
+	cmd[0] = (uint8_t) (RDCFGB >> 8);
+	cmd[1] = (uint8_t) (RDCFGB);
+	cmd_pec = ADBMS_calcPec15(cmd, 2);
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
+
+	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
+
+	ADBMS_nCS_Low();
+
+	// Transmit the RDAC command
+	hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+	if (hal_ret != HAL_OK) {
+		ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
+		ADBMS_nCS_High();
+		return ret;
+	}
+
+	// Receive one page from every device in the chain (concatenated)
+	hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
+	if (hal_ret != HAL_OK) {
+		ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
+		ADBMS_nCS_High();
+		return ret;
+	}
+
+	ADBMS_nCS_High();
+
+	// Validate and unpack each device’s 6-byte data + 2-byte PEC10
+	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
+		uint16_t offset = (uint16_t)(modIndex * RX_BYTES_PER_IC);
+
+		uint8_t *CFGB    = &rx_buffer[offset];            // 6 data bytes
+		uint8_t *CFGBPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
+
+		// Check RX PEC10 for data integrity
+		bool pec10Check = ADBMS_checkRxPec(CFGB, DATA_LEN, CFGBPec);
+		if (!pec10Check) {
+//				printf("M%d failed for voltage reading\n", devIndex + 1);
+			continue; // Skip this device’s page if PEC fails
+		}
+
+		for (uint8_t cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++) {
+			rdfcgb[modIndex].CFGBR[cfgIndex] = CFGB[cfgIndex];
+		}
+	}
+	return ret;
+}
+
 /**
  *
  * @param total_ic	The number of ICs being written to

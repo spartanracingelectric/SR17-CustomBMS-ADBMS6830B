@@ -69,6 +69,7 @@
 
 #define WRCFGA 0x0001
 #define WRCFGB 0x0024
+#define RDCFGB 0x0026
 
 /* ===== ADC Control Field Enums ==============================================
  * These map directly to bitfields inside the ADCV (start conversion) command.
@@ -144,6 +145,12 @@ typedef enum {
 	LTC_SPI_RX_TIMEOUT = 0x80U	//HAL SPI RX returned HAL_TIMEOUT.
 } LTC_SPI_StatusTypeDef;
 
+typedef struct RDFCGB_buffer{
+	uint8_t CFGBR[DATA_LEN];
+	uint16_t VUV_12;
+	uint16_t VOV_12;
+}RDFCGB_buffer;
+
 /* ===== External TX Buffers ===================================================
  * Staging buffers for multi-IC write commands. Each frame = 4 cmd/PEC bytes +
  * (8 bytes per IC) payload. They are defined in a .c and referenced here.
@@ -184,6 +191,7 @@ void ADBMS_UNSNAP();
  */
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
 void ADBMS_writeCFGB(BalanceStatus *blst);
+LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
 void LTC_SPI_requestData(uint8_t len);
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
