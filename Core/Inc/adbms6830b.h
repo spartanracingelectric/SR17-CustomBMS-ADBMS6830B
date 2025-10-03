@@ -163,8 +163,9 @@ extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
  * isoSPI_Idle_to_Ready(): send a dummy 0xFF while nCS is low to wake IDLE->READY.
  * Wakeup_Sleep(): toggle nCS to bring devices out of SLEEP (no clocks needed).
  */
-void isoSPI_Idle_to_Ready(void);
-void Wakeup_Sleep(void);
+void isoSPI_Idle_to_Ready();
+void Wakeup_Sleep();
+void Clear_Registers();
 
 /* ===== Public API: High-Level Init/Control ==================================
  * ADBMS_init(): wake devices, UNSNAP to resume live updates, and start ADCV.

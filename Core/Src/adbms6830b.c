@@ -21,9 +21,15 @@
 uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
-const uint8_t RDSID[2]  = {0x00, 0x2C};
-const uint8_t SNAP[2]   = {0x00, 0x2D};
-const uint8_t UNSNAP[2] = {0x00, 0x2F};
+const uint8_t RDSID[2]   = {0x00, 0x2C};
+const uint8_t SNAP[2]    = {0x00, 0x2D};
+const uint8_t UNSNAP[2]  = {0x00, 0x2F};
+const uint8_t CLRCELL[2] = {0x07, 0x11};
+const uint8_t CLRFC[2]   = {0x07, 0x14};
+const uint8_t CLRAUX[2]  = {0x07, 0x12};
+const uint8_t CLRSPIN[2] = {0x07, 0x16};
+const uint8_t CLRFLAG[2] = {0x07, 0x17};
+const uint8_t CLOVUV[2]  = {0x07, 0x15};
 const uint16_t VUV       = 0x01A1;
 const uint16_t VOV       = 0x0465;
 
@@ -37,7 +43,7 @@ static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
  * Some ADBMS/LTC parts require a short SPI activity (while nCS is low) to exit IDLE.
  * Sending 0xFF with nCS asserted is a safe way to provide clocks without issuing a command.
  */
-void isoSPI_Idle_to_Ready(void) {
+void isoSPI_Idle_to_Ready() {
 	uint8_t hex_ff = 0xFF;
 	ADBMS_nCS_Low();							   // Assert CS to address the chain
 	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send a dummy byte to toggle SCK and wake isoSPI
@@ -51,13 +57,40 @@ void isoSPI_Idle_to_Ready(void) {
  * Many LTC/ADBMS devices detect wake on nCS edges while asleep.
  * Two low-high toggles with small delays are commonly recommended.
  */
-void Wakeup_Sleep(void) {
+void Wakeup_Sleep() {
     for (int i = 0; i < 2; i++) {
         ADBMS_nCS_Low();
         HAL_Delay(1);
         ADBMS_nCS_High();
         HAL_Delay(1);
     }
+}
+
+void Clear_Registers(){
+	uint8_t cmd[4];
+	uint16_t cmd_pec;
+	const uint8_t cmds[][2] = {
+		{CLRCELL [0], CLRCELL [1]},
+		{CLRAUX  [0], CLRAUX  [1]},
+		{CLRSPIN [0], CLRSPIN [1]},
+		{CLRFC   [0], CLRFC   [1]},
+		{CLOVUV  [0], CLOVUV  [1]},
+		{CLRFLAG [0], CLRFLAG [1]}
+	 };
+	isoSPI_Idle_to_Ready();   // Ensure link is awake
+
+	const size_t N = sizeof(cmds) / sizeof(cmds[0]);
+	for(int i = 0; i < N; i++){
+		cmd[0] = cmds[i][0];       // Command high byte
+		cmd[1] = cmds[i][1];	      // Command low byte
+		cmd_pec = ADBMS_calcPec15(cmd, 2);
+		cmd[2] = (uint8_t) (cmd_pec >> 8);
+		cmd[3] = (uint8_t) (cmd_pec);
+
+		ADBMS_nCS_Low();
+		HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+		ADBMS_nCS_High();
+	}
 }
 
 /**
@@ -71,6 +104,7 @@ void Wakeup_Sleep(void) {
 void ADBMS_init(){
 	Wakeup_Sleep();
 	ADBMS_UNSNAP();
+	Clear_Registers();
 	ADBMS_startADCVoltage();
 }
 

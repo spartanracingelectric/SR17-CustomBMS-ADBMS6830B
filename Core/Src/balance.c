@@ -144,3 +144,7 @@ void Balance_reset(BalanceStatus *blst) {
 	        }
 	    }
 }
+
+void Get_balanceStatus(BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
+
+}
