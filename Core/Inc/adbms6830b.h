@@ -183,8 +183,7 @@ void ADBMS_UNSNAP();
  * ADBMS_ReadSID():            read 6-byte silicon ID per IC (PEC10 verified).
  */
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
-void LTC_writePWM(uint8_t total_ic, uint8_t pwm);
-void LTC_writeCFG(uint8_t total_ic, uint8_t config[][6]);
+void ADBMS_writeCFGB(BalanceStatus *blst);
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
 void LTC_SPI_requestData(uint8_t len);
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
