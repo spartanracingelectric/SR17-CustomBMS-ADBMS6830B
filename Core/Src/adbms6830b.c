@@ -299,7 +299,6 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	return ret;
 }
 
-
 void ADBMS_writeCFGB(BalanceStatus *blst) {
 	uint8_t cmd[4];
 	uint8_t cfg[8];
@@ -310,14 +309,6 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	uint8_t CFGBR1 = (uint8_t)(((VUV >> 8) & 0x0F) << 4 | (VOV & 0x0F)); // VUV[11:8], VOV[3:0]
     uint8_t CFGBR2 = (uint8_t)((VOV >> 4) & 0xFF); // VOV[11:4];
     uint8_t CFGBR3 = 0x00; //settings for discharge timer
-	uint8_t CFGBR4 = 0;
-	uint8_t CFGBR5 = 0;
-
-	// Pack command bits into the register CFGBR4
-	for (int i = 0; i < NUM_CELL_PER_MOD; i++) {
-	    if (i < 8) CFGBR4 |= (blst->balance_cells[i] & 0x01) << i;
-	    else       CFGBR5 |= (blst->balance_cells[i] & 0x01) << (i - 8);
-	}
 
 	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
 	cmd[0] = (uint8_t) (WRCFGB >> 8);
@@ -325,24 +316,42 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
+	memcpy(&wrcfg_buffer[0], cmd, 4);
+
+
+	// Pack command bits into the register CFGBR4
+	for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++){
+		uint8_t CFGBR4 = 0;
+		uint8_t CFGBR5 = 0;
+		for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
+			if(cell_idx < 8){
+				CFGBR4 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << cell_idx;
+			}
+			else{
+				CFGBR5 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << (cell_idx - 8);
+			}
+		}
+		cfg[0] = CFGBR0;
+		cfg[1] = CFGBR1;
+		cfg[2] = CFGBR2;
+		cfg[3] = CFGBR3;
+		cfg[4] = CFGBR4;
+		cfg[5] = CFGBR5;
+		cfg_pec = ADBMS_calcPec15(cfg, 6);
+		cfg[6] = (uint8_t) (cfg_pec >> 8);
+		cfg[7] = (uint8_t) (cfg_pec);
+
+		int base = 4 + dev_idx * 8;
+		memcpy(&wrcfg_buffer[base], cfg, 8);
+
+	}
 
 	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
 
-	cfg[0] = CFGBR0;
-	cfg[1] = CFGBR1;
-	cfg[2] = CFGBR2;
-	cfg[3] = CFGBR3;
-	cfg[4] = CFGBR4;
-	cfg[5] = CFGBR5;
-	cfg_pec = ADBMS_calcPec15(cfg, 6);
-	cfg[6] = (uint8_t) (cfg_pec >> 8);
-	cfg[7] = (uint8_t) (cfg_pec);
-
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cfg, sizeof(cfg), 100);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, sizeof(wrcfg_buffer), 100);
 
 	ADBMS_nCS_High();
 }

@@ -41,9 +41,9 @@
  *  - When a finish flag is set (e.g., by CAN), clears all DCC bits and restores
  *    the default configuration on all devices.
  */
-void Balance_init(uint16_t *balanceStatus);
-void Start_Balance(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus);
-void End_Balance(uint16_t *balanceStatus);
+void Balance_init(BalanceStatus *blst);
+void Start_Balance(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst);
+void End_Balance(BalanceStatus *blst);
 
 /* ===== Public API: Algorithm ================================================
  * Discharge_Algo():
@@ -58,9 +58,9 @@ void End_Balance(uint16_t *balanceStatus);
  *  - balanceStatus:  per-device bitfield array reflecting current DCC decisions;
  *                    element i holds the bitmask for device i.
  */
-void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus);
+void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst);
 
-/* ===== Public API: Helpers ===================================================
+/* ===== Public API: Helpers ===============================================Balance_reset(BalanceStatus *blst)====
  * Balance_reset():
  *  - Clears all DCC decisions (sets all to 0) and zeroes balanceStatus.
  *
@@ -74,7 +74,6 @@ void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatu
  *  - DCC:      pointer to per-cell discharge control bits (1=on, 0=off) for
  *              the given device; length must cover NUM_CELL_PER_MOD.
  */
-void Balance_reset(uint16_t *balanceStatus);
-void Set_Cfg(uint8_t dev_idx, uint8_t *DCC);
+void Balance_reset(BalanceStatus *blst);
 
 #endif /* INC_BALANCE_H_ */
