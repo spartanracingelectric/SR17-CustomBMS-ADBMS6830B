@@ -145,6 +145,8 @@ void Balance_reset(BalanceStatus *blst) {
 	    }
 }
 
-void Get_balanceStatus(BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
-
+void Get_balanceStatus(BalanceStatus *blst, const RDFCGB_buffer *rdfcgb){
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		blst[modIndex].balancing_cells = (uint16_t)rdfcgb[modIndex].CFGBR[4] | ((uint16_t)rdfcgb[modIndex].CFGBR[5] << 8);
+	}
 }

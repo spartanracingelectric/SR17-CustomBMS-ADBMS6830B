@@ -76,4 +76,6 @@ void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst)
  */
 void Balance_reset(BalanceStatus *blst);
 
+void Get_balanceStatus(BalanceStatus *blst, const RDFCGB_buffer *rdfcgb);
+
 #endif /* INC_BALANCE_H_ */

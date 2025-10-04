@@ -103,7 +103,7 @@ void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod);
 void CAN_Send_Cell_Summary(CANMessage *ptr, struct AccumulatorData *batt);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings);
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
-void CAN_Send_Balance_Status(struct CANMessage *ptr, uint16_t *balance_status);
+void CAN_Send_Balance_Status(CANMessage *buffer, const BalanceStatus *blst);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 
