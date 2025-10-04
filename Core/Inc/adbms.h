@@ -130,6 +130,42 @@ typedef enum {
     OW_ALL_ON  = 0b11  // Check all cells
 } AdcOW;
 
+typedef enum {
+	OW_OFF = 0, // Check open-wire for AUX
+	OW_ON  = 1  // Check open-wire for AUX
+} AUXOW;
+
+typedef enum {
+	PUP_OFF = 0, // Check open-wire for AUX
+	PUP_ON  = 1  // Check open-wire for AUX
+} AUXPUP;
+
+typedef enum {
+	CH4_ON  = 0, // Check open-wire for AUX
+	CH4_OFF = 1  // Check open-wire for AUX
+} AUXCH4;
+
+typedef enum {
+	CH3_ON  = 0, // Check open-wire for AUX
+	CH3_OFF = 1  // Check open-wire for AUX
+} AUXCH3;
+
+typedef enum {
+	CH2_ON  = 0, // Check open-wire for AUX
+	CH2_OFF = 1  // Check open-wire for AUX
+} AUXCH2;
+
+typedef enum {
+	CH1_ON  = 0, // Check open-wire for AUX
+	CH1_OFF = 1  // Check open-wire for AUX
+} AUXCH1;
+
+typedef enum {
+	CH0_ON  = 0, // Check open-wire for AUX
+	CH0_OFF = 1  // Check open-wire for AUX
+} AUXCH0;
+
+
 /* ===== SPI Status Bitfield ===================================================
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
  * Example: set (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)) on TX failure.
@@ -187,7 +223,7 @@ void LTC_writePWM(uint8_t total_ic, uint8_t pwm);
 void LTC_writeCFG(uint8_t total_ic, uint8_t config[][6]);
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
 void LTC_SPI_requestData(uint8_t len);
-LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
+LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod);
 void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
 int32_t LTC_POLLADC();
 int Calc_Pack_Voltage(uint16_t *read_voltages);

@@ -132,6 +132,51 @@ void ADBMS_startADCVoltage() {
 	ADBMS_nCS_High();
 }
 
+void ADBMS_startADAX() {
+	uint8_t cmd[4];
+	uint16_t cmd_pec;
+
+	AUXOW OW = OW_OFF;
+	AUXPUP PUP = PUP_OFF;
+	AUXCH4 CH4 = CH4_OFF;
+	AUXCH4 CH3 = CH3_OFF;
+	AUXCH4 CH2 = CH2_OFF;
+	AUXCH4 CH1 = CH1_OFF;
+	AUXCH4 CH0 = CH0_OFF;
+	uint16_t commandWord = 0;
+
+	// Pack command bits into the 16-bit container (MSB first on wire)
+	commandWord |= (1   << 10);    // bit10 = 0        (fixed)
+	commandWord |= (0   << 9);     // bit9  = 1        (fixed)
+	commandWord |= (OW  << 8);     // bit8  = OW       (rate/redundancy)
+	commandWord |= (PUP << 7);     // bit7  = CONT     (continuous mode)
+	commandWord |= (CH4 << 6);     // bit6  = CH4      (fixed)
+	commandWord |= (0   << 5);     // bit5  = 1        (fixed)
+	commandWord |= (1   << 4);     // bit4  = DCP      (fixed)
+	commandWord |= (CH3 << 3);     // bit3  = CH3      (fixed)
+	commandWord |= (CH2 << 2);     // bit2  = CH2      (reset digital filter)
+	commandWord |= (CH1 << 1);     // bit1  = CH1      (reset digital filter)
+	commandWord |= (CH0 << 0);     // bit0  = CH0      (reset digital filter)
+
+	// Split command word into two bytes (big-endian: high byte first)
+	uint8_t firstCmdByte  = (uint8_t)(commandWord >> 8);
+	uint8_t secondCmdByte = (uint8_t)(commandWord & 0xFF);
+
+	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
+	cmd[0] = firstCmdByte;
+	cmd[1] = secondCmdByte;
+	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
+
+	// Ensure the isoSPI port is awake before issuing the command
+	isoSPI_Idle_to_Ready();
+
+	ADBMS_nCS_Low();
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	ADBMS_nCS_High();
+}
+
 /**
  * @brief Issue SNAP command to latch a coherent “snapshot” of measurement registers.
  *
