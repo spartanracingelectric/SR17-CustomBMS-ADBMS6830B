@@ -84,8 +84,8 @@ uint8_t TimerPacket_FixedPulse(TimerPacket *tp);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static uint8_t BMS_MUX_PAUSE[2][6] = {{0x69, 0x28, 0x0F, 0x09, 0x7F, 0xF9},
-                                      {0x69, 0x08, 0x0F, 0x09, 0x7F, 0xF9}};
+//static uint8_t BMS_MUX_PAUSE[2][6] = {{0x69, 0x28, 0x0F, 0x09, 0x7F, 0xF9},
+//                                      {0x69, 0x08, 0x0F, 0x09, 0x7F, 0xF9}};
 /* USER CODE END 0 */
 
 /**
@@ -101,7 +101,8 @@ int main(void)
     TimerPacket canReconnection;
     AccumulatorData accmData;
     ModuleData modData[NUM_MOD];
-    BalanceStatus blst[NUM_MOD];
+    BalanceStatus balanceStatus;
+    RDFCGB_buffer readCFGB;
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
@@ -274,7 +275,7 @@ int main(void)
 			CAN_Send_Voltage(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_Send_Balance_Status(&msg, accmData.balance_status);
+			CAN_Send_Balance_Status(&msg, &balanceStatus, &readCFGB);
 		}
     }
   /* USER CODE END 3 */

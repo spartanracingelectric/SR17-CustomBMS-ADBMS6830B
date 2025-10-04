@@ -145,12 +145,6 @@ typedef enum {
 	LTC_SPI_RX_TIMEOUT = 0x80U	//HAL SPI RX returned HAL_TIMEOUT.
 } LTC_SPI_StatusTypeDef;
 
-typedef struct RDFCGB_buffer{
-	uint8_t CFGBR[DATA_LEN];
-	uint16_t VUV_12;
-	uint16_t VOV_12;
-}RDFCGB_buffer;
-
 /* ===== External TX Buffers ===================================================
  * Staging buffers for multi-IC write commands. Each frame = 4 cmd/PEC bytes +
  * (8 bytes per IC) payload. They are defined in a .c and referenced here.

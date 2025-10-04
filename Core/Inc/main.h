@@ -28,7 +28,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -120,6 +119,12 @@ typedef struct BalanceStatus {
 	uint8_t balance_cells[NUM_CELL_PER_MOD];
 	uint16_t balancing_cells;
 }BalanceStatus;
+
+typedef struct RDFCGB_buffer{
+	uint8_t CFGBR[6];
+	uint16_t VUV_12;
+	uint16_t VOV_12;
+}RDFCGB_buffer;
 
 /**
  * @brief CAN transmission staging buffers.

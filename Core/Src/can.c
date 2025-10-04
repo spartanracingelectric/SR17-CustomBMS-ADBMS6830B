@@ -26,6 +26,7 @@
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
+#include "balance.h"
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -433,8 +434,8 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt,
  *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
  *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
  */
-void CAN_Send_Balance_Status(CANMessage *buffer, const BalanceStatus *blst){
-	Get_balanceStatus(blst);
+void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
+	Get_balanceStatus(blst, rdfcgb);
 	uint32_t CAN_ID = (uint32_t)CAN_ID_BALANCE_STATUS;
 	uint8_t numByte = 8;
 
