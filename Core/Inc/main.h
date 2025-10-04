@@ -55,7 +55,7 @@ extern "C" {
 #define NUM_MOD					8	//1 slave board
 #define NUM_CELL_PER_MOD	 	14	//1 slave board
 #define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
-#define NUM_THERM_PER_MOD		12
+#define NUM_THERM_PER_MOD		10
 #define NUM_THERM_TOTAL			(NUM_MOD*NUM_THERM_PER_MOD)
 #define NUM_AUX_GROUP			6
 #define NUM_AUXES				(NUM_MOD*NUM_AUX_GROUP)
@@ -104,7 +104,7 @@ typedef struct AccumulatorData {
  */
 typedef struct ModuleData {
 	uint16_t cell_volt[NUM_CELL_PER_MOD];
-	uint16_t cell_temp[NUM_THERM_TOTAL];
+	uint16_t gpio_volt[NUM_THERM_TOTAL];
 	uint16_t average_volt;
 	uint16_t average_temp;
 	uint16_t sum_volt_module;

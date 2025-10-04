@@ -41,8 +41,10 @@
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
  * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
  */
-#define LTC_CMD_RDAUXA 0x000C
-#define LTC_CMD_RDAUXB 0x000E
+#define RDAUXA 0x0019
+#define RDAUXB 0x001A
+#define RDAUXC 0x001B
+#define RDAUXD 0x001F
 
 /* ===== SPI/HAL Error Bitfield Layout ========================================
  * Return type LTC_SPI_StatusTypeDef uses these bit positions to indicate
@@ -63,8 +65,9 @@
 #define REG_LEN 8
 #define PEC_LEN 2
 #define DATA_LEN 6
-#define ADBMS_SERIES_GROUPS_PER_RDCV 3
-#define LTC_SERIES_GROUPS_PER_RDAUX 3
+#define ADBMS_SERIES_GROUPS_PER_RDAC 3
+#define ADBMS_SERIES_GROUPS_PER_RDAUX 3
+#define REG_NUM_RDAUX 4
 #define NUM_AUX_SERIES_GROUPS 6
 
 /* ===== ADC Control Field Enums ==============================================

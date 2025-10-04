@@ -138,16 +138,16 @@ void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, 
  *    threshold by FAULT_LOCK_MARGIN_HIGH_TEMP and calls ClearFaultSignal().
  */
 void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings) {
-	batt->cell_temp_highest = mod->cell_temp[0];
-	batt->cell_temp_lowest = mod->cell_temp[0];
+	batt->cell_temp_highest = mod->gpio_volt[0];
+	batt->cell_temp_lowest = mod->gpio_volt[0];
 
 	for (int i = 0; i < NUM_THERM_TOTAL; i++) {
 		//find highest temp
-		if (batt->cell_temp_highest < mod->cell_temp[i]) {
-			batt->cell_temp_highest = mod->cell_temp[i];
+		if (batt->cell_temp_highest < mod->gpio_volt[i]) {
+			batt->cell_temp_highest = mod->gpio_volt[i];
 		}
-		if (batt->cell_temp_lowest > mod->cell_temp[i]) {
-			batt->cell_temp_lowest = mod->cell_temp[i];
+		if (batt->cell_temp_lowest > mod->gpio_volt[i]) {
+			batt->cell_temp_lowest = mod->gpio_volt[i];
 		}
 	}
 

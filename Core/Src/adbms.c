@@ -27,7 +27,7 @@ const uint8_t UNSNAP[2] = {0x00, 0x2F};
 
 static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 
-static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
+static const uint16_t ADBMS_CMD_RDAUX[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
 
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
@@ -211,9 +211,9 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 
 	ADBMS_SNAP(); // Latch a consistent dataset across all modules
 
-	// We have 14 cells per module; ADBMS_SERIES_GROUPS_PER_RDCV indicates how many cells per RDAC page.
-	for (uint8_t regIndex = 0; regIndex < ((NUM_CELL_PER_MOD + ADBMS_SERIES_GROUPS_PER_RDCV - 1)
-			/ ADBMS_SERIES_GROUPS_PER_RDCV); regIndex++) {
+	// We have 14 cells per module; ADBMS_SERIES_GROUPS_PER_RDAC indicates how many cells per RDAC page.
+	for (uint8_t regIndex = 0; regIndex < ((NUM_CELL_PER_MOD + ADBMS_SERIES_GROUPS_PER_RDAC - 1)
+			/ ADBMS_SERIES_GROUPS_PER_RDAC); regIndex++) {
 
 		// Build RDAC command for the current voltage-register page
 		cmd[0] = (0xFF & (ADBMS_CMD_RDAC[regIndex] >> 8));
@@ -260,9 +260,9 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 				continue; // Skip this device’s page if PEC fails
 			}
 
-			// Each page provides ADBMS_SERIES_GROUPS_PER_RDCV cells (2 bytes per cell)
-			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDCV; dataIndex++) {
-				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDCV + dataIndex);
+			// Each page provides ADBMS_SERIES_GROUPS_PER_RDAC cells (2 bytes per cell)
+			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDAC; dataIndex++) {
+				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDAC + dataIndex);
 				if (cellInMod >= NUM_CELL_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
 
 				// Device transmits LSB then MSB; re-pack into a 16-bit sample
@@ -453,84 +453,146 @@ void LTC_SPI_requestData(uint8_t len) {
 	ADBMS_nCS_High();
 }
 
-LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
+//LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
+//	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
+//	LTC_SPI_StatusTypeDef hal_ret;
+//	const uint8_t ARR_SIZE_REG = NUM_MOD * REG_LEN;
+//	uint8_t read_auxiliary_reg[ARR_SIZE_REG]; // Increased in size to handle multiple devices
+//
+//	for (uint8_t i = 0;
+//			i < (NUM_AUX_SERIES_GROUPS / LTC_SERIES_GROUPS_PER_RDAUX); i++) {
+//		uint8_t cmd[4];
+//		uint16_t cmd_pec;
+//
+//		cmd[0] = (0xFF & (LTC_CMD_AUXREG[i] >> 8)); // RDCV Register
+//		cmd[1] = (0xFF & (LTC_CMD_AUXREG[i]));		// RDCV Register
+//		cmd_pec = ADBMS_calcPec15(cmd, 2);
+//		cmd[2] = (uint8_t) (cmd_pec >> 8);
+//		cmd[3] = (uint8_t) (cmd_pec);
+//
+//		isoSPI_Idle_to_Ready(); // Wake LTC up
+//
+//		ADBMS_nCS_Low(); // Pull CS low
+//
+//		hal_ret = HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+//		if (hal_ret) {									// Non-zero means error
+//			ret |= (1 << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // TX error
+//		}
+//
+//		hal_ret = HAL_SPI_Receive(&hspi1, (uint8_t*) read_auxiliary_reg,
+//				ARR_SIZE_REG, 100);
+//		if (hal_ret) {									// Non-zero means error
+//			ret |= (1 << (hal_ret + LTC_SPI_RX_BIT_OFFSET)); // RX error
+//		}
+//
+//		ADBMS_nCS_High(); // Pull CS high
+//
+//		// Process the received data
+//		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+//			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
+//			// PEC for each device is the last two bytes of its data segment
+//			uint8_t *data_ptr = &read_auxiliary_reg[dev_idx * REG_LEN];
+//
+//			memcpy(
+//					&read_auxiliary[dev_idx * NUM_AUX_SERIES_GROUPS
+//							+ i * LTC_SERIES_GROUPS_PER_RDAUX], data_ptr,
+//					REG_LEN - 2);
+//		}
+//
+//	}
+//
+//	return ret;
+//}
+
+
+
+LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod) {
 	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-	LTC_SPI_StatusTypeDef hal_ret;
-	const uint8_t ARR_SIZE_REG = NUM_MOD * REG_LEN;
-	uint8_t read_auxiliary_reg[ARR_SIZE_REG]; // Increased in size to handle multiple devices
+	HAL_StatusTypeDef hal_ret;
+	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC per IC
+	const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+	uint8_t rx_buffer[RX_LEN];
+	uint8_t  cmd[4];
+	uint16_t cmd_pec;
 
-	for (uint8_t i = 0;
-			i < (NUM_AUX_SERIES_GROUPS / LTC_SERIES_GROUPS_PER_RDAUX); i++) {
-		uint8_t cmd[4];
-		uint16_t cmd_pec;
+	// We have 14 cells per module; ADBMS_SERIES_GROUPS_PER_RDAC indicates how many cells per RDAC page.
+	for (uint8_t regIndex = 0; regIndex < REG_NUM_RDAUX; regIndex++) { //there's only for register group for
 
-		cmd[0] = (0xFF & (LTC_CMD_AUXREG[i] >> 8)); // RDCV Register
-		cmd[1] = (0xFF & (LTC_CMD_AUXREG[i]));		// RDCV Register
+		// Build RDAC command for the current voltage-register page
+		cmd[0] = (0xFF & (ADBMS_CMD_RDAUX[regIndex] >> 8));
+		cmd[1] = (0xFF & (ADBMS_CMD_RDAUX[regIndex]));
 		cmd_pec = ADBMS_calcPec15(cmd, 2);
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		isoSPI_Idle_to_Ready(); // Wake LTC up
+		isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
 
-		ADBMS_nCS_Low(); // Pull CS low
+		ADBMS_nCS_Low();
 
-		hal_ret = HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
-		if (hal_ret) {									// Non-zero means error
-			ret |= (1 << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // TX error
+		// Transmit the RDAC command
+	    hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+	    if (hal_ret != HAL_OK) {
+	        ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
+	        ADBMS_nCS_High();
+	        return ret;
+	    }
+
+	    // Receive one page from every device in the chain (concatenated)
+	    hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
+	    if (hal_ret != HAL_OK) {
+	        ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
+	        ADBMS_nCS_High();
+	        return ret;
+	    }
+
+	    ADBMS_nCS_High();
+
+	    // Validate and unpack each device’s 6-byte data + 2-byte PEC10
+	    for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
+			uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
+
+			uint8_t *gpioData    = &rx_buffer[offset];            // 6 data bytes
+			uint8_t *gpioDataPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
+
+			// Check RX PEC10 for data integrity
+			bool pec10Check = ADBMS_checkRxPec(gpioData, DATA_LEN, gpioDataPec);
+			if (!pec10Check) {
+//				printf("M%d failed for voltage reading\n", devIndex + 1);
+				continue; // Skip this device’s page if PEC fails
+			}
+
+			// Each page provides ADBMS_SERIES_GROUPS_PER_RDAC cells (2 bytes per cell)
+			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDAC; dataIndex++) {
+				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDAC + dataIndex);
+				if (cellInMod >= NUM_CELL_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
+
+				// Device transmits LSB then MSB; re-pack into a 16-bit sample
+				uint8_t lo = gpioData[2 * dataIndex + 0];
+				uint8_t hi = gpioData[2 * dataIndex + 1];
+
+				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
+	//				printf("M%d, cell:%d raw Value:%d\n", devIndex+1,  cellInMod +1 ,ILOVEBMS);
+				// 0x8000 is a device “cleared/invalid” code; store 0xFFFF as a sentinel for “no data”
+				if (ILOVEBMS == 0x8000u) { mod[devIndex].gpio_volt[cellInMod] = 0xFFFF; }
+				else {
+					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
+					// (Adjust this formula to the exact datasheet scaling for your part/mode.)
+					uint32_t gpiouV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
+					uint16_t gpiomV = (uint16_t)((gpiouV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
+					if (gpiomV > 65535u) gpiomV = 65535u;                       // Clamp to 16-bit storage field
+					mod[devIndex].gpio_volt[cellInMod] = gpiomV;  //store in mV
+				}
+			}
 		}
-
-		hal_ret = HAL_SPI_Receive(&hspi1, (uint8_t*) read_auxiliary_reg,
-				ARR_SIZE_REG, 100);
-		if (hal_ret) {									// Non-zero means error
-			ret |= (1 << (hal_ret + LTC_SPI_RX_BIT_OFFSET)); // RX error
-		}
-
-		ADBMS_nCS_High(); // Pull CS high
-
-		// Process the received data
-		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
-			// PEC for each device is the last two bytes of its data segment
-			uint8_t *data_ptr = &read_auxiliary_reg[dev_idx * REG_LEN];
-
-			memcpy(
-					&read_auxiliary[dev_idx * NUM_AUX_SERIES_GROUPS
-							+ i * LTC_SERIES_GROUPS_PER_RDAUX], data_ptr,
-					REG_LEN - 2);
-		}
-
 	}
-
+//
+//	for (int i = 0; i < NUM_MOD; i++){
+//		printf("Cell Voltage\n");
+//		for(int j = 0; j < NUM_CELL_PER_MOD; j++){
+//			printf("M%d, cell %d: %uV\n", (0 + 1), (j + 1), mod[0].cell_volt[j]);
+//		}
+//	}
 	return ret;
-}
-
-
-
-void LTC_startADC_GPIO(uint8_t MD, // ADC Mode
-		uint8_t CHG // GPIO Channels to be measured)
-		) {
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-	uint8_t md_bits;
-
-	md_bits = (MD & 0x02) >> 1;
-	cmd[0] = md_bits + 0x04;
-	md_bits = (MD & 0x01) << 7;
-	cmd[1] = md_bits + 0x60 + CHG;
-	cmd_pec = ADBMS_calcPec15(cmd, 2);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-
-	/*
-	 isoSPI_Idle_to_Ready (); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-	 output_low(LTC6811_CS);
-	 spi_write_array(4,cmd);
-	 output_high(LTC6811_CS);
-	 */
-	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
-	ADBMS_nCS_High();
 }
 
 int32_t LTC_POLLADC() {
