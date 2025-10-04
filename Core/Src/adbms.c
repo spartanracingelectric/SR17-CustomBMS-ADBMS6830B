@@ -453,59 +453,6 @@ void LTC_SPI_requestData(uint8_t len) {
 	ADBMS_nCS_High();
 }
 
-//LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
-//	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-//	LTC_SPI_StatusTypeDef hal_ret;
-//	const uint8_t ARR_SIZE_REG = NUM_MOD * REG_LEN;
-//	uint8_t read_auxiliary_reg[ARR_SIZE_REG]; // Increased in size to handle multiple devices
-//
-//	for (uint8_t i = 0;
-//			i < (NUM_AUX_SERIES_GROUPS / LTC_SERIES_GROUPS_PER_RDAUX); i++) {
-//		uint8_t cmd[4];
-//		uint16_t cmd_pec;
-//
-//		cmd[0] = (0xFF & (LTC_CMD_AUXREG[i] >> 8)); // RDCV Register
-//		cmd[1] = (0xFF & (LTC_CMD_AUXREG[i]));		// RDCV Register
-//		cmd_pec = ADBMS_calcPec15(cmd, 2);
-//		cmd[2] = (uint8_t) (cmd_pec >> 8);
-//		cmd[3] = (uint8_t) (cmd_pec);
-//
-//		isoSPI_Idle_to_Ready(); // Wake LTC up
-//
-//		ADBMS_nCS_Low(); // Pull CS low
-//
-//		hal_ret = HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
-//		if (hal_ret) {									// Non-zero means error
-//			ret |= (1 << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // TX error
-//		}
-//
-//		hal_ret = HAL_SPI_Receive(&hspi1, (uint8_t*) read_auxiliary_reg,
-//				ARR_SIZE_REG, 100);
-//		if (hal_ret) {									// Non-zero means error
-//			ret |= (1 << (hal_ret + LTC_SPI_RX_BIT_OFFSET)); // RX error
-//		}
-//
-//		ADBMS_nCS_High(); // Pull CS high
-//
-//		// Process the received data
-//		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-//			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
-//			// PEC for each device is the last two bytes of its data segment
-//			uint8_t *data_ptr = &read_auxiliary_reg[dev_idx * REG_LEN];
-//
-//			memcpy(
-//					&read_auxiliary[dev_idx * NUM_AUX_SERIES_GROUPS
-//							+ i * LTC_SERIES_GROUPS_PER_RDAUX], data_ptr,
-//					REG_LEN - 2);
-//		}
-//
-//	}
-//
-//	return ret;
-//}
-
-
-
 LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod) {
 	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
 	HAL_StatusTypeDef hal_ret;
@@ -563,24 +510,24 @@ LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod) {
 
 			// Each page provides ADBMS_SERIES_GROUPS_PER_RDAC cells (2 bytes per cell)
 			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDAC; dataIndex++) {
-				uint8_t cellInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDAC + dataIndex);
-				if (cellInMod >= NUM_CELL_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
+				uint8_t gpioInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDAC + dataIndex);
+				if (gpioInMod >= NUM_THERM_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
 
 				// Device transmits LSB then MSB; re-pack into a 16-bit sample
 				uint8_t lo = gpioData[2 * dataIndex + 0];
 				uint8_t hi = gpioData[2 * dataIndex + 1];
 
 				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
-	//				printf("M%d, cell:%d raw Value:%d\n", devIndex+1,  cellInMod +1 ,ILOVEBMS);
+	//				printf("M%d, cell:%d raw Value:%d\n", devIndex+1,  gpioInMod +1 ,ILOVEBMS);
 				// 0x8000 is a device “cleared/invalid” code; store 0xFFFF as a sentinel for “no data”
-				if (ILOVEBMS == 0x8000u) { mod[devIndex].gpio_volt[cellInMod] = 0xFFFF; }
+				if (ILOVEBMS == 0x8000u) { mod[devIndex].gpio_volt[gpioInMod] = 0xFFFF; }
 				else {
 					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
 					// (Adjust this formula to the exact datasheet scaling for your part/mode.)
 					uint32_t gpiouV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
 					uint16_t gpiomV = (uint16_t)((gpiouV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
 					if (gpiomV > 65535u) gpiomV = 65535u;                       // Clamp to 16-bit storage field
-					mod[devIndex].gpio_volt[cellInMod] = gpiomV;  //store in mV
+					mod[devIndex].gpio_volt[gpioInMod] = gpiomV;  //store in mV
 				}
 			}
 		}
