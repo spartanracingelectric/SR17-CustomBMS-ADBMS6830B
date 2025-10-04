@@ -199,7 +199,7 @@ int main(void)
 //			ADBMS_ReadSID(modData);
 //			 HAL_ADCEx_Calibration_Start(&hadc1);
 //			 HAL_ADCEx_Calibration_Start(&hadc2);
-		printf("hello\n");
+//		printf("hello\n");
 //			//reading cell voltages
 ////			printf("volt start\n");
 			Read_Volt(modData);
@@ -249,20 +249,11 @@ int main(void)
 //            Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
 //			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
 ////			Passive balancing is called unless a fault has occurred
-////			if (safetyFaults == 0 && BALANCE
-////					&& ((modPackInfo.cell_volt_highest
-////							- modPackInfo.cell_volt_lowest) > 50)) {
-////				Start_Balance((uint16_t*) modPackInfo.cell_volt,
-////				NUM_MOD, modPackInfo.cell_volt_lowest);
-//
-////			} else if (BALANCE) {
-////				End_Balance(&safetyFaults);
-////			}
-////            if(&accmData.cell_difference > BALANCE_THRESHOLD){
-////				Start_Balance(modData.cell_volt, accmData.cell_volt_lowest, accmData.balance_status);
-////			}
-//
-//			End_Balance(accmData.balance_status);//end the balance if CAN RX recieve 0
+            if(accmData.cell_difference > BALANCE_THRESHOLD){
+				Start_Balance(modData, &accmData, &balanceStatus);
+			}
+
+			End_Balance(&balanceStatus);//end the balance if CAN RX recieve 0
 //
 //
 //			//calling all CAN realated methods
