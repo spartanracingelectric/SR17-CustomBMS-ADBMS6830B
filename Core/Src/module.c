@@ -99,23 +99,15 @@ void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adcValue) {
  *  - Writes the result into ‘actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex]’.
  *  - If data==0, writes 999.0f sentinel value (error) into the array.
  */
-void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp, uint16_t data) {
-    if (data == 0) {
-        actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = 999.0f; // error value
-        return;
-    }
-
-    float scalar = 30000.0f / (float)(data) - 1.0f;
-    scalar = ntcSeriesResistance / scalar;
-
-    float steinhart = scalar / ntcNominal;
-    steinhart = log(steinhart);
-    steinhart *= invBetaFactor;
-    steinhart += invNominalTemp;
-    steinhart = 1.0f / steinhart;
-    steinhart -= 273.15f;
-
-    actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = steinhart;
+void Convert_GPIOVoltageToTemp(ModuleData *mod) {
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		for (int tempIndex = 0; tempIndex < NUM_THERM_PER_MOD; tempIndex++){
+			float TEMP_R = TEMP_Rp * (mod[modIndex].gpio_volt[tempIndex] / (mod[modIndex].vref2 - mod[modIndex].gpio_volt[tempIndex]));
+			float lnR_R0 = logf(TEMP_R / TEMP_R0);
+			float TEMP_T = (1 / (TEMPE_INVERCED_T0 + TEMP_INVERCED_BETA * lnR_R0)) - TEMP_KELVIN;
+			mod[modIndex].cell_temp[tempIndex] = TEMP_T;
+		}
+	}
 }
 
 /* ===== Cell Voltage Acquisition =============================================
@@ -135,32 +127,13 @@ void Read_Volt(ModuleData *mod) {
  * They are left commented as TODO; enable and adapt to your hardware mapping.
  */
 //TODO: gpio read
-//void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg) {
-//
-////	printf("Temperature read start\n");
-//	LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX[tempindex]);
-//	LTC_SPI_requestData(2);
-//	//end sending to mux to read temperatures
-//	if (tempindex == 0) {
-//		LTC_startADC_GPIO(MD_NORMAL, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-//		HAL_Delay(NORMAL_DELAY + 2); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-//	} else {
-//		LTC_startADC_GPIO(MD_FAST, 1); //ADC mode: MD_FILTERED, MD_NORMAL, MD_FAST
-//		HAL_Delay(FAST_DELAY); //FAST_DELAY, NORMAL_DELAY, FILTERD_DELAY;
-//	}
-//	if (!LTC_readGPIOs((uint16_t*) read_auxreg)) // Set to read back all aux registers
-//			{
-//		for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-//			//isoSPI_Idle_to_Ready();
-//			// Assuming data format is [cell voltage, cell voltage, ..., PEC, PEC]
-//			// PEC for each device is the last two bytes of its data segment
-//			uint16_t data = read_auxreg[dev_idx * NUM_AUX_GROUP];
-//			//read_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = data;
-//			Get_Actual_Temps(dev_idx, tempindex, (uint16_t*) read_temp, data); //+5 because vref is the last reg
-//		}
-//	}
-////	printf("Temperature read end\n");
-//}
+void Read_Temp(ModuleData *mod) {
+	ADBMS_getVref2(mod);
+	ADBMS_getGPIOData(mod);
+	Convert_GPIOVoltageToTemp(mod); //+5 because vref is the last reg
+
+//	printf("Temperature read end\n");
+}
 //
 //
 //void Read_Pressure(ModuleData *mod) {

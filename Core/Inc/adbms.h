@@ -46,6 +46,12 @@
 #define RDAUXC 0x001B
 #define RDAUXD 0x001F
 
+#define RDSTATA 0x0030
+#define RDSTATB 0x0031
+#define RDSTATC 0x0072
+#define RDSTATD 0x0033
+#define RDSTATE 0x0034
+
 /* ===== SPI/HAL Error Bitfield Layout ========================================
  * Return type LTC_SPI_StatusTypeDef uses these bit positions to indicate
  * TX/RX error, busy, and timeout conditions (mirroring HAL status but separated
@@ -68,6 +74,7 @@
 #define ADBMS_SERIES_GROUPS_PER_RDAC 3
 #define ADBMS_SERIES_GROUPS_PER_RDAUX 3
 #define REG_NUM_RDAUX 4
+#define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
 
 /* ===== ADC Control Field Enums ==============================================
@@ -224,7 +231,7 @@ void LTC_writeCFG(uint8_t total_ic, uint8_t config[][6]);
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
 void LTC_SPI_requestData(uint8_t len);
 LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod);
-void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
+LTC_SPI_StatusTypeDef ADBMS_getVref2(ModuleData *mod);
 int32_t LTC_POLLADC();
 int Calc_Pack_Voltage(uint16_t *read_voltages);
 LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod);
