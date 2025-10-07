@@ -141,6 +141,7 @@ void Balance_reset(BalanceStatus *blst) {
 	 for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 	        for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
 	            blst[dev_idx].balance_cells[cell_idx] = 0;
+	            blst[dev_idx].balancing_cells = 0;
 	        }
 	    }
 }
