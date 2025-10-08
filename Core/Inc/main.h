@@ -51,7 +51,7 @@ extern "C" {
  *  - BALANCE is a feature toggle (0 = disabled at compile time).
  *  - MAX_*_CAPACITY are nominal capacities (mAh) used for SoC/estimation.
  */
-#define NUM_MOD					8	//1 slave board
+#define NUM_MOD					10	//1 slave board
 #define NUM_CELL_PER_MOD	 	14	//1 slave board
 #define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
 #define NUM_THERM_PER_MOD		12

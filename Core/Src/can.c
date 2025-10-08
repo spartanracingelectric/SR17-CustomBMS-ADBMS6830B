@@ -460,7 +460,7 @@ void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst, RDFCGB_buf
 			buffer->balanceStatus[6] =   blst[modIndex + 3] .balancing_cells        & 0xFF;
 			buffer->balanceStatus[7] =  (blst[modIndex + 3] .balancing_cells >> 8)  & 0xFF;
 		}
-		printf("M1 balancing status %d\n", blst[0].balancing_cells);
+//		printf("M1 balancing status %X\n", blst[0].balancing_cells);
 
 		CAN_Send(buffer);
 		CAN_ID++;

@@ -313,7 +313,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
                     // (Adjust this formula to the exact datasheet scaling for your part/mode.)
 				    uint32_t uV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
-				    uint16_t mV = (uint16_t)((uV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
+				    uint16_t mV = (uint16_t)(uV / 1000u);      // Scale from µV to mV, add 500 for integer rounding
 				    if (mV > 65535u) mV = 65535u;                       // Clamp to 16-bit storage field
 				    mod[devIndex].cell_volt[cellInMod] = mV;  //store in mV
 				}
@@ -340,9 +340,13 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	uint16_t cfg_pec;
 
 	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF); // VUV[7:0]
+//	printf("CFGBR0 %X\n", CFGBR0);
 	uint8_t CFGBR1 = (uint8_t)(((VUV >> 8) & 0x0F) << 4 | (VOV & 0x0F)); // VUV[11:8], VOV[3:0]
+//	printf("CFGBR1 %X\n", CFGBR1);
     uint8_t CFGBR2 = (uint8_t)((VOV >> 4) & 0xFF); // VOV[11:4];
+//    printf("CFGBR2 %X\n", CFGBR2);
     uint8_t CFGBR3 = 0x00; //settings for discharge timer
+//    printf("CFGBR3 %X\n", CFGBR3);
 
 	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
 	cmd[0] = (uint8_t) (WRCFGB >> 8);
@@ -365,18 +369,22 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 				CFGBR5 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << (cell_idx - 8);
 			}
 		}
+
+//		printf("M%d, CFGBR4:%X\n", dev_idx, CFGBR4);
+//		printf("M%d, CFGBR5:%X\n", dev_idx, CFGBR5);
 		cfg[0] = CFGBR0;
 		cfg[1] = CFGBR1;
 		cfg[2] = CFGBR2;
 		cfg[3] = CFGBR3;
 		cfg[4] = CFGBR4;
 		cfg[5] = CFGBR5;
-		cfg_pec = ADBMS_calcPec15(cfg, 6);
+		cfg_pec = ADBMS_calcPec10(cfg, 6, NULL);
 		cfg[6] = (uint8_t) (cfg_pec >> 8);
 		cfg[7] = (uint8_t) (cfg_pec);
 
 		int base = 4 + dev_idx * 8;
 		memcpy(&wrcfg_buffer[base], cfg, 8);
+//		printf("cfg %X\n", cfg);
 
 	}
 

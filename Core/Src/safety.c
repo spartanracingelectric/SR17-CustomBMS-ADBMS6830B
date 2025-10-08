@@ -29,6 +29,7 @@
 #include "main.h"
 #include "stdio.h"
 #include "gpio.h"
+#include "accumulator.h"
 
 // ! Fault Thresholds
 
@@ -52,29 +53,15 @@ uint8_t high_temp_hysteresis = 0;
  *  - Clears/relaxes a latched fault only after the measurement crosses back by
  *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
  */
-void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
-//finding highest and lowest cell voltage
-	batt->cell_volt_highest = mod->cell_volt[0];
-	batt->cell_volt_lowest = mod->cell_volt[0];
-
-	for (int i = 0; i < NUM_CELLS; i++) {
-//find highest volt
-		if (mod->cell_volt[i] > batt->cell_volt_highest) {
-			batt->cell_volt_highest = mod->cell_volt[i];
-//			printf("high voltage fault: %d\n", batt->cell_volt_highest);
-		}
-
-//find lowest volt
-		if (mod->cell_volt[i] < batt->cell_volt_lowest) {
-			batt->cell_volt_lowest = mod->cell_volt[i];
-		}
-  }
+void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
+	accumulator_getMinVolatage(acc, mod);
+	accumulator_getMaxVolatage(acc, mod);
 //high cell volt warning
-		if (batt->cell_volt_highest >= CELL_HIGH_VOLT_WARNING) {
+		if (acc->cell_volt_highest >= CELL_HIGH_VOLT_WARNING) {
 			*warnings |= WARNING_BIT_HIGH_VOLT;
 		}
 //high cell volt fault
-		if ((batt->cell_volt_highest >= CELL_HIGH_VOLT_FAULT)) {
+		if ((acc->cell_volt_highest >= CELL_HIGH_VOLT_FAULT)) {
 			if (high_volt_hysteresis > 16) {  //takes 50 cycle to fault
 				high_volt_fault_lock = 1;
 				*warnings &= ~WARNING_BIT_HIGH_VOLT;
@@ -87,7 +74,7 @@ void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, 
 //			printf("high voltage fault signal on\n");
 		}
 //reset high cell volt fault
-		else if (((batt->cell_volt_highest < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT)) || (batt->cell_volt_highest > CELL_HIGH_VOLT_DISCONNECT))&& high_volt_fault_lock == 1){
+		else if (((acc->cell_volt_highest < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT)) || (acc->cell_volt_highest > CELL_HIGH_VOLT_DISCONNECT))&& high_volt_fault_lock == 1){
 			if (high_volt_hysteresis > 0){
 				high_volt_hysteresis = 0;
 				high_volt_fault_lock = 0;
@@ -98,11 +85,11 @@ void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, 
 		}
 
 //low cell volt warning
-		if (batt->cell_volt_lowest <= CELL_LOW_VOLT_WARNING) {
+		if (acc->cell_volt_lowest <= CELL_LOW_VOLT_WARNING) {
 			*warnings |= WARNING_BIT_LOW_VOLT;
 		}
 //low cell volt fault
-		if (batt->cell_volt_lowest <= CELL_LOW_VOLT_FAULT){
+		if (acc->cell_volt_lowest <= CELL_LOW_VOLT_FAULT){
 			if (low_volt_hysteresis > 16) {
 				low_volt_fault_lock = 1;
 				*warnings &= ~WARNING_BIT_LOW_VOLT;
@@ -112,7 +99,7 @@ void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, 
 				low_volt_hysteresis++;
 			}
 //reset low cell volt fault
-		} else if (batt->cell_volt_lowest > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT)) {
+		} else if (acc->cell_volt_lowest > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT)) {
 			if (low_volt_hysteresis > 0) {
 				low_volt_hysteresis = 0;
 				*warnings &= ~WARNING_BIT_LOW_VOLT;

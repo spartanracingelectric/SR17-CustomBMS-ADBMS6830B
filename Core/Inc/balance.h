@@ -41,9 +41,9 @@
  *  - When a finish flag is set (e.g., by CAN), clears all DCC bits and restores
  *    the default configuration on all devices.
  */
-void Balance_init(BalanceStatus *blst);
+void Balance_init(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff);
 void Start_Balance(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst);
-void End_Balance(BalanceStatus *blst);
+void End_Balance(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff);
 
 /* ===== Public API: Algorithm ================================================
  * Discharge_Algo():
@@ -58,7 +58,7 @@ void End_Balance(BalanceStatus *blst);
  *  - balanceStatus:  per-device bitfield array reflecting current DCC decisions;
  *                    element i holds the bitmask for device i.
  */
-void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst);
+void Balance_setDCCbits(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst);
 
 /* ===== Public API: Helpers ===============================================Balance_reset(BalanceStatus *blst)====
  * Balance_reset():
@@ -74,8 +74,8 @@ void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst)
  *  - DCC:      pointer to per-cell discharge control bits (1=on, 0=off) for
  *              the given device; length must cover NUM_CELL_PER_MOD.
  */
-void Balance_reset(BalanceStatus *blst);
+void Balance_reset(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff);
 
-void Get_balanceStatus(BalanceStatus *blst, const RDFCGB_buffer *rdfcgb);
+void Get_balanceStatus(BalanceStatus *blst, RDFCGB_buffer *rdfcgb);
 
 #endif /* INC_BALANCE_H_ */

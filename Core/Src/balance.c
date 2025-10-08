@@ -49,10 +49,10 @@ uint8_t balance_finish = 0;
  * Start_Balance(): Run decision algorithm and push updated CFG (if enabled).
  * End_Balance():   If finish flag set, clear DCCs and restore default CFG.
  */
-void Balance_init(BalanceStatus *blst){
+void Balance_init(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff){
 	balance = 0;
 	balance_finish = 0;
-	Balance_reset(blst);
+	Balance_reset(blst, RDFCGB_buff);
 	Wakeup_Sleep();
 	ADBMS_writeCFGB(blst);
 }
@@ -88,7 +88,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
 void Start_Balance(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
 //	printf("balance enable is %d\n", balance);
 	if(balance > 0){
-		Discharge_Algo(mod, accm , blst);
+		Balance_setDCCbits(mod, accm , blst);
 		Wakeup_Sleep();
 		ADBMS_writeCFGB(blst);
 	}
@@ -97,9 +97,9 @@ void Start_Balance(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) 
 	}
 }
 
-void End_Balance(BalanceStatus *blst) {
+void End_Balance(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
 	if(balance_finish == 1){
-		Balance_reset(blst);
+		Balance_reset(blst, RDFCGB_buff);
 		Wakeup_Sleep();
 		ADBMS_writeCFGB(blst);
 		balance_finish = 0;
@@ -119,14 +119,14 @@ void End_Balance(BalanceStatus *blst) {
  *  - Local DCC array here is sized 12. If NUM_CELL_PER_MOD > 12 (e.g., 14),
  *    ensure your HW/chip variant’s DCC mapping matches this size choice.
  */
-void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
-	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+void Balance_setDCCbits(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
+	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
 		// check if each cell is close within 0.005V of the lowest cell.
 		for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
-			if (mod[dev_idx].cell_volt[cell_idx] - accm->cell_volt_lowest > BALANCE_THRESHOLD) {
-				blst[dev_idx].balance_cells[cell_idx] = 1;
+			if (mod[modIndex].cell_volt[cell_idx] - accm->cell_volt_lowest > BALANCE_THRESHOLD) {
+				blst[modIndex].balance_cells[cell_idx] = 1;
 			} else {
-				blst[dev_idx].balance_cells[cell_idx] = 0;
+				blst[modIndex].balance_cells[cell_idx] = 0;
 			}
 		}
 	}
@@ -137,16 +137,20 @@ void Discharge_Algo(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst)
  * Set_Cfg():       Map DCC array into config[dev][4] (cells 0–7) and
  *                  config[dev][5] (cells 8–15) bit positions.
  */
-void Balance_reset(BalanceStatus *blst) {
+void Balance_reset(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
 	 for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 	        for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
 	            blst[dev_idx].balance_cells[cell_idx] = 0;
 	            blst[dev_idx].balancing_cells = 0;
 	        }
-	    }
+	        for(int cfgIndex = 0; cfgIndex < 6; cfgIndex++){
+	        	RDFCGB_buff[dev_idx].CFGBR[cfgIndex] = 0x00;
+	        }
+	 }
 }
 
-void Get_balanceStatus(BalanceStatus *blst, const RDFCGB_buffer *rdfcgb){
+void Get_balanceStatus(BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
+	ADBMS_readCFGB(rdfcgb);
 	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
 		blst[modIndex].balancing_cells = (uint16_t)rdfcgb[modIndex].CFGBR[4] | ((uint16_t)rdfcgb[modIndex].CFGBR[5] << 8);
 	}
