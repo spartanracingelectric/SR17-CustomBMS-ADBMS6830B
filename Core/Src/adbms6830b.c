@@ -18,9 +18,6 @@
 #include "main.h"
 #include <stdio.h>
 
-uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
-uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
-uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 const uint8_t RDSID[2]   = {0x00, 0x2C};
 const uint8_t SNAP[2]    = {0x00, 0x2D};
 const uint8_t UNSNAP[2]  = {0x00, 0x2F};
@@ -338,6 +335,7 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	uint8_t cfg[8];
 	uint16_t cmd_pec;
 	uint16_t cfg_pec;
+	uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)] = {0};
 
 	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF); // VUV[7:0]
 //	printf("CFGBR0 %X\n", CFGBR0);
@@ -387,6 +385,11 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 //		printf("cfg %X\n", cfg);
 
 	}
+	printf("wrcfg_buffer\n");
+	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
+	    printf("%02X", wrcfg_buffer[i]);
+	}
+	printf("a\n");
 
 	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
@@ -452,9 +455,11 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 
 		for (uint8_t cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++) {
 			rdfcgb[modIndex].CFGBR[cfgIndex] = CFGB[cfgIndex];
+			printf("M%d, CFGBR5%d: %X\n", modIndex, cfgIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
 		}
 	}
 	return ret;
+
 }
 
 /**

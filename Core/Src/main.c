@@ -245,7 +245,8 @@ int main(void)
 //			ReadHVInput(&accmData);
 			getSumPackVoltage(&accmData, modData);
 ////			printf("pack volt end\n");
-//
+			accumulator_getMinVolatage(&accmData, modData);
+			accumulator_getMaxVolatage(&accmData, modData);
 //			SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 //			prev_soc_time = HAL_GetTick();
 //			//getting the summary of all cells in the pack

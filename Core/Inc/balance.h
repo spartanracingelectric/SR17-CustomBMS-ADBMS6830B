@@ -26,7 +26,7 @@
  *  - If (cell_mV - lowest_cell_mV) > BALANCE_THRESHOLD, that cell is eligible
  *    for discharge (bleeding) via its DCC bit.
  */
-#define BALANCE_THRESHOLD 50  //mv
+#define BALANCE_THRESHOLD 50 //mv
 
 /* ===== Public API: Lifecycle ================================================
  * Balance_init():

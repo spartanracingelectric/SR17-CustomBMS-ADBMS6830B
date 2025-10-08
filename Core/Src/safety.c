@@ -54,8 +54,6 @@ uint8_t high_temp_hysteresis = 0;
  *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
  */
 void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
-	accumulator_getMinVolatage(acc, mod);
-	accumulator_getMaxVolatage(acc, mod);
 //high cell volt warning
 		if (acc->cell_volt_highest >= CELL_HIGH_VOLT_WARNING) {
 			*warnings |= WARNING_BIT_HIGH_VOLT;
