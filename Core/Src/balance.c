@@ -120,7 +120,7 @@ void End_Balance(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
  *    ensure your HW/chip variant’s DCC mapping matches this size choice.
  */
 void Balance_setDCCbits(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
-	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
+	for (uint8_t modIndex = 0; modIndex < 1; modIndex++) {
 		// check if each cell is close within 0.005V of the lowest cell.
 		for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
 			if (mod[modIndex].cell_volt[cell_idx] - accm->cell_volt_lowest > BALANCE_THRESHOLD) {
@@ -143,7 +143,7 @@ void Balance_reset(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
 	 for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 	        for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
 	            blst[dev_idx].balance_cells[cell_idx] = 0;
-	            blst[dev_idx].balancing_cells = 0xFFFF;
+	            blst[dev_idx].balancing_cells = 0x0000;
 	        }
 	        for(int cfgIndex = 0; cfgIndex < 6; cfgIndex++){
 	        	RDFCGB_buff[dev_idx].CFGBR[cfgIndex] = 0x00;

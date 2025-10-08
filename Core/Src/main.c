@@ -103,7 +103,7 @@ int main(void)
     AccumulatorData accmData;
     ModuleData modData[NUM_MOD];
     BalanceStatus balanceStatus[NUM_MOD];
-    RDFCGB_buffer readCFGB[6];
+    RDFCGB_buffer readCFGB[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;

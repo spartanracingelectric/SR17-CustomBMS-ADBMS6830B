@@ -385,11 +385,11 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 //		printf("cfg %X\n", cfg);
 
 	}
-	printf("wrcfg_buffer\n");
-	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
-	    printf("%02X", wrcfg_buffer[i]);
-	}
-	printf("a\n");
+//	printf("wrcfg_buffer\n");
+//	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
+//	    printf("%02X", wrcfg_buffer[i]);
+//	}
+//	printf("a\n");
 
 	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
@@ -439,6 +439,13 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 
 	ADBMS_nCS_High();
 
+	printf("rdcfg_buffer\n");
+	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
+	    printf("%02X", rx_buffer[i]);
+	}
+	printf("a\n");
+
+
 	// Validate and unpack each device’s 6-byte data + 2-byte PEC10
 	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
 		uint16_t offset = (uint16_t)(modIndex * RX_BYTES_PER_IC);
@@ -455,11 +462,14 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 
 		for (uint8_t cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++) {
 			rdfcgb[modIndex].CFGBR[cfgIndex] = CFGB[cfgIndex];
-			printf("M%d, CFGBR5%d: %X\n", modIndex, cfgIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
+		}
+	}
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		for(int cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++){
+			printf("M%d CFGBR: %X\n", modIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
 		}
 	}
 	return ret;
-
 }
 
 /**
