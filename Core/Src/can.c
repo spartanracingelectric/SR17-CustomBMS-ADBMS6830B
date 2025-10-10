@@ -131,7 +131,15 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
   /* USER CODE END CAN1_MspInit 1 */
   }
 }
-
+/* Code to calculate sum and average for voltage */
+void sum_and_average_comp(ModuleData * modules) {
+	uint32_t sum = 0;
+    for (int i=0; i< NUM_CELL_PER_MOD; i++) {
+    	sum= sum+ cell_volt[i];
+    }
+    modules->sum_volt_module = sum;
+    modules->average_volt = sum / NUM_CELL_PER_MOD;
+    }
 /* ===== CubeMX: MSP DeInit =================================================== */
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 {
@@ -244,6 +252,7 @@ void Set_CAN_Id(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
  *  - Tail case (if <4 remain): byte[4..7] carry average_volt and sum_volt_module.
  *  - IDs start at CAN_ID_VOLTAGE and increment per frame.
  */
+sum_and_average_comp(ModuleData * mod);
 void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
 	uint32_t CAN_ID = (uint32_t)CAN_ID_VOLTAGE;
     for (int i = 0; i < NUM_MOD; i ++) {  //pack every 4 cell group in 1 CAN message
@@ -383,6 +392,9 @@ void CAN_Send_Cell_Summary(CANMessage *buffer, AccumulatorData *batt) {
  *      [4..5] = hvsens_pack_voltage (mV)
  *      [6..7] = sum_pack_voltage (mV)
  */
+void CAN_Send_Voltage_Data(CANMessage * buffer, ModuleData * mod) {
+
+}
 void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t *faults, uint8_t *warnings) {
 	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
 	uint32_t CAN_ID = (uint32_t)CAN_ID_SAFETY;
