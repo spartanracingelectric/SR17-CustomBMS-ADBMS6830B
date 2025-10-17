@@ -3,3 +3,4 @@ Debug/
 .ccls
 .ccls-cache/
 .DS_Store
+build/
