@@ -26,6 +26,7 @@
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
+#include "balance.h"
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -433,33 +434,37 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt,
  *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
  *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
  */
-void CAN_Send_Balance_Status(CANMessage *buffer, uint16_t *balance_status){
+void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
+	Get_balanceStatus(blst, rdfcgb);
 	uint32_t CAN_ID = (uint32_t)CAN_ID_BALANCE_STATUS;
-	Set_CAN_Id(buffer, CAN_ID);
+	uint8_t numByte = 8;
 
-	buffer->balanceStatus[0] =  balance_status[0]       & 0xFF;
-	buffer->balanceStatus[1] = (balance_status[0] >> 8) & 0xFF;
-	buffer->balanceStatus[2] =  balance_status[1]       & 0xFF;
-	buffer->balanceStatus[3] = (balance_status[1] >> 8) & 0xFF;
-	buffer->balanceStatus[4] =  balance_status[2]       & 0xFF;
-	buffer->balanceStatus[5] = (balance_status[2] >> 8) & 0xFF;
-	buffer->balanceStatus[6] =  balance_status[3]       & 0xFF;
-	buffer->balanceStatus[7] = (balance_status[3] >> 8) & 0xFF;
-//	printf("can id for balance1: %d\n", CAN_ID);
-	CAN_Send(buffer);
-	CAN_ID++;
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex+=4){
+		Set_CAN_Id(buffer, CAN_ID);
+		for (int reset = 0; reset < numByte; reset++){ //reset the buffer
+			buffer->balanceStatus[reset] = 0;
+		}
+		if(modIndex >= 8){
+			buffer->balanceStatus[0] =   blst[modIndex    ] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[1] =  (blst[modIndex    ] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[2] =   blst[modIndex + 1] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[3] =  (blst[modIndex + 1] .balancing_cells >> 8)  & 0xFF;
+		}
+		else{
+			buffer->balanceStatus[0] =   blst[modIndex    ] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[1] =  (blst[modIndex    ] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[2] =   blst[modIndex + 1] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[3] =  (blst[modIndex + 1] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[4] =   blst[modIndex + 2] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[5] =  (blst[modIndex + 2] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[6] =   blst[modIndex + 3] .balancing_cells        & 0xFF;
+			buffer->balanceStatus[7] =  (blst[modIndex + 3] .balancing_cells >> 8)  & 0xFF;
+		}
+//		printf("M1 balancing status %X\n", blst[0].balancing_cells);
 
-	Set_CAN_Id(buffer, CAN_ID);
-	buffer->balanceStatus[0] =  balance_status[4]       & 0xFF;
-	buffer->balanceStatus[1] = (balance_status[4] >> 8) & 0xFF;
-	buffer->balanceStatus[2] =  balance_status[5]       & 0xFF;
-	buffer->balanceStatus[3] = (balance_status[5] >> 8) & 0xFF;
-	buffer->balanceStatus[4] =  balance_status[6]       & 0xFF;
-	buffer->balanceStatus[5] = (balance_status[6] >> 8) & 0xFF;
-	buffer->balanceStatus[6] =  balance_status[7]       & 0xFF;
-	buffer->balanceStatus[7] = (balance_status[7] >> 8) & 0xFF;
-//	printf("can id for balance2: %d\n", CAN_ID);
-	CAN_Send(buffer);
+		CAN_Send(buffer);
+		CAN_ID++;
+	}
 }
 
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {

@@ -28,7 +28,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -52,7 +51,7 @@ extern "C" {
  *  - BALANCE is a feature toggle (0 = disabled at compile time).
  *  - MAX_*_CAPACITY are nominal capacities (mAh) used for SoC/estimation.
  */
-#define NUM_MOD					8	//1 slave board
+#define NUM_MOD					1	//1 slave board
 #define NUM_CELL_PER_MOD	 	14	//1 slave board
 #define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
 #define NUM_THERM_PER_MOD		12
@@ -115,6 +114,17 @@ typedef struct ModuleData {
     uint16_t dew_point;
     uint8_t sid[6];
 } ModuleData;
+
+typedef struct BalanceStatus {
+	uint8_t balance_cells[NUM_CELL_PER_MOD];
+	uint16_t balancing_cells;
+}BalanceStatus;
+
+typedef struct RDFCGB_buffer{
+	uint8_t CFGBR[6];
+	uint16_t VUV_12;
+	uint16_t VOV_12;
+}RDFCGB_buffer;
 
 /**
  * @brief CAN transmission staging buffers.
