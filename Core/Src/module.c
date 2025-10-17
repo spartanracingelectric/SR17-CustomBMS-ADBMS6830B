@@ -19,7 +19,7 @@
  *  - LTC6811_Vdd defines the AUX reference for ratio-metric ambient sensors (in the same units as adc_data scale).
  *  - ADBMS_getAVGCellVoltages() handles SNAP/UNSNAP/PEC and writes into ModuleData.
  */
-#include <ADBMS.h>
+#include <adbms6830b.h>
 #include "module.h"
 #include <math.h>
 #include <stdio.h>
