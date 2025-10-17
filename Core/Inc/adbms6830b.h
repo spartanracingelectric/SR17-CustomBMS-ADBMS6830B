@@ -187,12 +187,6 @@ void ADBMS_UNSNAP();
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
 void ADBMS_writeCFGB(BalanceStatus *blst);
 LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
-void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
-void LTC_SPI_requestData(uint8_t len);
-LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);
-void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
-int32_t LTC_POLLADC();
-int Calc_Pack_Voltage(uint16_t *read_voltages);
 LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod);
 
 /* ===== Public API: PEC Helpers ==============================================
