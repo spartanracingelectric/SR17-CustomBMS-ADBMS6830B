@@ -44,32 +44,17 @@ uint8_t rxData[8];
 uint8_t balance = 0;			//FALSE
 uint8_t balance_finish = 0;
 
-/* ===== CFG Working Images (per device) ======================================
- * config:        Writable image used while balancing (DCC bits modified).
- * defaultConfig: Baseline image restored when balancing ends.
- * NOTE: Each row corresponds to one device in the daisy chain (NUM_MOD).
- */
-static uint8_t config[8][6] = { { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-								{ 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-								{ 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-								{ 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 } };
-
-static uint8_t defaultConfig[8][6] = {{ 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-									  { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-									  { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 },
-									  { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 }, { 0xF8, 0x00, 0x00, 0x00, 0x00, 0x20 } };
-
 /* ===== Public API: Initialization & Tear-down ================================
  * Balance_init():  Clear flags and DCCs, wake chain, write default CFG.
  * Start_Balance(): Run decision algorithm and push updated CFG (if enabled).
  * End_Balance():   If finish flag set, clear DCCs and restore default CFG.
  */
-void Balance_init(uint16_t *balanceStatus){
+void Balance_init(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff){
 	balance = 0;
 	balance_finish = 0;
-	Balance_reset(balanceStatus);
+	Balance_reset(blst, RDFCGB_buff);
 	Wakeup_Sleep();
-	LTC_writeCFG(NUM_MOD, defaultConfig);
+	ADBMS_writeCFGB(blst);
 }
 
 /* ===== Interrupt/Callback: CAN RX ===========================================
@@ -100,23 +85,23 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1) {
  * Start_Balance(): Executes Discharge_Algo() and writes config when enabled.
  * End_Balance():   Clears DCC and writes defaultConfig when finish flag set.
  */
-void Start_Balance(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus) {
+void Start_Balance(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
 //	printf("balance enable is %d\n", balance);
 	if(balance > 0){
-		Discharge_Algo(read_volt, lowest , balanceStatus);
+		Balance_setDCCbits(mod, accm , blst);
 		Wakeup_Sleep();
-		LTC_writeCFG(NUM_MOD, config);
+		ADBMS_writeCFGB(blst);
 	}
 	else{
 		return;
 	}
 }
 
-void End_Balance(uint16_t *balanceStatus) {
+void End_Balance(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
 	if(balance_finish == 1){
-		Balance_reset(balanceStatus);
+		Balance_reset(blst, RDFCGB_buff);
 		Wakeup_Sleep();
-		LTC_writeCFG(NUM_MOD, defaultConfig);
+		ADBMS_writeCFGB(blst);
 		balance_finish = 0;
 	}
 	else{
@@ -134,20 +119,18 @@ void End_Balance(uint16_t *balanceStatus) {
  *  - Local DCC array here is sized 12. If NUM_CELL_PER_MOD > 12 (e.g., 14),
  *    ensure your HW/chip variant’s DCC mapping matches this size choice.
  */
-void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatus) {
-	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+void Balance_setDCCbits(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst) {
+	for (uint8_t modIndex = 0; modIndex < 1; modIndex++) {
 		// check if each cell is close within 0.005V of the lowest cell.
-		uint8_t DCC[12];
 		for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
-			if (read_volt[dev_idx * NUM_CELL_PER_MOD + cell_idx] - lowest > BALANCE_THRESHOLD) {
-				DCC[cell_idx] = 1;
-				balanceStatus[dev_idx] |= (1 << cell_idx);
-			} else {
-				DCC[cell_idx] = 0;
-				balanceStatus[dev_idx] &= ~(1 << cell_idx); //set the bit to 0
+			if (mod[modIndex].cell_volt[cell_idx] - accm->cell_volt_lowest > BALANCE_THRESHOLD) {
+				blst[modIndex].balance_cells[cell_idx] = 1;
+			} else{
+				blst[modIndex].balance_cells[cell_idx] = 0;
 			}
+//			printf("M%d, cell: %d, diff: %d\n", modIndex + 1, cell_idx + 1, mod[0].cell_volt[cell_idx] - accm->cell_volt_lowest);
+//			printf("BALANCE_THRESHOLD: %d\n", BALANCE_THRESHOLD);
 		}
-		Set_Cfg(dev_idx, (uint8_t*) DCC);
 	}
 }
 
@@ -156,41 +139,21 @@ void Discharge_Algo(uint16_t *read_volt, uint16_t lowest, uint16_t *balanceStatu
  * Set_Cfg():       Map DCC array into config[dev][4] (cells 0–7) and
  *                  config[dev][5] (cells 8–15) bit positions.
  */
-void Balance_reset(uint16_t *balanceStatus) {
-	uint8_t DCC[12] = {0};  //reset all DCC to 0
-	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
-		balanceStatus[dev_idx] = 0;
-//		printf("balanceStaus[%d]: %d\n", dev_idx, balanceStatus[dev_idx]);
-
-		Set_Cfg(dev_idx, (uint8_t*) DCC);
-	}
+void Balance_reset(BalanceStatus *blst, RDFCGB_buffer *RDFCGB_buff) {
+	 for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
+	        for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
+	            blst[dev_idx].balance_cells[cell_idx] = 0;
+	            blst[dev_idx].balancing_cells = 0x0000;
+	        }
+	        for(int cfgIndex = 0; cfgIndex < 6; cfgIndex++){
+	        	RDFCGB_buff[dev_idx].CFGBR[cfgIndex] = 0x00;
+	        }
+	 }
 }
 
-/**
- * @brief  Apply DCC bits for a device to its CFG image.
- *
- * Mapping:
- *  - cell 0..7  → config[dev_idx][4] bit 0..7
- *  - cell 8..15 → config[dev_idx][5] bit 0..7
- *
- * @param dev_idx  Daisy-chain device index
- * @param DCC      Discharge control bits per cell (1=on, 0=off)
- */
-void Set_Cfg(uint8_t dev_idx, uint8_t *DCC) {
-	for (uint8_t cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
-		if (DCC[cell_idx]) {
-			if (cell_idx < 8) {
-				config[dev_idx][4] |= (1 << cell_idx);
-			} else if (cell_idx >= 8) {
-				config[dev_idx][5] |= (1 << (cell_idx - 8));
-			}
-		} else {
-			if (cell_idx < 8) {
-				config[dev_idx][4] &= (~(1 << cell_idx));
-			} else {
-				config[dev_idx][5] &= (~(1 << (cell_idx - 8)));
-			}
-		}
+void Get_balanceStatus(BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
+	ADBMS_readCFGB(rdfcgb);
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		blst[modIndex].balancing_cells = (uint16_t)rdfcgb[modIndex].CFGBR[4] | ((uint16_t)rdfcgb[modIndex].CFGBR[5] << 8);
 	}
 }
-

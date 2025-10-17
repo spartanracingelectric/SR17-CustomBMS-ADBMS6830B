@@ -67,6 +67,10 @@
 #define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6
 
+#define WRCFGA 0x0001
+#define WRCFGB 0x0024
+#define RDCFGB 0x0026
+
 /* ===== ADC Control Field Enums ==============================================
  * These map directly to bitfields inside the ADCV (start conversion) command.
  * See datasheet for exact bit positions; your .c packs them into a command word.
@@ -153,8 +157,9 @@ extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
  * isoSPI_Idle_to_Ready(): send a dummy 0xFF while nCS is low to wake IDLE->READY.
  * Wakeup_Sleep(): toggle nCS to bring devices out of SLEEP (no clocks needed).
  */
-void isoSPI_Idle_to_Ready(void);
-void Wakeup_Sleep(void);
+void isoSPI_Idle_to_Ready();
+void Wakeup_Sleep();
+void Clear_Registers();
 
 /* ===== Public API: High-Level Init/Control ==================================
  * ADBMS_init(): wake devices, UNSNAP to resume live updates, and start ADCV.
@@ -180,8 +185,8 @@ void ADBMS_UNSNAP();
  * ADBMS_ReadSID():            read 6-byte silicon ID per IC (PEC10 verified).
  */
 LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
-void LTC_writePWM(uint8_t total_ic, uint8_t pwm);
-void LTC_writeCFG(uint8_t total_ic, uint8_t config[][6]);
+void ADBMS_writeCFGB(BalanceStatus *blst);
+LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
 void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]);
 void LTC_SPI_requestData(uint8_t len);
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary);

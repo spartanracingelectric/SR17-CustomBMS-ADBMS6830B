@@ -18,12 +18,17 @@
 #include "main.h"
 #include <stdio.h>
 
-uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
-uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
-uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
-const uint8_t RDSID[2] = { 0x00, 0x2C };
-const uint8_t SNAP[2] = {0x00, 0x2D};
-const uint8_t UNSNAP[2] = {0x00, 0x2F};
+const uint8_t RDSID[2]   = {0x00, 0x2C};
+const uint8_t SNAP[2]    = {0x00, 0x2D};
+const uint8_t UNSNAP[2]  = {0x00, 0x2F};
+const uint8_t CLRCELL[2] = {0x07, 0x11};
+const uint8_t CLRFC[2]   = {0x07, 0x14};
+const uint8_t CLRAUX[2]  = {0x07, 0x12};
+const uint8_t CLRSPIN[2] = {0x07, 0x16};
+const uint8_t CLRFLAG[2] = {0x07, 0x17};
+const uint8_t CLOVUV[2]  = {0x07, 0x15};
+const uint16_t VUV       = 0x01A1;
+const uint16_t VOV       = 0x0465;
 
 static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 
@@ -35,7 +40,7 @@ static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
  * Some ADBMS/LTC parts require a short SPI activity (while nCS is low) to exit IDLE.
  * Sending 0xFF with nCS asserted is a safe way to provide clocks without issuing a command.
  */
-void isoSPI_Idle_to_Ready(void) {
+void isoSPI_Idle_to_Ready() {
 	uint8_t hex_ff = 0xFF;
 	ADBMS_nCS_Low();							   // Assert CS to address the chain
 	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send a dummy byte to toggle SCK and wake isoSPI
@@ -49,13 +54,40 @@ void isoSPI_Idle_to_Ready(void) {
  * Many LTC/ADBMS devices detect wake on nCS edges while asleep.
  * Two low-high toggles with small delays are commonly recommended.
  */
-void Wakeup_Sleep(void) {
+void Wakeup_Sleep() {
     for (int i = 0; i < 2; i++) {
         ADBMS_nCS_Low();
         HAL_Delay(1);
         ADBMS_nCS_High();
         HAL_Delay(1);
     }
+}
+
+void Clear_Registers(){
+	uint8_t cmd[4];
+	uint16_t cmd_pec;
+	const uint8_t cmds[][2] = {
+		{CLRCELL [0], CLRCELL [1]},
+		{CLRAUX  [0], CLRAUX  [1]},
+		{CLRSPIN [0], CLRSPIN [1]},
+		{CLRFC   [0], CLRFC   [1]},
+		{CLOVUV  [0], CLOVUV  [1]},
+		{CLRFLAG [0], CLRFLAG [1]}
+	 };
+	isoSPI_Idle_to_Ready();   // Ensure link is awake
+
+	const size_t N = sizeof(cmds) / sizeof(cmds[0]);
+	for(int i = 0; i < N; i++){
+		cmd[0] = cmds[i][0];       // Command high byte
+		cmd[1] = cmds[i][1];	      // Command low byte
+		cmd_pec = ADBMS_calcPec15(cmd, 2);
+		cmd[2] = (uint8_t) (cmd_pec >> 8);
+		cmd[3] = (uint8_t) (cmd_pec);
+
+		ADBMS_nCS_Low();
+		HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+		ADBMS_nCS_High();
+	}
 }
 
 /**
@@ -69,6 +101,7 @@ void Wakeup_Sleep(void) {
 void ADBMS_init(){
 	Wakeup_Sleep();
 	ADBMS_UNSNAP();
+	Clear_Registers();
 	ADBMS_startADCVoltage();
 }
 
@@ -128,7 +161,7 @@ void ADBMS_startADCVoltage() {
 	isoSPI_Idle_to_Ready();
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
 	ADBMS_nCS_High();
 }
 
@@ -277,7 +310,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
                     // (Adjust this formula to the exact datasheet scaling for your part/mode.)
 				    uint32_t uV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
-				    uint16_t mV = (uint16_t)((uV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
+				    uint16_t mV = (uint16_t)(uV / 1000u);      // Scale from µV to mV, add 500 for integer rounding
 				    if (mV > 65535u) mV = 65535u;                       // Clamp to 16-bit storage field
 				    mod[devIndex].cell_volt[cellInMod] = mV;  //store in mV
 				}
@@ -297,94 +330,146 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	return ret;
 }
 
-/**
- * 	write command to all pwm registers. This setup only allows to use 4b'1111 (HIGH) or 4b'0000 (LOW). 
- * @param total_ic		total count of ic (daisy chain)
- * @param pwm			A two dimensional array of the configuration data that will be written
- */
-void LTC_writePWM(uint8_t total_ic, uint8_t pwm) {
-	// NOTE currently chaging this method to only assign a specific PWM to all registers
-
-	// TODO change it back to relying on @param pwm for duty cycle assignment. 
-
-	const uint8_t BYTES_IN_REG = 6;
-	const uint8_t CMD_LEN = 4 + (8 * total_ic);
-	uint16_t pwm_pec;
+void ADBMS_writeCFGB(BalanceStatus *blst) {
+	uint8_t cmd[4];
+	uint8_t cfg[8];
 	uint16_t cmd_pec;
-	uint8_t cmd_index; // command counter
+	uint16_t cfg_pec;
+	uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)] = {0};
 
-	// init bits
-	wrpwm_buffer[0] = 0x00;
-	wrpwm_buffer[1] = 0x20;
-	cmd_pec = ADBMS_calcPec15(wrpwm_buffer, 2);
-	wrpwm_buffer[2] = (uint8_t) (cmd_pec >> 8);
-	wrpwm_buffer[3] = (uint8_t) (cmd_pec);
+	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF); // VUV[7:0]
+//	printf("CFGBR0 %X\n", CFGBR0);
+	uint8_t CFGBR1 = (uint8_t)(((VUV >> 8) & 0x0F) << 4 | (VOV & 0x0F)); // VUV[11:8], VOV[3:0]
+//	printf("CFGBR1 %X\n", CFGBR1);
+    uint8_t CFGBR2 = (uint8_t)((VOV >> 4) & 0xFF); // VOV[11:4];
+//    printf("CFGBR2 %X\n", CFGBR2);
+    uint8_t CFGBR3 = 0x00; //settings for discharge timer
+//    printf("CFGBR3 %X\n", CFGBR3);
 
-	cmd_index = 4;				// Command bits
-	for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--) // executes for each ltc6811 in daisy chain, this loops starts with
-			{
-		// the last IC on the stack. The first configuration written is
-		// received by the last IC in the daisy chain
+	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
+	cmd[0] = (uint8_t) (WRCFGB >> 8);
+	cmd[1] = (uint8_t) (WRCFGB);
+	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
+	memcpy(&wrcfg_buffer[0], cmd, 4);
 
-		for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG;
-				current_byte++) // executes for each of the 6 bytes in the CFGR register
-				{
-			// current_byte is the byte counter
 
-			wrpwm_buffer[cmd_index] = pwm; //adding the pwm data to the array to be sent
-			cmd_index = cmd_index + 1;
+	// Pack command bits into the register CFGBR4
+	for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++){
+		uint8_t CFGBR4 = 0;
+		uint8_t CFGBR5 = 0;
+		for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
+			if(cell_idx < 8){
+				CFGBR4 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << cell_idx;
+			}
+			else{
+				CFGBR5 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << (cell_idx - 8);
+			}
 		}
 
-		pwm_pec = (uint16_t) ADBMS_calcPec15(&pwm, BYTES_IN_REG); // calculating the PEC for each ICs configuration register data
-		wrpwm_buffer[cmd_index] = (uint8_t) (pwm_pec >> 8);
-		wrpwm_buffer[cmd_index + 1] = (uint8_t) pwm_pec;
-		cmd_index = cmd_index + 2;
-	}
+//		printf("M%d, CFGBR4:%X\n", dev_idx, CFGBR4);
+//		printf("M%d, CFGBR5:%X\n", dev_idx, CFGBR5);
+		cfg[0] = CFGBR0;
+		cfg[1] = CFGBR1;
+		cfg[2] = CFGBR2;
+		cfg[3] = CFGBR3;
+		cfg[4] = CFGBR4;
+		cfg[5] = CFGBR5;
+		cfg_pec = ADBMS_calcPec10(cfg, 6, NULL);
+		cfg[6] = (uint8_t) (cfg_pec >> 8);
+		cfg[7] = (uint8_t) (cfg_pec);
 
-	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+		int base = 4 + dev_idx * 8;
+		memcpy(&wrcfg_buffer[base], cfg, 8);
+//		printf("cfg %X\n", cfg);
+
+	}
+//	printf("wrcfg_buffer\n");
+//	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
+//	    printf("%02X", wrcfg_buffer[i]);
+//	}
+//	printf("a\n");
+
+	// Ensure the isoSPI port is awake before issuing the command
+	isoSPI_Idle_to_Ready();
+
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrpwm_buffer, CMD_LEN, 100);
+
+	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, sizeof(wrcfg_buffer), 100);
+
 	ADBMS_nCS_High();
 }
 
-void LTC_writeCFG(uint8_t total_ic, //The number of ICs being written to
-		uint8_t config[][6] //A two dimensional array of the configuration data that will be written
-		) {
-	const uint8_t BYTES_IN_REG = 6;
-	const uint8_t CMD_LEN = 4 + (8 * total_ic);
-	uint16_t cfg_pec;
-	uint8_t cmd_index; //command counter
+LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
+	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
+	HAL_StatusTypeDef hal_ret;
+	const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC per IC
+	const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+	uint8_t rx_buffer[RX_LEN];
+	uint8_t  cmd[4];
+	uint16_t cmd_pec;
 
-	wrcfg_buffer[0] = 0x00;
-	wrcfg_buffer[1] = 0x01;
-	wrcfg_buffer[2] = 0x3d;
-	wrcfg_buffer[3] = 0x6e;
+	// Build RDCFGB command to get the cfg on the chip
+	cmd[0] = (uint8_t) (RDCFGB >> 8);
+	cmd[1] = (uint8_t) (RDCFGB);
+	cmd_pec = ADBMS_calcPec15(cmd, 2);
+	cmd[2] = (uint8_t) (cmd_pec >> 8);
+	cmd[3] = (uint8_t) (cmd_pec);
 
-	cmd_index = 4;
-	// executes for each ltc6811 in daisy chain, this loops starts with
-	for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--) {
-		// the last IC on the stack. The first configuration written is
-		// received by the last IC in the daisy chain
+	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
 
-		// executes for each of the 6 bytes in the CFGR register
-		for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG;
-				current_byte++) {
-			// current_byte is the byte counter
+	ADBMS_nCS_Low();
 
-			wrcfg_buffer[cmd_index] = config[current_ic - 1][current_byte]; //adding the config data to the array to be sent
-			cmd_index = cmd_index + 1;
-		}
-
-		cfg_pec = (uint16_t) ADBMS_calcPec15(&config[current_ic - 1][0], BYTES_IN_REG); // calculating the PEC for each ICs configuration register data
-		wrcfg_buffer[cmd_index] = (uint8_t) (cfg_pec >> 8);
-		wrcfg_buffer[cmd_index + 1] = (uint8_t) cfg_pec;
-		cmd_index = cmd_index + 2;
+	// Transmit the RDAC command
+	hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+	if (hal_ret != HAL_OK) {
+		ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
+		ADBMS_nCS_High();
+		return ret;
 	}
 
-	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
-	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, CMD_LEN, 100);
+	// Receive one page from every device in the chain (concatenated)
+	hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
+	if (hal_ret != HAL_OK) {
+		ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
+		ADBMS_nCS_High();
+		return ret;
+	}
+
 	ADBMS_nCS_High();
+
+	printf("rdcfg_buffer\n");
+	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
+	    printf("%02X", rx_buffer[i]);
+	}
+	printf("a\n");
+
+
+	// Validate and unpack each device’s 6-byte data + 2-byte PEC10
+	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
+		uint16_t offset = (uint16_t)(modIndex * RX_BYTES_PER_IC);
+
+		uint8_t *CFGB    = &rx_buffer[offset];            // 6 data bytes
+		uint8_t *CFGBPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
+
+		// Check RX PEC10 for data integrity
+		bool pec10Check = ADBMS_checkRxPec(CFGB, DATA_LEN, CFGBPec);
+		if (!pec10Check) {
+//				printf("M%d failed for voltage reading\n", devIndex + 1);
+			continue; // Skip this device’s page if PEC fails
+		}
+
+		for (uint8_t cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++) {
+			rdfcgb[modIndex].CFGBR[cfgIndex] = CFGB[cfgIndex];
+		}
+	}
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		for(int cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++){
+			printf("M%d CFGBR: %X\n", modIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
+		}
+	}
+	return ret;
 }
 
 /**

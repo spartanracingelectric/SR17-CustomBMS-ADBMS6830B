@@ -44,6 +44,24 @@
 static const float invNominalTemp = 1.0f / (ntcNominalTemp + 273.15f);
 static const float invBetaFactor = 1.0f / ntcBetaFactor;
 
+void Module_init(ModuleData *mod){
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		for(int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++){
+			mod[modIndex].cell_volt[cellIndex] = 0xFFFF;
+		}
+		for(int thermIndex = 0; thermIndex < NUM_THERM_TOTAL; thermIndex++){
+			mod[modIndex].cell_temp[NUM_THERM_TOTAL] = 0xFF;
+		}
+		mod[modIndex].average_volt = 0xFFFF;
+		mod[modIndex].average_temp = 0xFFFF;
+		mod[modIndex].sum_volt_module = 0xFFFF;
+		mod[modIndex].pressure = 0xFFFF;
+		mod[modIndex].humidity = 0xFFFF;
+		mod[modIndex].atmos_temp = 0xFFFF;
+	}
+
+}
+
 // addresses provided by the mux (uses i2c protocol)
 //static uint8_t BMS_MUX[][6] = {{ 0x69, 0x28, 0x0F, 0xF9, 0x7F, 0xF9 }, { 0x69, 0x28, 0x0F, 0xE9, 0x7F, 0xF9 },
 //								 { 0x69, 0x28, 0x0F, 0xD9, 0x7F, 0xF9 }, { 0x69, 0x28, 0x0F, 0xC9, 0x7F, 0xF9 },

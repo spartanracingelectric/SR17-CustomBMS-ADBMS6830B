@@ -52,6 +52,7 @@
 
 #define LTC6811_Vdd 51450.0f
 
+void Module_init(ModuleData *mod);
 /* ===== Public API: Cell Voltages ============================================
  * Read_Volt():
  *  - Triggers and collects cell voltage measurements for all modules.

@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "module.h"
+#include "accumulator.h"
 #include "safety.h"
 #include "string.h"
 #include <time.h>
@@ -84,8 +85,8 @@ uint8_t TimerPacket_FixedPulse(TimerPacket *tp);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static uint8_t BMS_MUX_PAUSE[2][6] = {{0x69, 0x28, 0x0F, 0x09, 0x7F, 0xF9},
-                                      {0x69, 0x08, 0x0F, 0x09, 0x7F, 0xF9}};
+//static uint8_t BMS_MUX_PAUSE[2][6] = {{0x69, 0x28, 0x0F, 0x09, 0x7F, 0xF9},
+//                                      {0x69, 0x08, 0x0F, 0x09, 0x7F, 0xF9}};
 /* USER CODE END 0 */
 
 /**
@@ -101,6 +102,8 @@ int main(void)
     TimerPacket canReconnection;
     AccumulatorData accmData;
     ModuleData modData[NUM_MOD];
+    BalanceStatus balanceStatus[NUM_MOD];
+    RDFCGB_buffer readCFGB[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
@@ -144,6 +147,8 @@ int main(void)
     ADBMS_nCS_High();
 
     ADBMS_init();
+    Module_init(modData);
+    accumulator_init(&accmData);
 
 //	//Sending a fault signal and reseting it
 //	HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
@@ -176,7 +181,7 @@ int main(void)
 //    LTC_SPI_writeCommunicationSetting(NUM_MOD, BMS_MUX_PAUSE[1]);
 //    LTC_SPI_requestData(2);
 ////				HAL_Delay(1); //this delay is for stablize mux
-//    Balance_init(accmData.balance_status);
+    Balance_init(balanceStatus, readCFGB);
 //
 //    ReadHVInput(&accmData);
 //    getSumPackVoltage(&accmData, modData);
@@ -197,7 +202,7 @@ int main(void)
 //			ADBMS_ReadSID(modData);
 //			 HAL_ADCEx_Calibration_Start(&hadc1);
 //			 HAL_ADCEx_Calibration_Start(&hadc2);
-		printf("hello\n");
+//		printf("hello\n");
 //			//reading cell voltages
 ////			printf("volt start\n");
 			Read_Volt(modData);
@@ -238,29 +243,21 @@ int main(void)
 ////			}
 ////			printf("pack volt start\n");
 //			ReadHVInput(&accmData);
-//			getSumPackVoltage(&accmData, modData);
+			getSumPackVoltage(&accmData, modData);
 ////			printf("pack volt end\n");
-//
+			accumulator_getMinVolatage(&accmData, modData);
+			accumulator_getMaxVolatage(&accmData, modData);
 //			SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 //			prev_soc_time = HAL_GetTick();
 //			//getting the summary of all cells in the pack
-//            Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
-//			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
+            Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
+			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
 ////			Passive balancing is called unless a fault has occurred
-////			if (safetyFaults == 0 && BALANCE
-////					&& ((modPackInfo.cell_volt_highest
-////							- modPackInfo.cell_volt_lowest) > 50)) {
-////				Start_Balance((uint16_t*) modPackInfo.cell_volt,
-////				NUM_MOD, modPackInfo.cell_volt_lowest);
-//
-////			} else if (BALANCE) {
-////				End_Balance(&safetyFaults);
-////			}
-////            if(&accmData.cell_difference > BALANCE_THRESHOLD){
-////				Start_Balance(modData.cell_volt, accmData.cell_volt_lowest, accmData.balance_status);
-////			}
-//
-//			End_Balance(accmData.balance_status);//end the balance if CAN RX recieve 0
+
+			Start_Balance(modData, &accmData, balanceStatus);
+
+
+			End_Balance(balanceStatus, readCFGB);//end the balance if CAN RX recieve 0
 //
 //
 //			//calling all CAN realated methods
@@ -273,7 +270,7 @@ int main(void)
 			CAN_Send_Voltage(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_Send_Balance_Status(&msg, accmData.balance_status);
+			CAN_Send_Balance_Status(&msg, balanceStatus, readCFGB);
 		}
     }
   /* USER CODE END 3 */
