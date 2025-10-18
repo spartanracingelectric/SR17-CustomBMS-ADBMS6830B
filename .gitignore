@@ -3,4 +3,6 @@ Debug/
 .ccls
 .ccls-cache/
 .DS_Store
+.vscode/
+.cache/
 build/
