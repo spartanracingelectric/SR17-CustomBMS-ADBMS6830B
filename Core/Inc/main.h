@@ -88,6 +88,7 @@ typedef struct AccumulatorData {
 	uint16_t balance_status[NUM_MOD];
     uint32_t soc; // microamps!!!!!
     uint32_t current;
+	uint32_t sop; // microwatts? !!!!!
 } AccumulatorData;
 
 /**
