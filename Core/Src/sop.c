@@ -1,10 +1,8 @@
-//import OCV, soc, R0, I, Inom
 #include "main.h"
+#include "sop.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <time.h>
 
 //assumes temps stored as rounded integers
 float gt(uint16_t cell_temp_lowest) {
@@ -14,6 +12,7 @@ float gt(uint16_t cell_temp_lowest) {
     return 0;
 }
 
+// soc currently not scaled properly for these calculations
 float gz(uint32_t soc) {
     if (0.02 < soc && soc <= 0.05) return (soc - 0.02)/0.03; // low ramp 0.02
     if (0.05 < soc && soc <= 0.9) return 1; // low full 0.05
@@ -29,3 +28,5 @@ uint32_t SoPcalc(uint32_t soc, uint16_t cell_temp_lowest, float R0, float Inom) 
     float Vchg = ocv + Ichg * R0;
     return -Vchg*Ichg;
 }
+
+// ignore heavy float usage (will change in accordance with given units/scaling and fixed point math)
