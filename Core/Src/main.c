@@ -97,13 +97,13 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-    GpioTimePacket tp_led_heartbeat;
-    TimerPacket cycleTimeCap;
-    TimerPacket canReconnection;
-    AccumulatorData accmData;
-    ModuleData modData[NUM_MOD];
-    BalanceStatus balanceStatus[NUM_MOD];
-    RDFCGB_buffer readCFGB[NUM_MOD];
+	GpioTimePacket tp_led_heartbeat;
+	TimerPacket cycleTimeCap;
+	TimerPacket canReconnection;
+	AccumulatorData accmData;
+	ModuleData modData[NUM_MOD];
+	BalanceStatus balanceStatus[NUM_MOD];
+	ConfigurationRegisterB configB[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
@@ -149,7 +149,7 @@ int main(void)
     ADBMS_init();
     Module_init(modData);
     accumulator_init(&accmData);
-	Balance_init(balanceStatus, readCFGB);
+	Balance_init(balanceStatus, configB);
 
 
 	// Sending a fault signal and reseting it
@@ -157,7 +157,7 @@ int main(void)
 	HAL_Delay(1000);
     ClearFaultSignal();	//those are for debug the charger and mobo
 
-    Module_readVoltages(modData);
+    //Module_getVoltages(modData);
 
 	// ReadHVInput(&accmData);
 	// getSumPackVoltage(&accmData, modData);
@@ -179,7 +179,7 @@ int main(void)
 			//HAL_ADCEx_Calibration_Start(&hadc1);
 			//HAL_ADCEx_Calibration_Start(&hadc2);
 
-			Module_readVoltages(modData);
+			Module_getVoltages(modData);
 			// printf("Cell voltages:\n");
 			// for (int i = 0; i < NUM_CELLS; i++) {
 			// 	printf("Cell %d: %u mV\n", i + 1, modPackInfo.cell_volt[i]);
@@ -195,9 +195,8 @@ int main(void)
             Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
 			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
 
-//			Passive balancing is called unless a fault has occurred
-			Start_Balance(modData, &accmData, balanceStatus);
-			End_Balance(balanceStatus, readCFGB);//end the balance if CAN RX recieve 0
+			// Passive balancing is called unless a fault has occurred
+			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
 
 			if(TimerPacket_FixedPulse(&canReconnection)){
 				can_skip_flag = 0;
@@ -207,7 +206,7 @@ int main(void)
 			CAN_Send_Voltage(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_Send_Balance_Status(&msg, balanceStatus, readCFGB);
+			CAN_Send_Balance_Status(&msg, balanceStatus);
 		}
     }
   /* USER CODE END 3 */

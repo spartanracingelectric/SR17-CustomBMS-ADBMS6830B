@@ -62,8 +62,8 @@ void Module_init(ModuleData *mod){
 
 }
 
-void Module_readVoltages(ModuleData *mod) {
-	ADBMS_readCellVoltages(mod);
+void Module_getVoltages(ModuleData *mod) {
+	ADBMS_getCellVoltages(mod);
 }
 
 

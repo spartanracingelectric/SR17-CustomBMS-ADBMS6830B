@@ -58,7 +58,7 @@ void Module_init(ModuleData *mod);
  *  - Triggers and collects cell voltage measurements for all modules.
  *  - Populates ModuleData cell_volt[] (and may update per-module aggregates).
  */
-void Module_readVoltages(ModuleData *mod);
+void Module_getVoltages(ModuleData *mod);
 
 /* ===== Public API: Temperature Conversions ==================================
  * Get_Actual_Temps():

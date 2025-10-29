@@ -42,19 +42,14 @@
 #define UNSNAP 0x002F
 #define RDSID 0x002C
 
-/* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
- * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
- */
-#define LTC_CMD_RDAUXA 0x000C
-#define LTC_CMD_RDAUXB 0x000E
+#define VUV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
+#define VOV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
 
-/* ===== SPI/HAL Error Bitfield Layout ========================================
- * Return type LTC_SPI_StatusTypeDef uses these bit positions to indicate
- * TX/RX error, busy, and timeout conditions (mirroring HAL status but separated
- * for TX vs RX paths by an offset).
- */
-#define LTC_SPI_TX_BIT_OFFSET 0	// Start bit index for TX errors
-#define LTC_SPI_RX_BIT_OFFSET 4	// Start bit index for RX errors
+#define VUV   VUV_FROM_VOLTAGE(2.50f)
+#define VOV   VOV_FROM_VOLTAGE(4.2f) 
+
+
+
 
 /* ===== Frame Sizes and Packing ==============================================
  * REG_LEN: 8 bytes per IC response frame: 6 data + 2-byte PEC10
@@ -72,7 +67,6 @@
 #define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
 // #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
 #define CELLS_PER_REGISTER 3
-#define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6
 
 #define WRCFGA 0x0001
@@ -172,24 +166,16 @@ void ADBMS_snap();
 void ADBMS_unsnap();
 
 /* ===== Public API: Measurement and Register Access ===========================
- * ADBMS_getAVGCellVoltages(): read all RDCV pages from every IC (with PEC check),
+ * ADBMS_getCellVoltages(): read all RDCV pages from every IC (with PEC check),
  *                             convert raw counts to mV, and store into ModuleData.
- * LTC_writePWM():             write per-IC PWM/balance bits (affects cell bleeding).
- * LTC_writeCFG():             write per-IC configuration registers (6-byte payload).
- * LTC_SPI_writeCommunicationSetting(): write COMM register (GPIO-serial/isoSPI bridge).
- * LTC_SPI_requestData():      request 'len' bytes back (after a preceding command).
- * LTC_readGPIOs():            read aux/GPIO pages, return into provided array.
- * LTC_startADC_GPIO():        start auxiliary ADC conversions (mode + channel mask).
- * LTC_POLLADC():              poll until ADC completes; returns remaining/converged.
- * Calc_Pack_Voltage():        sum per-cell mV array into total pack voltage (mV).
- * ADBMS_ReadSID():            read 6-byte silicon ID per IC (PEC10 verified).
  */
-void ADBMS_readCellVoltages(ModuleData *mod);
-void ADBMS_writeCFGB(BalanceStatus *blst);
-void ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
+void ADBMS_getCellVoltages(ModuleData *mod);
+void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst);
+void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegisterB *configB);
+void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
 void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
-void ADBMS_receiveData(uint8_t *rxBuffer, uint8_t dataLength);
+void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
 void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 
 /* ===== Public API: PEC Helpers ==============================================

@@ -434,8 +434,7 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt,
  *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
  *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
  */
-void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst, RDFCGB_buffer *rdfcgb){
-	Get_balanceStatus(blst, rdfcgb);
+void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst) {
 	uint32_t CAN_ID = (uint32_t)CAN_ID_BALANCE_STATUS;
 	uint8_t numByte = 8;
 
@@ -445,20 +444,20 @@ void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst, RDFCGB_buf
 			buffer->balanceStatus[reset] = 0;
 		}
 		if(modIndex >= 8){
-			buffer->balanceStatus[0] =   blst[modIndex    ] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[1] =  (blst[modIndex    ] .balancing_cells >> 8)  & 0xFF;
-			buffer->balanceStatus[2] =   blst[modIndex + 1] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[3] =  (blst[modIndex + 1] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[0] =   blst[modIndex    ] .cellsBalancing        & 0xFF;
+			buffer->balanceStatus[1] =  (blst[modIndex    ] .cellsBalancing >> 8)  & 0xFF;
+			buffer->balanceStatus[2] =   blst[modIndex + 1] .cellsBalancing        & 0xFF;
+			buffer->balanceStatus[3] =  (blst[modIndex + 1] .cellsBalancing >> 8)  & 0xFF;
 		}
 		else{
-			buffer->balanceStatus[0] =   blst[modIndex    ] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[1] =  (blst[modIndex    ] .balancing_cells >> 8)  & 0xFF;
-			buffer->balanceStatus[2] =   blst[modIndex + 1] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[3] =  (blst[modIndex + 1] .balancing_cells >> 8)  & 0xFF;
-			buffer->balanceStatus[4] =   blst[modIndex + 2] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[5] =  (blst[modIndex + 2] .balancing_cells >> 8)  & 0xFF;
-			buffer->balanceStatus[6] =   blst[modIndex + 3] .balancing_cells        & 0xFF;
-			buffer->balanceStatus[7] =  (blst[modIndex + 3] .balancing_cells >> 8)  & 0xFF;
+			buffer->balanceStatus[0] =   blst[modIndex    ] .cellsBalancing        & 0xFF;
+			buffer->balanceStatus[1] =  (blst[modIndex    ] .cellsBalancing >> 8)  & 0xFF;
+			buffer->balanceStatus[2] =   blst[modIndex + 1] .cellsBalancing        & 0xFF;
+			buffer->balanceStatus[3] =  (blst[modIndex + 1] .cellsBalancing >> 8)  & 0xFF;
+			buffer->balanceStatus[4] =   blst[modIndex + 2] .cellsBalancing       & 0xFF;
+			buffer->balanceStatus[5] =  (blst[modIndex + 2] .cellsBalancing >> 8)  & 0xFF;
+			buffer->balanceStatus[6] =   blst[modIndex + 3] .cellsBalancing       & 0xFF;
+			buffer->balanceStatus[7] =  (blst[modIndex + 3] .cellsBalancing >> 8)  & 0xFF;
 		}
 //		printf("M1 balancing status %X\n", blst[0].balancing_cells);
 

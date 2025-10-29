@@ -24,8 +24,6 @@ const uint8_t CLRAUX[2]  = {0x07, 0x12};
 const uint8_t CLRSPIN[2] = {0x07, 0x16};
 const uint8_t CLRFLAG[2] = {0x07, 0x17};
 const uint8_t CLOVUV[2]  = {0x07, 0x15};
-const uint16_t VUV       = 0x01A1;
-const uint16_t VOV       = 0x0465;
 
 
 static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
@@ -187,14 +185,14 @@ void ADBMS_unsnap(){
 	ADBMS_nCS_High();
 }
 
-void ADBMS_receiveData(uint8_t *rxBuffer, uint8_t dataLength)
+void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN])
 {
 	//TODO: Verify PEC
-	HAL_SPI_Receive(&hspi1, rxBuffer, dataLength, 100);
+	HAL_SPI_Receive(&hspi1, (uint8_t*)&rxBuffer[0][0], NUM_MOD * (DATA_LEN + PEC_LEN), 100);
 }
 
 void ADBMS_sendCommand(uint16_t command) {
-	uint8_t txBuffer[4];
+	uint8_t txBuffer[COMMAND_LENGTH + PEC_LEN];
 	txBuffer[0] = (uint8_t)(command >> 8);
 	txBuffer[1] = (uint8_t)(command);
 	
@@ -227,7 +225,7 @@ void ADBMS_sendCommand(uint16_t command) {
  * @param[out] mod  Array of ModuleData; each entry receives cell voltages in mV.
  * @return LTC_SPI_StatusTypeDef  Bitfield with TX/RX error flags set on HAL failures.
  */
-void ADBMS_readCellVoltages(ModuleData *moduleData) 
+void ADBMS_getCellVoltages(ModuleData *moduleData) 
 {
 	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 	
@@ -238,7 +236,7 @@ void ADBMS_readCellVoltages(ModuleData *moduleData)
 		isoSPI_Idle_to_Ready();
 		ADBMS_nCS_Low();
 		ADBMS_sendCommand(ADBMS_CMD_RDAC[registerIndex]);
-		ADBMS_receiveData((uint8_t*)rxBuffer, RX_LEN);
+		ADBMS_receiveData(rxBuffer);
 		ADBMS_nCS_High();
 
 		ADBMS_parseVoltages(rxBuffer, registerIndex, moduleData);
@@ -253,7 +251,7 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 
 	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
 	{
-		bool isDataValid = ADBMS_checkRxPec(rxBuffer[moduleIndex][0], DATA_LEN, rxBuffer[moduleIndex][DATA_LEN]);
+		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		if (!isDataValid) 
 		{
 			//TODO: Proper error state
@@ -276,137 +274,90 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
 				moduleData[moduleIndex].cell_volt[cellIndex] = milliVoltage;
 			}
-			
 		}
 	}
 }
 
-void ADBMS_writeCFGB(BalanceStatus *blst) 
+void ADBMS_sendData(uint8_t data[NUM_MOD][DATA_LEN])  
 {
-	uint8_t cmd[4];
-	uint8_t cfg[8];
-	uint16_t cmd_pec;
-	uint16_t cfg_pec;
-	uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)] = {0};
+	uint8_t txBuffer[NUM_MOD][DATA_LEN + PEC_LEN];
+	
+	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
+	{
+		memcpy(txBuffer[moduleIndex], data[moduleIndex], DATA_LEN);
+		uint16_t dataPec = ADBMS_calcPec10(data[moduleIndex], DATA_LEN, NULL);
+		txBuffer[moduleIndex][DATA_LEN + 0] = (uint8_t)(dataPec >> 8);
+		txBuffer[moduleIndex][DATA_LEN + 1] = (uint8_t)(dataPec);
+	}
 
+	HAL_SPI_Transmit(&hspi1, (uint8_t*)&txBuffer, (DATA_LEN + PEC_LEN) * NUM_MOD, 100);
+}
+
+void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst) 
+{
+	uint8_t txBuffer[NUM_MOD][DATA_LEN];
 	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF); // VUV[7:0]
-//	printf("CFGBR0 %X\n", CFGBR0);
 	uint8_t CFGBR1 = (uint8_t)(((VUV >> 8) & 0x0F) << 4 | (VOV & 0x0F)); // VUV[11:8], VOV[3:0]
-//	printf("CFGBR1 %X\n", CFGBR1);
     uint8_t CFGBR2 = (uint8_t)((VOV >> 4) & 0xFF); // VOV[11:4];
-//    printf("CFGBR2 %X\n", CFGBR2);
     uint8_t CFGBR3 = 0x00; //settings for discharge timer
-//    printf("CFGBR3 %X\n", CFGBR3);
-
-	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
-	cmd[0] = (uint8_t) (WRCFGB >> 8);
-	cmd[1] = (uint8_t) (WRCFGB);
-	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-	memcpy(&wrcfg_buffer[0], cmd, 4);
-
-
 	// Pack command bits into the register CFGBR4
-	for (int dev_idx = 0; dev_idx < NUM_MOD; dev_idx++){
+	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
 		uint8_t CFGBR4 = 0;
 		uint8_t CFGBR5 = 0;
-		for (int cell_idx = 0; cell_idx < NUM_CELL_PER_MOD; cell_idx++) {
-			if(cell_idx < 8){
-				CFGBR4 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << cell_idx;
+		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++) 
+		{
+			if(cellIndex < 8)
+			{
+				CFGBR4 |= (blst[moduleIndex].cellsToBalance[cellIndex] & 0x01) << cellIndex;
 			}
-			else{
-				CFGBR5 |= (blst[dev_idx].balance_cells[cell_idx] & 0x01) << (cell_idx - 8);
+			else
+			{
+				CFGBR5 |= (blst[moduleIndex].cellsToBalance[cellIndex] & 0x01) << (cellIndex - 8);
 			}
 		}
-
-//		printf("M%d, CFGBR4:%X\n", dev_idx, CFGBR4);
-//		printf("M%d, CFGBR5:%X\n", dev_idx, CFGBR5);
-		cfg[0] = CFGBR0;
-		cfg[1] = CFGBR1;
-		cfg[2] = CFGBR2;
-		cfg[3] = CFGBR3;
-		cfg[4] = CFGBR4;
-		cfg[5] = CFGBR5;
-		cfg_pec = ADBMS_calcPec10(cfg, 6, NULL);
-		cfg[6] = (uint8_t) (cfg_pec >> 8);
-		cfg[7] = (uint8_t) (cfg_pec);
-
-		int base = 4 + dev_idx * 8;
-		memcpy(&wrcfg_buffer[base], cfg, 8);
-//		printf("cfg %X\n", cfg);
-
+		txBuffer[moduleIndex][0] = CFGBR0;
+		txBuffer[moduleIndex][1] = CFGBR1;
+		txBuffer[moduleIndex][2] = CFGBR2;
+		txBuffer[moduleIndex][3] = CFGBR3;
+		txBuffer[moduleIndex][4] = CFGBR4;
+		txBuffer[moduleIndex][5] = CFGBR5;
 	}
-//	printf("wrcfg_buffer\n");
-//	for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
-//	    printf("%02X", wrcfg_buffer[i]);
-//	}
-//	printf("a\n");
-
-	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
-
 	ADBMS_nCS_Low();
-
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, sizeof(wrcfg_buffer), 100);
-
+	ADBMS_sendCommand(WRCFGB);
+	ADBMS_sendData(txBuffer);
 	ADBMS_nCS_High();
 }
 
-void ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
-	uint8_t rx_buffer[RX_LEN];
-	uint8_t  cmd[4];
-	uint16_t cmd_pec;
-
-	// Build RDCFGB command to get the cfg on the chip
-	cmd[0] = (uint8_t) (RDCFGB >> 8);
-	cmd[1] = (uint8_t) (RDCFGB);
-	cmd_pec = ADBMS_calcPec15(cmd, 2);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
+void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB) 
+{
+	uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN];
 
 	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
-
 	ADBMS_nCS_Low();
-
-	// Transmit the RDAC command
-	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-
-	// Receive one page from every device in the chain (concatenated)
-	HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
-	
+	ADBMS_sendCommand(RDCFGB);
+	ADBMS_receiveData(rxBuffer);
 	ADBMS_nCS_High();
 
-	// printf("rdcfg_buffer\n");
-	// for (int i = 0; i < 4 + 8 * NUM_MOD; i++) {
-	//     printf("%02X", rx_buffer[i]);
-	// }
-	// printf("a\n");
-
-
-	// Validate and unpack each device’s 6-byte data + 2-byte PEC10
-	for (uint8_t modIndex = 0; modIndex < NUM_MOD; modIndex++) {
-		uint16_t offset = (uint16_t)(modIndex * RX_BYTES_PER_IC);
-
-		uint8_t *CFGB    = &rx_buffer[offset];            // 6 data bytes
-		uint8_t *CFGBPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
-
-		// Check RX PEC10 for data integrity
-		bool pec10Check = ADBMS_checkRxPec(CFGB, DATA_LEN, CFGBPec);
-		if (!pec10Check) {
-//				printf("M%d failed for voltage reading\n", devIndex + 1);
-			continue; // Skip this device’s page if PEC fails
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
+	{
+		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN + 0]);
+		if (!isDataValid) 
+		{
+			//TODO: Add proper error state
+			continue; 
 		}
-
-		for (uint8_t cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++) {
-			rdfcgb[modIndex].CFGBR[cfgIndex] = CFGB[cfgIndex];
-		}
+		ADBMS_parseConfigurationRegisterB(rxBuffer[moduleIndex], &configB[moduleIndex]);
 	}
-	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
-		for(int cfgIndex = 0; cfgIndex < DATA_LEN; cfgIndex++){
-			//: %X\n", modIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
-		}
-	}
+}
+
+void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegisterB *configB) 
+{
+	//TODO: Convert VUV and VOV into voltage
+	configB->underVoltageThreshold_V = (uint16_t)data[0] | (uint16_t)((data[1] & 0x0Fu) << 8);
+	configB->overVoltageThreshold_V = (uint16_t)((data[1] >> 4) & 0x0Fu) | (uint16_t)(data[2] << 4);
+	configB->cellsDischargeStatus = (uint16_t)data[4] | (uint16_t)(data[5] << 8);
 }
 
 
@@ -481,43 +432,32 @@ static const uint16_t crc10Table[256] =
  * @param[out] read_sid  [NUM_MOD][DATA_LEN] destination for per-module 6-byte SIDs.
  * @return LTC_SPI_StatusTypeDef with TX/RX error bits set on HAL failures (PEC errors are logged only).
  */
-LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod) {
-    LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-    HAL_StatusTypeDef hal_ret;
-
-    uint8_t rx_buffer[RX_LEN];  // Concatenated receive buffer for the whole chain
+void ADBMS_ReadSID(ModuleData *mod) {
+	uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN];  // Concatenated receive buffer for the whole chain
 
 	//TODO: Finish
     isoSPI_Idle_to_Ready();
 
     ADBMS_nCS_Low();
 	ADBMS_sendCommand(RDSID);
-	ADBMS_receiveData(rx_buffer, RX_LEN);
+	ADBMS_receiveData(rxBuffer);
     ADBMS_nCS_High();
 
-    // 3) Validate and unpack each module's payload
-    for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
-        uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
+//     // 3) Validate and unpack each module's payload
+//     for (uint8_t Index = 0; devIndex < NUM_MOD; devIndex++) {
+//         uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
 
-        uint8_t *sid    = &rx_buffer[offset];            // 6-byte SID
-        uint8_t *sidpec = &rx_buffer[offset + DATA_LEN]; // 2-byte PEC10 (packed with CC)
+//         uint8_t *sid    = &rx_buffer[offset];            // 6-byte SID
+//         uint8_t *sidpec = &rx_buffer[offset + DATA_LEN]; // 2-byte PEC10 (packed with CC)
 
-        // Verify 10-bit PEC computed over the 6 SID bytes (+ command counter if present)
-        bool pec10Check = ADBMS_checkRxPec(sid, DATA_LEN, sidpec);
-        if (!pec10Check) {
-//        	printf("M%d failed\n", devIndex + 1);
-            continue; // Skip copying this module’s SID if PEC fails
-        }
-        memcpy(mod[devIndex].sid, sid, DATA_LEN);
-
-        // Pretty print the 6-byte SID for this module
-//        printf("SID M%u: %02X %02X %02X %02X %02X %02X\r\n",
-//                       (unsigned)(devIndex + 1),
-//                       sid[0], sid[1], sid[2], sid[3], sid[4], sid[5]);
-
-    }
-
-    return ret;
+//         // Verify 10-bit PEC computed over the 6 SID bytes (+ command counter if present)
+//         bool pec10Check = ADBMS_checkRxPec(sid, DATA_LEN, sidpec);
+//         if (!pec10Check) {
+// //        	printf("M%d failed\n", devIndex + 1);
+//             continue; // Skip copying this module’s SID if PEC fails
+//         }
+//         memcpy(mod[devIndex].sid, sid, DATA_LEN);
+//     }
 }
 
 /**

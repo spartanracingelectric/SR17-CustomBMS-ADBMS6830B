@@ -116,15 +116,16 @@ typedef struct ModuleData {
 } ModuleData;
 
 typedef struct BalanceStatus {
-	uint8_t balance_cells[NUM_CELL_PER_MOD];
-	uint16_t balancing_cells;
-}BalanceStatus;
+	uint8_t cellsToBalance[NUM_CELL_PER_MOD];
+	uint16_t cellsBalancing;
+} BalanceStatus;
 
-typedef struct RDFCGB_buffer{
-	uint8_t CFGBR[6];
-	uint16_t VUV_12;
-	uint16_t VOV_12;
-}RDFCGB_buffer;
+typedef struct ConfigurationRegisterB {
+	uint16_t underVoltageThreshold_V;
+	uint16_t overVoltageThreshold_V;
+	uint16_t cellsDischargeStatus;
+	//TODO: Add other fields in register
+} ConfigurationRegisterB;
 
 /**
  * @brief CAN transmission staging buffers.
