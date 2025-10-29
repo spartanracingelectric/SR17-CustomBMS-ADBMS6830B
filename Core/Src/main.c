@@ -195,6 +195,7 @@ int main(void)
             Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
 			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
 
+//			Passive balancing is called unless a fault has occurred
 			Start_Balance(modData, &accmData, balanceStatus);
 			End_Balance(balanceStatus, readCFGB);//end the balance if CAN RX recieve 0
 
