@@ -26,7 +26,7 @@ const uint8_t CLRFLAG[2] = {0x07, 0x17};
 const uint8_t CLOVUV[2]  = {0x07, 0x15};
 
 
-static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
+static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
@@ -235,7 +235,7 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 	{
 		isoSPI_Idle_to_Ready();
 		ADBMS_nCS_Low();
-		ADBMS_sendCommand(ADBMS_CMD_RDAC[registerIndex]);
+		ADBMS_sendCommand(AVERAGE_CELL_VOLTAGE_REGISTERS[registerIndex]);
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_nCS_High();
 
@@ -249,7 +249,8 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_REGISTER;
 
-	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
+	//Receive data from last module first
+	for (uint8_t moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		if (!isDataValid) 
@@ -258,13 +259,15 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 			continue;
 		}
 		
-		for (uint8_t cellIndex = initialCellIndex; cellIndex < CELLS_PER_REGISTER; cellIndex++) 
+		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_REGISTER; cellOffset++) 
 		{
-			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellIndex];
-			uint8_t highByte = rxBuffer[moduleIndex][2 * cellIndex + 1];
+			uint8_t cellIndex = initialCellIndex + cellOffset;
+
+			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
+			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
 			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
 
-			if (rawVoltage == 0x8000u) 
+			if (rawVoltage == 0x8000u) //Default value
 			{
 				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
 			}
@@ -285,6 +288,7 @@ void ADBMS_sendData(uint8_t data[NUM_MOD][DATA_LEN])
 	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
 	{
 		memcpy(txBuffer[moduleIndex], data[moduleIndex], DATA_LEN);
+
 		uint16_t dataPec = ADBMS_calcPec10(data[moduleIndex], DATA_LEN, NULL);
 		txBuffer[moduleIndex][DATA_LEN + 0] = (uint8_t)(dataPec >> 8);
 		txBuffer[moduleIndex][DATA_LEN + 1] = (uint8_t)(dataPec);
