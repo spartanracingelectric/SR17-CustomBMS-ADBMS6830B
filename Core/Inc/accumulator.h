@@ -10,10 +10,9 @@
 
 #include "main.h"
 
-void accumulator_init(AccumulatorData *acc);
-
-void accumulator_getMinVolatage(AccumulatorData *acc, ModuleData *mod);
-
-void accumulator_getMaxVolatage(AccumulatorData *acc, ModuleData *mod);
+void Accumulator_init(AccumulatorData *acc);
+void Accumulator_getMinVolatage(AccumulatorData *acc, ModuleData *mod);
+void Accumulator_getMaxVolatage(AccumulatorData *acc, ModuleData *mod);
+void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod);
 
 #endif /* INC_ACCUMULATOR_H_ */

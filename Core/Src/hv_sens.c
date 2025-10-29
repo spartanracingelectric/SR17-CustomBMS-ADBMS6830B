@@ -50,21 +50,7 @@ void ReadHVInput(AccumulatorData *batt) {
 	else{
 		batt->hvsens_pack_voltage = 0;
 	}
-
 }
 
-/* ===== Pack Voltage Summation ===============================================
- * getSumPackVoltage():
- *  - Sums per-cell voltages from ModuleData (assumed millivolts).
- *  - Converts to centivolts (÷100) and stores in batt->sum_pack_voltage.
- */
-void getSumPackVoltage(AccumulatorData *batt, ModuleData *mod){
-	uint32_t sum_voltage = 0;
-
-	for (int i = 0; i < NUM_CELLS; i++) {
-		 sum_voltage += mod->cell_volt[i]; //get sum in millivolts
-	}
-	batt->sum_pack_voltage = (uint16_t)(sum_voltage / 100);  //mV → cV
-}
 
 

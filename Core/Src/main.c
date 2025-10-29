@@ -148,7 +148,7 @@ int main(void)
 
     ADBMS_init();
     Module_init(modData);
-    accumulator_init(&accmData);
+    Accumulator_init(&accmData);
 	Balance_init(balanceStatus, configB);
 
 
@@ -188,8 +188,8 @@ int main(void)
 			// ReadHVInput(&accmData);
 			// getSumPackVoltage(&accmData, modData);
 
-			accumulator_getMinVolatage(&accmData, modData);
-			accumulator_getMaxVolatage(&accmData, modData);
+			Accumulator_getMinVolatage(&accmData, modData);
+			Accumulator_getMaxVolatage(&accmData, modData);
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
             Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
