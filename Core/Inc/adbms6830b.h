@@ -38,6 +38,10 @@
 #define RDACE 0x0049
 #define RDACF 0x004B
 
+#define SNAP 0x002D
+#define UNSNAP 0x002F
+#define RDSID 0x002C
+
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
  * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
  */
@@ -63,7 +67,11 @@
 #define REG_LEN 8
 #define PEC_LEN 2
 #define DATA_LEN 6
-#define ADBMS_SERIES_GROUPS_PER_RDCV 3
+#define COMMAND_LENGTH 2
+#define RX_BYTES_PER_IC (DATA_LEN + PEC_LEN)
+#define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
+// #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
+#define CELLS_PER_REGISTER 3
 #define LTC_SERIES_GROUPS_PER_RDAUX 3
 #define NUM_AUX_SERIES_GROUPS 6
 
@@ -168,8 +176,8 @@ void Clear_Registers();
  */
 void ADBMS_init();
 void ADBMS_startADCVoltage();
-void ADBMS_SNAP();
-void ADBMS_UNSNAP();
+void ADBMS_snap();
+void ADBMS_unsnap();
 
 /* ===== Public API: Measurement and Register Access ===========================
  * ADBMS_getAVGCellVoltages(): read all RDCV pages from every IC (with PEC check),
@@ -194,6 +202,9 @@ void LTC_startADC_GPIO(uint8_t MD,uint8_t CHG);
 int32_t LTC_POLLADC();
 int Calc_Pack_Voltage(uint16_t *read_voltages);
 LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod);
+void ADBMS_sendCommand(uint16_t command);
+void ADBMS_receiveData(uint8_t *rxBuffer, uint8_t dataLength);
+void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).
