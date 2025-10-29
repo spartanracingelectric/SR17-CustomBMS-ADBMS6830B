@@ -149,21 +149,21 @@ int main(void)
     ADBMS_init();
     Module_init(modData);
     accumulator_init(&accmData);
+	Balance_init(balanceStatus, readCFGB);
 
-	//Sending a fault signal and reseting it
-  //HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
+
+	// Sending a fault signal and reseting it
+  	// HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
 	HAL_Delay(1000);
     ClearFaultSignal();	//those are for debug the charger and mobo
 
-    Read_Volt(modData);
+    Module_readVoltages(modData);
 
-    Balance_init(balanceStatus, readCFGB);
+	// ReadHVInput(&accmData);
+	// getSumPackVoltage(&accmData, modData);
 
-//    ReadHVInput(&accmData);
-//    getSumPackVoltage(&accmData, modData);
-
-//	SOC_getInitialCharge(&accmData, modData);
-//	uint32_t prev_soc_time = HAL_GetTick();
+	// SOC_getInitialCharge(&accmData, modData);
+	// uint32_t prev_soc_time = HAL_GetTick();
 
   /* USER CODE END 2 */
 
@@ -175,11 +175,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
 		if (TimerPacket_FixedPulse(&cycleTimeCap)) {
-			ADBMS_ReadSID(modData);
+			//ADBMS_ReadSID(modData);
 			//HAL_ADCEx_Calibration_Start(&hadc1);
 			//HAL_ADCEx_Calibration_Start(&hadc2);
 
-			Read_Volt(modData);
+			Module_readVoltages(modData);
 			// printf("Cell voltages:\n");
 			// for (int i = 0; i < NUM_CELLS; i++) {
 			// 	printf("Cell %d: %u mV\n", i + 1, modPackInfo.cell_volt[i]);

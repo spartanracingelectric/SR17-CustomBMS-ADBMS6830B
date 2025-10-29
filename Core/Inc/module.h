@@ -58,25 +58,17 @@ void Module_init(ModuleData *mod);
  *  - Triggers and collects cell voltage measurements for all modules.
  *  - Populates ModuleData cell_volt[] (and may update per-module aggregates).
  */
-void Read_Volt(ModuleData *mod);
+void Module_readVoltages(ModuleData *mod);
 
 /* ===== Public API: Temperature Conversions ==================================
  * Get_Actual_Temps():
  *  - Convert a raw temperature-related reading 'data' for device 'dev_idx'
  *    and logical index 'tempindex' into an entry of 'actual_temp' array.
  *
- * Read_Temp():
- *  - Read temperature-related AUX channels selected by 'tempindex' and
- *    place raw values into read_temp[] and read_auxreg[] for later conversion.
  */
 void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp, uint16_t data);
-void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg);
 
 /* ===== Public API: Ambient Sensors (Pressure / Air Temp / Humidity) =========
- * Convert_Analog_To_Pressure():
- *  - Convert raw ADC/AUX code 'adc_data' for module 'dev_idx' into pressure
- *    and store into ModuleData (units per project convention).
- *
  * Atmos_Temp_To_Celsius():
  *  - Convert raw ADC/AUX code to ambient temperature for module 'dev_idx'
  *    and store into ModuleData (typically °C scaled to integer).
@@ -84,16 +76,10 @@ void Read_Temp(uint8_t tempindex, uint16_t *read_temp, uint16_t *read_auxreg);
  * ADC_To_Humidity():
  *  - Convert raw ADC/AUX code to relative humidity for module 'dev_idx'
  *    and store into ModuleData (typically %RH scaled to integer).
- *
- * Read_Pressure()/Read_Atmos_Temp()/Read_Humidity():
- *  - Acquire the respective channels for all modules and update ModuleData.
  */
-void Convert_Analog_To_Pressure(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
 void Atmos_Temp_To_Celsius(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
 void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data);
-void Read_Pressure(ModuleData *mod);
-void Read_Atmos_Temp(ModuleData *mod);
-void Read_Humidity(ModuleData *mod);
+
 
 /* ===== Public API: Derived Metrics ==========================================
  * Get_Dew_Point():

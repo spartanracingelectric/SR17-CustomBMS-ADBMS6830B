@@ -143,15 +143,7 @@ typedef enum {
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
  * Example: set (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)) on TX failure.
  */
-typedef enum {
-	LTC_SPI_OK         = 0x00U, //No error.
-	LTC_SPI_TX_ERROR   = 0x02U, //HAL SPI TX returned HAL_ERROR.
-	LTC_SPI_TX_BUSY    = 0x04U, //HAL SPI TX returned HAL_BUSY.
-	LTC_SPI_TX_TIMEOUT = 0x08U, //HAL SPI TX returned HAL_TIMEOUT.
-	LTC_SPI_RX_ERROR   = 0x20U, //HAL SPI RX returned HAL_ERROR.
-	LTC_SPI_RX_BUSY    = 0x40U, //HAL SPI RX returned HAL_BUSY.
-	LTC_SPI_RX_TIMEOUT = 0x80U	//HAL SPI RX returned HAL_TIMEOUT.
-} LTC_SPI_StatusTypeDef;
+
 
 /* ===== External TX Buffers ===================================================
  * Staging buffers for multi-IC write commands. Each frame = 4 cmd/PEC bytes +
@@ -192,10 +184,10 @@ void ADBMS_unsnap();
  * Calc_Pack_Voltage():        sum per-cell mV array into total pack voltage (mV).
  * ADBMS_ReadSID():            read 6-byte silicon ID per IC (PEC10 verified).
  */
-LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod);
+void ADBMS_readCellVoltages(ModuleData *mod);
 void ADBMS_writeCFGB(BalanceStatus *blst);
-LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
-LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod);
+void ADBMS_readCFGB(RDFCGB_buffer *rdfcgb);
+void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t *rxBuffer, uint8_t dataLength);
 void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);

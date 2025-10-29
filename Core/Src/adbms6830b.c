@@ -30,8 +30,6 @@ const uint16_t VOV       = 0x0465;
 
 static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 
-static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
-
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
  *
@@ -229,14 +227,14 @@ void ADBMS_sendCommand(uint16_t command) {
  * @param[out] mod  Array of ModuleData; each entry receives cell voltages in mV.
  * @return LTC_SPI_StatusTypeDef  Bitfield with TX/RX error flags set on HAL failures.
  */
-LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *moduleData) {
-	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-	HAL_StatusTypeDef hal_ret;
+void ADBMS_readCellVoltages(ModuleData *moduleData) 
+{
 	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 	
 	ADBMS_snap(); 
 	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_REGISTER - 1)) / CELLS_PER_REGISTER;
-	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) {
+	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
+	{
 		isoSPI_Idle_to_Ready();
 		ADBMS_nCS_Low();
 		ADBMS_sendCommand(ADBMS_CMD_RDAC[registerIndex]);
@@ -245,10 +243,7 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *moduleData) {
 
 		ADBMS_parseVoltages(rxBuffer, registerIndex, moduleData);
 	}
-
 	ADBMS_unsnap();
-
-	return ret;
 }
 
 void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
@@ -283,11 +278,11 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 			}
 			
 		}
-		
 	}
 }
 
-void ADBMS_writeCFGB(BalanceStatus *blst) {
+void ADBMS_writeCFGB(BalanceStatus *blst) 
+{
 	uint8_t cmd[4];
 	uint8_t cfg[8];
 	uint16_t cmd_pec;
@@ -358,11 +353,7 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 	ADBMS_nCS_High();
 }
 
-LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
-	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-	HAL_StatusTypeDef hal_ret;
-	// const uint8_t  RX_BYTES_PER_IC = DATA_LEN + PEC_LEN;      // 6 data + 2 PEC per IC
-	// const uint16_t RX_LEN = (uint16_t)(RX_BYTES_PER_IC * NUM_MOD);
+void ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 	uint8_t rx_buffer[RX_LEN];
 	uint8_t  cmd[4];
 	uint16_t cmd_pec;
@@ -379,21 +370,11 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 	ADBMS_nCS_Low();
 
 	// Transmit the RDAC command
-	hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-	if (hal_ret != HAL_OK) {
-		ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
-		ADBMS_nCS_High();
-		return ret;
-	}
+	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
 
 	// Receive one page from every device in the chain (concatenated)
-	hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
-	if (hal_ret != HAL_OK) {
-		ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
-		ADBMS_nCS_High();
-		return ret;
-	}
-
+	HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
+	
 	ADBMS_nCS_High();
 
 	// printf("rdcfg_buffer\n");
@@ -426,7 +407,6 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 			//: %X\n", modIndex, rdfcgb[modIndex].CFGBR[cfgIndex]);
 		}
 	}
-	return ret;
 }
 
 
