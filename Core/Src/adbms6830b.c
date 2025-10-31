@@ -263,6 +263,11 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 		{
 			uint8_t cellIndex = initialCellIndex + cellOffset;
 
+			if (cellIndex > NUM_CELL_PER_MOD - 1) 
+			{
+				break;
+			}
+
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
 			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);

@@ -169,7 +169,7 @@ void ADBMS_unsnap();
  * ADBMS_getCellVoltages(): read all RDCV pages from every IC (with PEC check),
  *                             convert raw counts to mV, and store into ModuleData.
  */
-void ADBMS_getCellVoltages(ModuleData *mod);
+void ADBMS_getCellVoltages(ModuleData *moduleData);
 void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst);
 void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegisterB *configB);
 void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
