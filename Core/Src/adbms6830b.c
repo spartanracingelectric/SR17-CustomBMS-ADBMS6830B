@@ -250,7 +250,7 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_REGISTER;
 
 	//Receive data from last module first
-	for (uint8_t moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
+	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		if (!isDataValid) 
