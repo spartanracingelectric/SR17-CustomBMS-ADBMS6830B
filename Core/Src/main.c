@@ -149,7 +149,7 @@ int main(void)
     ADBMS_init();
     Module_init(modData);
     Accumulator_init(&accmData);
-	//Balance_init(balanceStatus, configB);
+	Balance_init(balanceStatus, configB);
 
 
 	// Sending a fault signal and reseting it
@@ -184,15 +184,15 @@ int main(void)
 			// ReadHVInput(&accmData);
 			// getSumPackVoltage(&accmData, modData);
 
-			//Accumulator_getMinVolatage(&accmData, modData);
-			//Accumulator_getMaxVolatage(&accmData, modData);
+			Accumulator_getMinVolatage(&accmData, modData);
+			Accumulator_getMaxVolatage(&accmData, modData);
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
             Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
 			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
 
 			// Passive balancing is called unless a fault has occurred
-			//Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
+			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
 
 			if(TimerPacket_FixedPulse(&canReconnection)){
 				can_skip_flag = 0;
@@ -202,7 +202,7 @@ int main(void)
 			CAN_Send_Voltage(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			//CAN_Send_Balance_Status(&msg, balanceStatus);
+			CAN_Send_Balance_Status(&msg, balanceStatus);
 		}
     }
   /* USER CODE END 3 */
