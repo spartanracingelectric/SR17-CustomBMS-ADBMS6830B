@@ -38,9 +38,19 @@
 #define RDACE 0x0049
 #define RDACF 0x004B
 
+#define RDSID 0x002C
+
+
 #define SNAP 0x002D
 #define UNSNAP 0x002F
-#define RDSID 0x002C
+
+#define CLRCELL 0x0711
+#define CLRAUX 0x712
+#define CLRFC 0x0714
+#define CLOVUV 0x0715
+#define CLRSPIN 0x0716
+#define CLRFLAG 0x0717
+
 
 #define VUV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
 #define VOV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
@@ -152,8 +162,8 @@ extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
  * Wakeup_Sleep(): toggle nCS to bring devices out of SLEEP (no clocks needed).
  */
 void isoSPI_Idle_to_Ready();
-void Wakeup_Sleep();
-void Clear_Registers();
+void ADBMS_wakeUp();
+void ADBMS_clearRegisters();
 
 /* ===== Public API: High-Level Init/Control ==================================
  * ADBMS_init(): wake devices, UNSNAP to resume live updates, and start ADCV.

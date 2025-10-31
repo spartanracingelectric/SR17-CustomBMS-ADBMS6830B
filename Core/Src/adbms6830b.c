@@ -18,15 +18,11 @@
 #include "main.h"
 #include <stdio.h>
 
-const uint8_t CLRCELL[2] = {0x07, 0x11};
-const uint8_t CLRFC[2]   = {0x07, 0x14};
-const uint8_t CLRAUX[2]  = {0x07, 0x12};
-const uint8_t CLRSPIN[2] = {0x07, 0x16};
-const uint8_t CLRFLAG[2] = {0x07, 0x17};
-const uint8_t CLOVUV[2]  = {0x07, 0x15};
 
 
-static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
+
+static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
+static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
 
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
@@ -48,7 +44,7 @@ void isoSPI_Idle_to_Ready() {
  * Many LTC/ADBMS devices detect wake on nCS edges while asleep.
  * Two low-high toggles with small delays are commonly recommended.
  */
-void Wakeup_Sleep() {
+void ADBMS_wakeUp() {
     for (int i = 0; i < 2; i++) {
         ADBMS_nCS_Low();
         HAL_Delay(1);
@@ -57,29 +53,14 @@ void Wakeup_Sleep() {
     }
 }
 
-void Clear_Registers(){
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-	const uint8_t cmds[][2] = {
-		{CLRCELL [0], CLRCELL [1]},
-		{CLRAUX  [0], CLRAUX  [1]},
-		{CLRSPIN [0], CLRSPIN [1]},
-		{CLRFC   [0], CLRFC   [1]},
-		{CLOVUV  [0], CLOVUV  [1]},
-		{CLRFLAG [0], CLRFLAG [1]}
-	 };
-	isoSPI_Idle_to_Ready();   // Ensure link is awake
-
-	const size_t N = sizeof(cmds) / sizeof(cmds[0]);
-	for(int i = 0; i < N; i++){
-		cmd[0] = cmds[i][0];       // Command high byte
-		cmd[1] = cmds[i][1];	      // Command low byte
-		cmd_pec = ADBMS_calcPec15(cmd, 2);
-		cmd[2] = (uint8_t) (cmd_pec >> 8);
-		cmd[3] = (uint8_t) (cmd_pec);
-
+void ADBMS_clearRegisters()
+{
+	isoSPI_Idle_to_Ready();   
+	size_t numberOfCommands = sizeof(CLEAR_REGISTERS_COMMANDS) / sizeof(CLEAR_REGISTERS_COMMANDS[0]);
+	for(int i = 0; i < numberOfCommands; i++)
+	{
 		ADBMS_nCS_Low();
-		HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+		ADBMS_sendCommand(CLEAR_REGISTERS_COMMANDS[i]);
 		ADBMS_nCS_High();
 	}
 }
@@ -93,9 +74,9 @@ void Clear_Registers(){
  *  3) Start voltage conversions (continuous or as configured by your fields).
  */
 void ADBMS_init(){
-	Wakeup_Sleep();
+	ADBMS_wakeUp();
 	ADBMS_unsnap();
-	Clear_Registers();
+	ADBMS_clearRegisters();
 	ADBMS_startADCVoltage();
 }
 
