@@ -216,19 +216,17 @@ void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerInd
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
-		if (!isDataValid) 
-		{
-			//TODO: Proper error state
-			continue;
-		}
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_REGISTER; cellOffset++) 
 		{
 			uint8_t cellIndex = initialCellIndex + cellOffset;
 
-			if (cellIndex > NUM_CELL_PER_MOD - 1) 
+			if (cellIndex > NUM_CELL_PER_MOD - 1) break;
+
+			if (!isDataValid) 
 			{
-				break;
+				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+				continue;
 			}
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
