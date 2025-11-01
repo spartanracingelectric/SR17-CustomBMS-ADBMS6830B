@@ -32,9 +32,9 @@ static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLO
  */
 void isoSPI_Idle_to_Ready() {
 	uint8_t hex_ff = 0xFF;
-	ADBMS_nCS_Low();							   // Assert CS to address the chain
+	ADBMS_csLow();							   // Assert CS to address the chain
 	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send a dummy byte to toggle SCK and wake isoSPI
-	ADBMS_nCS_High();							   // Deassert CS
+	ADBMS_csHigh();							   // Deassert CS
 	HAL_Delay(1);                                  // Small guard delay to ensure READY state
 }
 
@@ -46,9 +46,9 @@ void isoSPI_Idle_to_Ready() {
  */
 void ADBMS_wakeUp() {
     for (int i = 0; i < 2; i++) {
-        ADBMS_nCS_Low();
+        ADBMS_csLow();
         HAL_Delay(1);
-        ADBMS_nCS_High();
+        ADBMS_csHigh();
         HAL_Delay(1);
     }
 }
@@ -59,9 +59,9 @@ void ADBMS_clearRegisters()
 	size_t numberOfCommands = sizeof(CLEAR_REGISTERS_COMMANDS) / sizeof(CLEAR_REGISTERS_COMMANDS[0]);
 	for(int i = 0; i < numberOfCommands; i++)
 	{
-		ADBMS_nCS_Low();
+		ADBMS_csLow();
 		ADBMS_sendCommand(CLEAR_REGISTERS_COMMANDS[i]);
-		ADBMS_nCS_High();
+		ADBMS_csHigh();
 	}
 }
 
@@ -114,9 +114,9 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 	commandWord |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
 
 	isoSPI_Idle_to_Ready();
-	ADBMS_nCS_Low();
+	ADBMS_csLow();
 	ADBMS_sendCommand(commandWord);
-	ADBMS_nCS_High();
+	ADBMS_csHigh();
 }
 
 /**
@@ -129,9 +129,9 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 void ADBMS_snap()
 {
 	isoSPI_Idle_to_Ready(); 
-	ADBMS_nCS_Low();
+	ADBMS_csLow();
 	ADBMS_sendCommand(SNAP);
-	ADBMS_nCS_High();
+	ADBMS_csHigh();
 }
 
 /**
@@ -142,9 +142,9 @@ void ADBMS_snap()
 void ADBMS_unsnap()
 {
 	isoSPI_Idle_to_Ready();   // Ensure link is awake
-	ADBMS_nCS_Low();
+	ADBMS_csLow();
 	ADBMS_sendCommand(UNSNAP);
-	ADBMS_nCS_High();
+	ADBMS_csHigh();
 }
 
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN])
@@ -197,10 +197,10 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
 	{
 		isoSPI_Idle_to_Ready();
-		ADBMS_nCS_Low();
+		ADBMS_csLow();
 		ADBMS_sendCommand(AVERAGE_CELL_VOLTAGE_REGISTERS[registerIndex]);
 		ADBMS_receiveData(rxBuffer);
-		ADBMS_nCS_High();
+		ADBMS_csHigh();
 
 		ADBMS_parseVoltages(rxBuffer, registerIndex, moduleData);
 	}
@@ -294,10 +294,10 @@ void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
 		txBuffer[moduleIndex][5] = CFGBR5;
 	}
 	isoSPI_Idle_to_Ready();
-	ADBMS_nCS_Low();
+	ADBMS_csLow();
 	ADBMS_sendCommand(WRCFGB);
 	ADBMS_sendData(txBuffer);
-	ADBMS_nCS_High();
+	ADBMS_csHigh();
 }
 
 void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB) 
@@ -305,10 +305,10 @@ void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB)
 	uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN];
 
 	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
-	ADBMS_nCS_Low();
+	ADBMS_csLow();
 	ADBMS_sendCommand(RDCFGB);
 	ADBMS_receiveData(rxBuffer);
-	ADBMS_nCS_High();
+	ADBMS_csHigh();
 
 	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
 	{
@@ -408,10 +408,10 @@ void ADBMS_ReadSID(ModuleData *mod) {
 	//TODO: Finish
     isoSPI_Idle_to_Ready();
 
-    ADBMS_nCS_Low();
+    ADBMS_csLow();
 	ADBMS_sendCommand(RDSID);
 	ADBMS_receiveData(rxBuffer);
-    ADBMS_nCS_High();
+    ADBMS_csHigh();
 
 //     // 3) Validate and unpack each module's payload
 //     for (uint8_t Index = 0; devIndex < NUM_MOD; devIndex++) {

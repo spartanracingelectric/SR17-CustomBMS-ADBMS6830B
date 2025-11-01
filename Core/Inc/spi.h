@@ -42,9 +42,9 @@ void MX_SPI1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 /* Pull nCS line to SPI1 HIGH */
-void ADBMS_nCS_High(void);
+void ADBMS_csHigh(void);
 /* Pull nCS line to SPI1 LOW */
-void ADBMS_nCS_Low(void);
+void ADBMS_csLow(void);
 
 /* USER CODE END Prototypes */
 

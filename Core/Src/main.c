@@ -144,7 +144,7 @@ int main(void)
     TimerPacket_Init(&canReconnection, CAN_RECONNECTION_CHECK);
 
     // Pull SPI1 nCS HIGH (deselect)
-    ADBMS_nCS_High();
+    ADBMS_csHigh();
 
     ADBMS_init();
     Module_init(modData);

@@ -123,11 +123,11 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void ADBMS_nCS_High(void) {
+void ADBMS_csHigh(void) {
 	HAL_GPIO_WritePin(LTC_nCS_GPIO_Port, LTC_nCS_Pin, GPIO_PIN_SET); //Pull CS high
 }
 /* Pull nCS line to SPI1 LOW */
-void ADBMS_nCS_Low(void) {
+void ADBMS_csLow(void) {
 	HAL_GPIO_WritePin(LTC_nCS_GPIO_Port, LTC_nCS_Pin, GPIO_PIN_RESET); //Pull CS high
 }
 
