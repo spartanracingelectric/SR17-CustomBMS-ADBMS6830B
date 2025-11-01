@@ -73,11 +73,12 @@ void ADBMS_clearRegisters()
  *  2) UNSNAP so that live registers are accessible.
  *  3) Start voltage conversions (continuous or as configured by your fields).
  */
-void ADBMS_init(){
+void ADBMS_init()
+{
 	ADBMS_wakeUp();
 	ADBMS_unsnap();
 	ADBMS_clearRegisters();
-	ADBMS_startADCVoltage();
+	ADBMS_startCellVoltageConversions(REDUNDANT_MODE_OFF, CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, FILTER_RESET_MODE_ON, OPEN_WIRE_MODE_ALL_OFF);
 }
 
 /**
@@ -97,46 +98,24 @@ void ADBMS_init(){
  *
  * After packing, compute PEC15 over the 2 command bytes and transmit 4 bytes total.
  */
-void ADBMS_startADCVoltage() {
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-
-	AdcRD RD = RD_OFF;
-	AdcCONT CONT = CONT_ON;
-	AdcDCP DCP = DCP_OFF;
-	AdcRSTF RSTF = RSTF_ON;
-	AdcOW OW = OW_ALL_OFF;
-
+void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
+{
 	uint16_t commandWord = 0;
 
-	// Pack command bits into the 16-bit container (MSB first on wire)
-	commandWord |= (0    << 10);    // bit10 = 0        (fixed)
-	commandWord |= (1    << 9);     // bit9  = 1        (fixed sync bit)
-	commandWord |= (RD   << 8);     // bit8  = RD       (rate/redundancy)
-	commandWord |= (CONT << 7);     // bit7  = CONT     (continuous mode)
-	commandWord |= (1    << 6);     // bit6  = 1        (fixed)
-	commandWord |= (1    << 5);     // bit5  = 1        (fixed)
-	commandWord |= (DCP  << 4);     // bit4  = DCP      (balance during conv)
-	commandWord |= (0    << 3);     // bit3  = 0        (fixed)
-	commandWord |= (RSTF << 2);     // bit2  = RSTF     (reset digital filter)
-	commandWord |= (OW & 0x03);     // bit1-0 = OW[1:0] (open-wire mode)
+	commandWord |= (0 << 10);    					// bit10 = 0        (fixed)
+	commandWord |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
+	commandWord |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
+	commandWord |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
+	commandWord |= (1 << 6);     					// bit6  = 1        (fixed)
+	commandWord |= (1 << 5);     					// bit5  = 1        (fixed)
+	commandWord |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
+	commandWord |= (0 << 3);     					// bit3  = 0        (fixed)
+	commandWord |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
+	commandWord |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
 
-	// Split command word into two bytes (big-endian: high byte first)
-	uint8_t firstCmdByte  = (uint8_t)(commandWord >> 8);
-	uint8_t secondCmdByte = (uint8_t)(commandWord & 0xFF);
-
-	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
-	cmd[0] = firstCmdByte;
-	cmd[1] = secondCmdByte;
-	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-
-	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
-
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
+	ADBMS_sendCommand(commandWord);
 	ADBMS_nCS_High();
 }
 
@@ -147,7 +126,8 @@ void ADBMS_startADCVoltage() {
  * multiple RDCV/RDAUX/etc. transactions without internal updates racing your reads.
  * Typical flow: SNAP -> read all needed registers -> UNSNAP when done.
  */
-void ADBMS_snap(){
+void ADBMS_snap()
+{
 	isoSPI_Idle_to_Ready(); 
 	ADBMS_nCS_Low();
 	ADBMS_sendCommand(SNAP);
@@ -159,7 +139,8 @@ void ADBMS_snap(){
  *
  * Call this once you’ve finished reading all latched measurement pages.
  */
-void ADBMS_unsnap(){
+void ADBMS_unsnap()
+{
 	isoSPI_Idle_to_Ready();   // Ensure link is awake
 	ADBMS_nCS_Low();
 	ADBMS_sendCommand(UNSNAP);
@@ -172,7 +153,8 @@ void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN])
 	HAL_SPI_Receive(&hspi1, (uint8_t*)&rxBuffer[0][0], NUM_MOD * (DATA_LEN + PEC_LEN), 100);
 }
 
-void ADBMS_sendCommand(uint16_t command) {
+void ADBMS_sendCommand(uint16_t command) 
+{
 	uint8_t txBuffer[COMMAND_LENGTH + PEC_LEN];
 	txBuffer[0] = (uint8_t)(command >> 8);
 	txBuffer[1] = (uint8_t)(command);

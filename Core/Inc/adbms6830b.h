@@ -94,9 +94,9 @@
 //   1 = Redundant measurement (C-ADC + S-ADC for safety comparison)
 //------------------------------------------------------------------------------
 typedef enum {
-    RD_OFF = 0, // Redundancy disabled (C-ADC only)
-    RD_ON  = 1  // Redundancy enabled (C-ADC and S-ADC both measure)
-} AdcRD;
+    REDUNDANT_MODE_OFF = 0, // Redundancy disabled (C-ADC only)
+    REDUDANT_MODE_ON  = 1  // Redundancy enabled (C-ADC and S-ADC both measure)
+} AdcRedundantMode;
 
 //------------------------------------------------------------------------------
 // CONT: Continuous Conversion
@@ -104,9 +104,9 @@ typedef enum {
 //   1 = Continuous conversion (C-ADC runs continuously after start)
 //------------------------------------------------------------------------------
 typedef enum {
-    CONT_OFF = 0, // Single conversion only
-    CONT_ON  = 1  // Continuous conversion mode
-} AdcCONT;
+    CONTINUOUS_MODE_OFF = 0, // Single conversion only
+    CONTINUOUS_MODE_ON  = 1  // Continuous conversion mode
+} AdcContinuousMode;
 
 //------------------------------------------------------------------------------
 // DCP: Discharge Permit During Measurement
@@ -115,9 +115,9 @@ typedef enum {
 //   *Effective mainly in S-ADC related modes; has no effect in C-ADC continuous mode
 //------------------------------------------------------------------------------
 typedef enum {
-    DCP_OFF = 0, // Pause PWM discharge during conversion
-    DCP_ON  = 1  // Allow PWM discharge during conversion
-} AdcDCP;
+    DISCHARGE_MODE_OFF = 0, // Pause PWM discharge during conversion
+    DISCHARGE_MODE_ON = 1  // Allow PWM discharge during conversion
+} AdcDischargeMode;
 
 //------------------------------------------------------------------------------
 // RSTF: Reset IIR Filter
@@ -125,9 +125,9 @@ typedef enum {
 //   1 = Reset IIR filter (normally set only on the first ADCV command)
 //------------------------------------------------------------------------------
 typedef enum {
-    RSTF_OFF = 0, // Do not reset the filter
-    RSTF_ON  = 1  // Reset the filter (first command only)
-} AdcRSTF;
+    FILTER_RESET_MODE_OFF = 0, // Do not reset the filter
+    FILTER_RESET_MODE_ON  = 1  // Reset the filter (first command only)
+} AdcFilterResetMode;
 
 //------------------------------------------------------------------------------
 // OW[1:0]: Open-Wire Test Mode (cell connection diagnostics)
@@ -137,11 +137,11 @@ typedef enum {
 //   11 = All cells
 //------------------------------------------------------------------------------
 typedef enum {
-    OW_ALL_OFF = 0b00, // No open-wire detection
-    OW_EVEN_ON = 0b01, // Check even-numbered cells
-    OW_ODD_ON  = 0b10, // Check odd-numbered cells
-    OW_ALL_ON  = 0b11  // Check all cells
-} AdcOW;
+    OPEN_WIRE_MODE_ALL_OFF = 0b00, // No open-wire detection
+    OPEN_WIRE_MODE_EVEN_ON = 0b01, // Check even-numbered cells
+    OPEN_WIRE_MODE_ODD_ON  = 0b10, // Check odd-numbered cells
+    OPEN_WIRE_MODE_ALL_ON  = 0b11  // Check all cells
+} AdcOpenWireMode;
 
 /* ===== SPI Status Bitfield ===================================================
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
@@ -171,7 +171,7 @@ void ADBMS_clearRegisters();
  * ADBMS_SNAP()/UNSNAP(): latch a coherent dataset across pages / resume updates.
  */
 void ADBMS_init();
-void ADBMS_startADCVoltage();
+void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
 void ADBMS_snap();
 void ADBMS_unsnap();
 
