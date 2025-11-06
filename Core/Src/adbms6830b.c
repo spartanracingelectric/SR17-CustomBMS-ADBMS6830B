@@ -17,6 +17,7 @@
 #include "spi.h"
 #include "main.h"
 #include <stdio.h>
+#include <stdbool.h> 
 
 const uint8_t RDSID[2]   = {0x00, 0x2C};
 const uint8_t SNAP[2]    = {0x00, 0x2D};
@@ -34,6 +35,8 @@ static const uint16_t ADBMS_CMD_RDAC[6] = { RDACA, RDACB, RDACC, RDACD, RDACE, R
 
 static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
 
+static volatile bool spi_dma_cplt = false; 
+
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
  *
@@ -43,7 +46,11 @@ static const uint16_t LTC_CMD_AUXREG[2] = { LTC_CMD_RDAUXA, LTC_CMD_RDAUXB };
 void isoSPI_Idle_to_Ready() {
 	uint8_t hex_ff = 0xFF;
 	ADBMS_nCS_Low();							   // Assert CS to address the chain
-	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100);     // Send a dummy byte to toggle SCK and wake isoSPI
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, &hex_ff, 1);     // Send a dummy byte to toggle SCK and wake isoSPI
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 	ADBMS_nCS_High();							   // Deassert CS
 	HAL_Delay(1);                                  // Small guard delay to ensure READY state
 }
@@ -85,7 +92,11 @@ void Clear_Registers(){
 		cmd[3] = (uint8_t) (cmd_pec);
 
 		ADBMS_nCS_Low();
-		HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+		spi_dma_cplt = false; 
+		HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd)); 
+		while(!spi_dma_cplt) {
+			__WFI(); 
+		} 
 		ADBMS_nCS_High();
 	}
 }
@@ -161,7 +172,11 @@ void ADBMS_startADCVoltage() {
 	isoSPI_Idle_to_Ready();
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, sizeof(cmd), 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) cmd, sizeof(cmd)); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 	ADBMS_nCS_High();
 }
 
@@ -185,7 +200,11 @@ void ADBMS_SNAP(){
 	isoSPI_Idle_to_Ready(); // Make sure link is awake
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd)); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	}
 	ADBMS_nCS_High();
 }
 
@@ -207,7 +226,11 @@ void ADBMS_UNSNAP(){
 	isoSPI_Idle_to_Ready();   // Ensure link is awake
 
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+	spi_dma_cplt = false;
+	HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd));
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 	ADBMS_nCS_High();
 }
 
@@ -260,8 +283,13 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 		ADBMS_nCS_Low();
 
 		// Transmit the RDAC command
-	    hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-	    if (hal_ret != HAL_OK) {
+		spi_dma_cplt = false; 
+	    hal_ret = HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd)); 
+	    if (hal_ret == HAL_OK) { 
+	        while(!spi_dma_cplt) {
+				__WFI(); 
+			} 
+	    } else {
 	        ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
 	        ADBMS_UNSNAP();
 	        ADBMS_nCS_High();
@@ -269,8 +297,13 @@ LTC_SPI_StatusTypeDef ADBMS_getAVGCellVoltages(ModuleData *mod) {
 	    }
 
 	    // Receive one page from every device in the chain (concatenated)
-	    hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
-	    if (hal_ret != HAL_OK) {
+	    spi_dma_cplt = false; 
+	    hal_ret = HAL_SPI_Receive_DMA(&hspi1, rx_buffer, RX_LEN);
+	    if (hal_ret == HAL_OK) { 
+            while(!spi_dma_cplt) { 
+				__WFI(); 
+			} 
+        } else {
 	        ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
 	        ADBMS_UNSNAP();
 	        ADBMS_nCS_High();
@@ -396,7 +429,11 @@ void ADBMS_writeCFGB(BalanceStatus *blst) {
 
 	ADBMS_nCS_Low();
 
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcfg_buffer, sizeof(wrcfg_buffer), 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) wrcfg_buffer, sizeof(wrcfg_buffer));
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 
 	ADBMS_nCS_High();
 }
@@ -422,16 +459,26 @@ LTC_SPI_StatusTypeDef ADBMS_readCFGB(RDFCGB_buffer *rdfcgb) {
 	ADBMS_nCS_Low();
 
 	// Transmit the RDAC command
-	hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-	if (hal_ret != HAL_OK) {
+	spi_dma_cplt = false;
+	hal_ret = HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd)); 
+	if (hal_ret == HAL_OK) { 
+	    while(!spi_dma_cplt) {
+			__WFI(); 
+		} 
+	} else {
 		ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // Encode HAL error into return flags
 		ADBMS_nCS_High();
 		return ret;
 	}
 
 	// Receive one page from every device in the chain (concatenated)
-	hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
-	if (hal_ret != HAL_OK) {
+	spi_dma_cplt = false; 
+	hal_ret = HAL_SPI_Receive_DMA(&hspi1, rx_buffer, RX_LEN); 
+	if (hal_ret == HAL_OK) { 
+	    while(!spi_dma_cplt) {
+			__WFI(); 
+		} 
+	} else {
 		ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
 		ADBMS_nCS_High();
 		return ret;
@@ -511,7 +558,11 @@ void LTC_SPI_writeCommunicationSetting(uint8_t total_ic, uint8_t comm[6]) {
 
 	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) wrcomm_buffer, CMD_LEN, 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) wrcomm_buffer, CMD_LEN); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	}
 	ADBMS_nCS_High();
 }
 
@@ -531,16 +582,26 @@ void LTC_SPI_requestData(uint8_t len) {
 
 	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) cmd, 4); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
+
 	for (int i = 0; i < len * 3; i++) {
-		HAL_SPI_Transmit(&hspi1, (uint8_t*) 0xFF, 1, 100);
+		spi_dma_cplt = false; 
+		HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) 0xFF, 1); 
+		while(!spi_dma_cplt) {
+			__WFI(); 
+		} 
 	}
 	ADBMS_nCS_High();
 }
 
 LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
 	LTC_SPI_StatusTypeDef ret = LTC_SPI_OK;
-	LTC_SPI_StatusTypeDef hal_ret;
+	HAL_StatusTypeDef hal_ret; 
 	const uint8_t ARR_SIZE_REG = NUM_MOD * REG_LEN;
 	uint8_t read_auxiliary_reg[ARR_SIZE_REG]; // Increased in size to handle multiple devices
 
@@ -559,15 +620,29 @@ LTC_SPI_StatusTypeDef LTC_readGPIOs(uint16_t *read_auxiliary) {
 
 		ADBMS_nCS_Low(); // Pull CS low
 
-		hal_ret = HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
-		if (hal_ret) {									// Non-zero means error
-			ret |= (1 << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); // TX error
+		spi_dma_cplt = false; 
+		hal_ret = HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) cmd, 4); 
+		if (hal_ret == HAL_OK) { 
+			while(!spi_dma_cplt) {
+				__WFI(); 
+			} 
+		} else {									
+			ret |= (1 << (hal_ret + LTC_SPI_TX_BIT_OFFSET)); 
+			ADBMS_nCS_High();
+            continue;
 		}
 
-		hal_ret = HAL_SPI_Receive(&hspi1, (uint8_t*) read_auxiliary_reg,
-				ARR_SIZE_REG, 100);
-		if (hal_ret) {									// Non-zero means error
-			ret |= (1 << (hal_ret + LTC_SPI_RX_BIT_OFFSET)); // RX error
+		spi_dma_cplt = false; 
+		hal_ret = HAL_SPI_Receive_DMA(&hspi1, (uint8_t*) read_auxiliary_reg, 
+				ARR_SIZE_REG);
+		if (hal_ret == HAL_OK) { 
+			while(!spi_dma_cplt) {
+				__WFI(); 
+			} 
+		} else {									
+			ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET)); 
+			ADBMS_nCS_High();
+            continue;
 		}
 
 		ADBMS_nCS_High(); // Pull CS high
@@ -614,7 +689,11 @@ void LTC_startADC_GPIO(uint8_t MD, // ADC Mode
 	 */
 	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) cmd, 4); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 	ADBMS_nCS_High();
 }
 
@@ -635,13 +714,25 @@ int32_t LTC_POLLADC() {
 	isoSPI_Idle_to_Ready(); // This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	//Send PLADC command to LTC6811
 	ADBMS_nCS_Low();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+	spi_dma_cplt = false; 
+	HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) cmd, 4); 
+	while(!spi_dma_cplt) {
+		__WFI(); 
+	} 
 	ADBMS_nCS_High();
 	//Check if ADC is done
 	while (((HAL_GetTick() - start_time) < 210000)) {  // timeout at 210ms
 		ADBMS_nCS_Low();
-		HAL_SPI_Transmit(&hspi1, &dummy_tx, 1, 100);  //Send dummy byte and get adc status
-		HAL_SPI_Receive(&hspi1, &adc_status, 1, 100);
+		spi_dma_cplt = false; 
+        HAL_StatusTypeDef hal_ret = HAL_SPI_TransmitReceive_DMA(&hspi1, &dummy_tx, &adc_status, 1); //Send dummy byte and get adc status
+        if (hal_ret == HAL_OK) { 
+             while(!spi_dma_cplt) {
+				__WFI(); 
+			 }
+        } else {
+            ADBMS_nCS_High();
+            return 0; 
+        }
 		ADBMS_nCS_High();
 		if (adc_status != 0xFF) {  // if it's not 0xFF, finish adc
 			finished = 1;
@@ -760,16 +851,25 @@ LTC_SPI_StatusTypeDef ADBMS_ReadSID(ModuleData *mod) {
     isoSPI_Idle_to_Ready();
 
     ADBMS_nCS_Low();
-    hal_ret = HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
-    if (hal_ret != HAL_OK) {
-    	// Map HAL error code into our bitfield (TX error region)
+    spi_dma_cplt = false; 
+    hal_ret = HAL_SPI_Transmit_DMA(&hspi1, cmd, sizeof(cmd)); 
+    if (hal_ret == HAL_OK) { 
+        while(!spi_dma_cplt) {
+			__WFI();
+		} 
+    } else {
         ret |= (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET));
         ADBMS_nCS_High();
         return ret;
     }
 
-    hal_ret = HAL_SPI_Receive(&hspi1, rx_buffer, RX_LEN, 100);
-    if (hal_ret != HAL_OK) {
+    spi_dma_cplt = false; 
+    hal_ret = HAL_SPI_Receive_DMA(&hspi1, rx_buffer, RX_LEN); 
+    if (hal_ret == HAL_OK) { 
+        while(!spi_dma_cplt) {
+			__WFI();
+		}
+    } else {
     	// Map HAL error code into our bitfield (RX error region)
         ret |= (1U << (hal_ret + LTC_SPI_RX_BIT_OFFSET));
         ADBMS_nCS_High();
@@ -911,4 +1011,25 @@ bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2])
 
     // Compare only the 10 LSBs
     return ((dpec & 0x03FF) == calc);
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI1) {
+        spi_dma_cplt = true;
+    }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI1) {
+        spi_dma_cplt = true;
+    }
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI1) {
+        spi_dma_cplt = true;
+    }
 }
