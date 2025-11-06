@@ -11,6 +11,10 @@
 #define MAX_PACK_VOLTAGE_V 600
 #define STATIC_INTERNAL_RESISTANCE 1000 //placeholder value in milliohms
 #define NOMINAL_CHARGE_CURRENT_MA 3000 //placeholder value in mA
+#define COLD_STOP_CHARGE_TEMP 0 //placeholder estimate in C
+#define COLD_FULL_CHARGE_TEMP 15 //placeholder estimate in C
+#define HOT_FULL_CHARGE_TEMP 45 //placeholder estimate in C
+#define HOT_STOP_CHARGE_TEMP 60 //placeholder estimate in C
 
 float gt(uint16_t cell_temp_lowest);
 float gz(uint32_t soc);
