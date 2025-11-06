@@ -10,7 +10,7 @@ void accumulator_init(AccumulatorData *acc){
 	acc->sum_pack_voltage = 0x0000;
 	acc->hvsens_pack_voltage = 0x0000;
 	acc->balance_status[NUM_MOD] = 0x0000;
-	acc->soc = 0x00000000; // microamps!!!!!
+	acc->soc = 0x00000000; // uAh
 	acc->current = 0x00000000;
 }
 

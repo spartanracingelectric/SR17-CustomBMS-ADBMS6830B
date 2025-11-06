@@ -86,8 +86,9 @@ typedef struct AccumulatorData {
 	uint16_t sum_pack_voltage;
 	uint16_t hvsens_pack_voltage;
 	uint16_t balance_status[NUM_MOD];
-    uint32_t soc; // microamps!!!!!
-    uint32_t current;
+    uint32_t soc; // uAh!!!!!
+    uint32_t current; // mA (from SoC)
+	uint32_t sop; // mW (from SoP)
 } AccumulatorData;
 
 /**
