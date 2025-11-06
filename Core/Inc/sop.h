@@ -9,7 +9,7 @@
 #include <time.h>
 #include <stdint.h>
 
-#define MAX_PACK_VOLTAGE_MV 600000 // comp value in MV
+#define MAX_PACK_VOLTAGE_MV 600000 //comp value in mV
 #define STATIC_INTERNAL_RESISTANCE_MO 5 //placeholder value in milliohms
 #define NOMINAL_CHARGE_CURRENT_MA 7500 //value in mA from datasheet (for full pack); could go to 30 A
 #define COLD_STOP_CHARGE_TEMP_C 15 //placeholder estimate in C (maybe 0?)

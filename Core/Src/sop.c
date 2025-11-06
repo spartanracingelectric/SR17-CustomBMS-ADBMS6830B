@@ -17,7 +17,7 @@
  * Notes:
  *  - COLD_STOP_CHARGE_TEMP_C, COLD_FULL_CHARGE_TEMP_C, HOT_FULL_CHARGE_TEMP_C, HOT_STOP_CHARGE_TEMP_C, 
  *    STATIC_INTERNAL_RESISTANCE_MO, MAX_PACK_VOLTAGE_V, NOMINAL_CHARGE_CURRENT_MA, LOW_RAMP_SOC, LOW_FULL_SOC,
- *    HIGH_RAMP_SOC, and HIGH_EDGE_SOC are defined in headers.
+ *    HIGH_RAMP_SOC, HIGH_EDGE_SOC, and NUM_CELLS_2 (temporary measure) are defined in headers.
  */
 
 #include "main.h"
