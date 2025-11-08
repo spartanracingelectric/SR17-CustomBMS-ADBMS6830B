@@ -73,6 +73,8 @@
 #define RDSTATD 0x0033
 #define RDSTATE 0x0034
 
+#define ADAX 0x0410 
+#define ADAX2 0x0400
 
 /* ===== Frame Sizes and Packing ==============================================
  * REG_LEN: 8 bytes per IC response frame: 6 data + 2-byte PEC10
@@ -89,9 +91,9 @@
 #define RX_BYTES_PER_IC (DATA_LEN + PEC_LEN)
 #define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
 // #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
-#define CELLS_PER_REGISTER 3
-#define ADBMS_SERIES_GROUPS_PER_RDAC 3
-#define ADBMS_SERIES_GROUPS_PER_RDAUX 3
+#define CELLS_PER_ADC_REGISTER 3
+#define GPIOS_PER_AUX_REGISTER 3
+#define GPIOS_PER_IC 10
 #define REG_NUM_RDAUX 4
 #define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
@@ -161,39 +163,33 @@ typedef enum {
 } AdcOpenWireMode;
 
 typedef enum {
-	OW_OFF = 0, // Check open-wire for AUX
-	OW_ON  = 1  // Check open-wire for AUX
-} AUXOW;
+	OW_OFF = 0, 
+	OW_ON  = 1  
+} AuxOpenWireMode;
 
 typedef enum {
-	PUP_OFF = 0, // Check open-wire for AUX
-	PUP_ON  = 1  // Check open-wire for AUX
-} AUXPUP;
+	PUP_OFF = 0, 
+	PUP_ON  = 1  
+} AuxPullUpPinMode;
 
 typedef enum {
-	CH4_ON  = 0, // Check open-wire for AUX
-	CH4_OFF = 1  // Check open-wire for AUX
-} AUXCH4;
-
-typedef enum {
-	CH3_ON  = 0, // Check open-wire for AUX
-	CH3_OFF = 1  // Check open-wire for AUX
-} AUXCH3;
-
-typedef enum {
-	CH2_ON  = 0, // Check open-wire for AUX
-	CH2_OFF = 1  // Check open-wire for AUX
-} AUXCH2;
-
-typedef enum {
-	CH1_ON  = 0, // Check open-wire for AUX
-	CH1_OFF = 1  // Check open-wire for AUX
-} AUXCH1;
-
-typedef enum {
-	CH0_ON  = 0, // Check open-wire for AUX
-	CH0_OFF = 1  // Check open-wire for AUX
-} AUXCH0;
+    AUX_CHANNEL_ALL = 0x00,  // Measure all channels
+    AUX_CHANNEL_GPIO1 = 0x01,
+    AUX_CHANNEL_GPIO2 = 0x02,
+    AUX_CHANNEL_GPIO3 = 0x03,
+    AUX_CHANNEL_GPIO4 = 0x04,
+    AUX_CHANNEL_GPIO5 = 0x05,
+    AUX_CHANNEL_GPIO6 = 0x06,
+    AUX_CHANNEL_GPIO7 = 0x07,
+    AUX_CHANNEL_GPIO8 = 0x08,
+    AUX_CHANNEL_GPIO9 = 0x09,
+    AUX_CHANNEL_GPIO10 = 0x0A,
+    AUX_CHANNEL_VD = 0x0B,  // Supply voltage VD
+    AUX_CHANNEL_VA = 0x0C,  // Supply voltage VA
+    AUX_CHANNEL_VREF2 = 0x0D,  // Secondary reference voltage
+    AUX_CHANNEL_ITEMP = 0x0E,  // Internal temperature
+    AUX_CHANNEL_NONE = 0x1F   // Reserved / invalid
+} AuxChannelSelect;
 
 
 /* ===== SPI Status Bitfield ===================================================
@@ -239,9 +235,10 @@ void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
 void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
-void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
-void ADBMS_startAdax(); 
-void ADBMS_getGPIOData(ModuleData *mod);
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_startAuxConversions(); 
+void ADBMS_getGpioVoltages(ModuleData *moduleData);
+void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getVref2(ModuleData *mod);
 
 /* ===== Public API: PEC Helpers ==============================================
@@ -252,4 +249,3 @@ void ADBMS_getVref2(ModuleData *mod);
 uint16_t ADBMS_calcPec15(uint8_t *data, uint8_t len);
 uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter);
 bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2]);
-

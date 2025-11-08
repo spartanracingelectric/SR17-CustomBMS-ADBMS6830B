@@ -16,13 +16,15 @@
 #include <adbms6830b.h>
 #include "spi.h"
 #include "main.h"
+#include <stdint.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 
 
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
-static const uint16_t ADBMS_CMD_RDAUX[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
+static const uint16_t AUX_REGISTERS[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
 static const uint16_t ADBMS_CMD_RDSTAT[5] = {RDSTATA, RDSTATB, RDSTATC, RDSTATD, RDSTATE};
 
 /**
@@ -101,67 +103,31 @@ void ADBMS_init()
  */
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
 {
-	uint16_t commandWord = 0;
+	uint16_t command = 0;
 
-	commandWord |= (0 << 10);    					// bit10 = 0        (fixed)
-	commandWord |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
-	commandWord |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
-	commandWord |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
-	commandWord |= (1 << 6);     					// bit6  = 1        (fixed)
-	commandWord |= (1 << 5);     					// bit5  = 1        (fixed)
-	commandWord |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
-	commandWord |= (0 << 3);     					// bit3  = 0        (fixed)
-	commandWord |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
-	commandWord |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
+	command |= (0 << 10);    					// bit10 = 0        (fixed)
+	command |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
+	command |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
+	command |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
+	command |= (1 << 6);     					// bit6  = 1        (fixed)
+	command |= (1 << 5);     					// bit5  = 1        (fixed)
+	command |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
+	command |= (0 << 3);     					// bit3  = 0        (fixed)
+	command |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
+	command |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
 
 	isoSPI_Idle_to_Ready();
 	ADBMS_csLow();
-	ADBMS_sendCommand(commandWord);
+	ADBMS_sendCommand(command);
 	ADBMS_csHigh();
 }
 
-void ADBMS_startADAX() {
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
+void ADBMS_startGPIOConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
+    uint16_t command = ADAX | (openWireMode << 8) | (pullUpPinMode << 7) | channelSelect;
 
-	AUXOW OW = OW_OFF;
-	AUXPUP PUP = PUP_OFF;
-	AUXCH4 CH4 = CH4_OFF;
-	AUXCH4 CH3 = CH3_OFF;
-	AUXCH4 CH2 = CH2_OFF;
-	AUXCH4 CH1 = CH1_OFF;
-	AUXCH4 CH0 = CH0_OFF;
-	uint16_t commandWord = 0;
-
-	// Pack command bits into the 16-bit container (MSB first on wire)
-	commandWord |= (1   << 10);    // bit10 = 1        (fixed)
-	commandWord |= (0   << 9);     // bit9  = 0        (fixed)
-	commandWord |= (OW  << 8);     // bit8  = OW       (rate/redundancy)
-	commandWord |= (PUP << 7);     // bit7  = PUP      (continuous mode)
-	commandWord |= (CH4 << 6);     // bit6  = CH4      (fixed)
-	commandWord |= (0   << 5);     // bit5  = 0        (fixed)
-	commandWord |= (1   << 4);     // bit4  = 1        (fixed)
-	commandWord |= (CH3 << 3);     // bit3  = CH3      (fixed)
-	commandWord |= (CH2 << 2);     // bit2  = CH2      (reset digital filter)
-	commandWord |= (CH1 << 1);     // bit1  = CH1      (reset digital filter)
-	commandWord |= (CH0 << 0);     // bit0  = CH0      (reset digital filter)
-
-	// Split command word into two bytes (big-endian: high byte first)
-	uint8_t firstCmdByte  = (uint8_t)(commandWord >> 8);
-	uint8_t secondCmdByte = (uint8_t)(commandWord & 0xFF);
-
-	// Construct full command frame: [CMD_H][CMD_L][PEC15_H][PEC15_L]
-	cmd[0] = firstCmdByte;
-	cmd[1] = secondCmdByte;
-	cmd_pec = ADBMS_calcPec15(cmd, 2);   // PEC over the 2 command bytes
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-
-	// Ensure the isoSPI port is awake before issuing the command
 	isoSPI_Idle_to_Ready();
-
     ADBMS_csLow();
-	HAL_SPI_Transmit(&hspi1, (uint8_t*) cmd, 4, 100);
+    ADBMS_sendCommand(command);
     ADBMS_csHigh();
 }
 
@@ -239,7 +205,7 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 	
 	ADBMS_snap(); 
-	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_REGISTER - 1)) / CELLS_PER_REGISTER;
+	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_ADC_REGISTER - 1)) / CELLS_PER_ADC_REGISTER;
 	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
 	{
 		isoSPI_Idle_to_Ready();
@@ -248,21 +214,21 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
-		ADBMS_parseVoltages(rxBuffer, registerIndex, moduleData);
+		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
 	}
 	ADBMS_unsnap();
 }
 
-void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
 {
-	uint8_t initialCellIndex = registerIndex * CELLS_PER_REGISTER;
+	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
 
 	//Receive data from last module first
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		
-		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_REGISTER; cellOffset++) 
+		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
 			uint8_t cellIndex = initialCellIndex + cellOffset;
 
@@ -375,66 +341,57 @@ void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegi
 	configB->cellsDischargeStatus = (uint16_t)data[4] | (uint16_t)(data[5] << 8);
 }
 
-void ADBMS_getGPIOData(ModuleData *mod) {
-	uint8_t rx_buffer[RX_LEN];
-	uint8_t  cmd[4];
-	uint16_t cmd_pec;
+void ADBMS_getGpioVoltages(ModuleData *moduleData) 
+{
+	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 
-	// We have 14 cells per module; ADBMS_SERIES_GROUPS_PER_RDAC indicates how many cells per RDAC page.
-	for (uint8_t regIndex = 0; regIndex < REG_NUM_RDAUX; regIndex++) { //there's only for register group for
-
-		// Build RDAC command for the current voltage-register page
-		cmd[0] = (0xFF & (ADBMS_CMD_RDAUX[regIndex] >> 8));
-		cmd[1] = (0xFF & (ADBMS_CMD_RDAUX[regIndex]));
-		cmd_pec = ADBMS_calcPec15(cmd, 2);
-		cmd[2] = (uint8_t) (cmd_pec >> 8);
-	
-
-		isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
-
+	int numberOfRegisters = (NUM_CELL_PER_MOD + (GPIOS_PER_AUX_REGISTER - 1)) / GPIOS_PER_AUX_REGISTER;
+	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
+	{
+		isoSPI_Idle_to_Ready();
 		ADBMS_csLow();
+		ADBMS_sendCommand(AUX_REGISTERS[registerIndex]);
+		ADBMS_receiveData(rxBuffer);
+		ADBMS_csHigh();
 
-		// Transmit the RDAC command
-	    HAL_SPI_Transmit(&hspi1, cmd, sizeof(cmd), 100);
+		ADBMS_parseGpioVoltages(rxBuffer, registerIndex, moduleData);
+	}
+}
 
-	    // Receive one page from every device in the chain (concatenated)
+void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
+{
+	uint8_t initialGpioIndex = registerIndex * GPIOS_PER_AUX_REGISTER;
 
-	    ADBMS_csHigh();
+	//Receive data from last module first
+	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
+	{
+		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		
+		for (uint8_t gpioOffset = 0; gpioOffset < GPIOS_PER_AUX_REGISTER; gpioOffset++) 
+		{
+			uint8_t gpioIndex = initialGpioIndex + gpioOffset;
 
-	    // Validate and unpack each device’s 6-byte data + 2-byte PEC10
-	    for (uint8_t devIndex = 0; devIndex < NUM_MOD; devIndex++) {
-			uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
+			if (gpioIndex > GPIOS_PER_IC - 1) break;
 
-			uint8_t *gpioData    = &rx_buffer[offset];            // 6 data bytes
-			uint8_t *gpioDataPec = &rx_buffer[offset + DATA_LEN]; // 2 PEC bytes
-
-			// Check RX PEC10 for data integrity
-			bool pec10Check = ADBMS_checkRxPec(gpioData, DATA_LEN, gpioDataPec);
-			if (!pec10Check) {
-//				printf("M%d failed for voltage reading\n", devIndex + 1);
-				continue; // Skip this device’s page if PEC fails
+			if (!isDataValid) 
+			{
+				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+				continue;
 			}
 
-			// Each page provides ADBMS_SERIES_GROUPS_PER_RDAC cells (2 bytes per cell)
-			for (uint8_t dataIndex = 0; dataIndex < ADBMS_SERIES_GROUPS_PER_RDAC; dataIndex++) {
-				uint8_t gpioInMod = (uint8_t)(regIndex * ADBMS_SERIES_GROUPS_PER_RDAC + dataIndex);
-				if (gpioInMod >= NUM_THERM_PER_MOD) break; // Last page may be partially filled (e.g., 14 cells)
+			uint8_t lowByte = rxBuffer[moduleIndex][2 * gpioOffset];
+			uint8_t highByte = rxBuffer[moduleIndex][2 * gpioOffset + 1];
+			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
 
-				// Device transmits LSB then MSB; re-pack into a 16-bit sample
-				uint8_t lo = gpioData[2 * dataIndex + 0];
-				uint8_t hi = gpioData[2 * dataIndex + 1];
-				uint16_t ILOVEBMS = (uint16_t)(((uint16_t)hi << 8) | (uint16_t)lo);  //pack raw data to uint16_t
-	//				printf("M%d, cell:%d raw Value:%d\n", devIndex+1,  gpioInMod +1 ,ILOVEBMS);
-				// 0x8000 is a device “cleared/invalid” code; store 0xFFFF as a sentinel for “no data”
-				if (ILOVEBMS == 0x8000u) { mod[devIndex].gpio_volt[gpioInMod] = 0xFFFF; }
-				else {
-					// Convert raw to mV: mv = 1500 mV + raw * 0.150 mV/LSB
-					// (Adjust this formula to the exact datasheet scaling for your part/mode.)
-					uint32_t gpiouV = 1500000u + (uint32_t)ILOVEBMS * 150u; // convert equation is form datasheet(cell = CxV x 150microV + 1.5V)
-					uint16_t gpiomV = (uint16_t)((gpiouV + 500) / 1000u);      // Scale from µV to mV, add 500 for integer rounding
-					if (gpiomV > 65535u) gpiomV = 65535u;                       // Clamp to 16-bit storage field
-					mod[devIndex].gpio_volt[gpioInMod] = gpiomV;  //store in mV
-				}
+			if (rawVoltage == 0x8000u) //Default value
+			{
+				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+			}
+			else 
+			{
+				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
+				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+				moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
 			}
 		}
 	}

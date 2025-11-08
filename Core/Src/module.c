@@ -141,9 +141,9 @@ void Get_Dew_Point(ModuleData *mod) {
  * They are left commented as TODO; enable and adapt to your hardware mapping.
  */
 //TODO: gpio read
-void Read_Temp(ModuleData *mod) {
+void Module_getTemperatures(ModuleData *mod) {
 	ADBMS_getVref2(mod);
-	ADBMS_getGPIOData(mod);
+	ADBMS_getGpioVoltages(mod);
 	Convert_GPIOVoltageToTemp(mod); //+5 because vref is the last reg
 
 //	printf("Temperature read end\n");
