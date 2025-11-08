@@ -49,6 +49,12 @@
  */
 #define SENSOR_MIN_TEMP -40.0f
 #define SENSOR_MAX_TEMP 125.0f
+#define TEMPE_INVERCED_T0 (1.0f / 298.15f)
+#define TEMP_Rp 10000.0f
+#define TEMP_R0 10000.0f
+#define TEMP_INVERCED_BETA (1.0f / 3435.0f)
+#define TEMP_KELVIN 273.15f
+
 
 #define LTC6811_Vdd 51450.0f
 
@@ -66,7 +72,8 @@ void Module_getVoltages(ModuleData *mod);
  *    and logical index 'tempindex' into an entry of 'actual_temp' array.
  *
  */
-void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp, uint16_t data);
+void Convert_GPIOVoltageToTemp(ModuleData *mod);
+void Read_Temp(ModuleData *mod);
 
 /* ===== Public API: Ambient Sensors (Pressure / Air Temp / Humidity) =========
  * Atmos_Temp_To_Celsius():

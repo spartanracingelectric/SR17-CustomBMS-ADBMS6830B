@@ -59,6 +59,19 @@
 #define VOV   VOV_FROM_VOLTAGE(4.2f) 
 
 
+/* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
+ * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
+ */
+#define RDAUXA 0x0019
+#define RDAUXB 0x001A
+#define RDAUXC 0x001B
+#define RDAUXD 0x001F
+
+#define RDSTATA 0x0030
+#define RDSTATB 0x0031
+#define RDSTATC 0x0072
+#define RDSTATD 0x0033
+#define RDSTATE 0x0034
 
 
 /* ===== Frame Sizes and Packing ==============================================
@@ -77,6 +90,10 @@
 #define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
 // #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
 #define CELLS_PER_REGISTER 3
+#define ADBMS_SERIES_GROUPS_PER_RDAC 3
+#define ADBMS_SERIES_GROUPS_PER_RDAUX 3
+#define REG_NUM_RDAUX 4
+#define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
 
 #define WRCFGA 0x0001
@@ -143,6 +160,42 @@ typedef enum {
     OPEN_WIRE_MODE_ALL_ON  = 0b11  // Check all cells
 } AdcOpenWireMode;
 
+typedef enum {
+	OW_OFF = 0, // Check open-wire for AUX
+	OW_ON  = 1  // Check open-wire for AUX
+} AUXOW;
+
+typedef enum {
+	PUP_OFF = 0, // Check open-wire for AUX
+	PUP_ON  = 1  // Check open-wire for AUX
+} AUXPUP;
+
+typedef enum {
+	CH4_ON  = 0, // Check open-wire for AUX
+	CH4_OFF = 1  // Check open-wire for AUX
+} AUXCH4;
+
+typedef enum {
+	CH3_ON  = 0, // Check open-wire for AUX
+	CH3_OFF = 1  // Check open-wire for AUX
+} AUXCH3;
+
+typedef enum {
+	CH2_ON  = 0, // Check open-wire for AUX
+	CH2_OFF = 1  // Check open-wire for AUX
+} AUXCH2;
+
+typedef enum {
+	CH1_ON  = 0, // Check open-wire for AUX
+	CH1_OFF = 1  // Check open-wire for AUX
+} AUXCH1;
+
+typedef enum {
+	CH0_ON  = 0, // Check open-wire for AUX
+	CH0_OFF = 1  // Check open-wire for AUX
+} AUXCH0;
+
+
 /* ===== SPI Status Bitfield ===================================================
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
  * Example: set (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)) on TX failure.
@@ -187,6 +240,8 @@ void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
 void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod);
+LTC_SPI_StatusTypeDef ADBMS_getVref2(ModuleData *mod);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).

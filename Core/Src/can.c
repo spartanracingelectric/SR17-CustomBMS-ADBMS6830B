@@ -300,14 +300,14 @@ void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
 
     for (int i = 0; i < NUM_THERM_TOTAL; i += 12) {
         Set_CAN_Id(buffer, CAN_ID);
-        buffer->thermistorBuffer[0] = (uint8_t)(mod[i].cell_temp[  i  ] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].cell_temp[i + 1] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].cell_temp[i + 2] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].cell_temp[i + 3] & 0xFF);
-		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].cell_temp[i + 4] & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].cell_temp[i + 5] & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].cell_temp[i + 6] & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].cell_temp[i + 7] & 0xFF);
+        buffer->thermistorBuffer[0] = (uint8_t)(mod[i].gpio_volt[  i  ] & 0xFF);
+		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].gpio_volt[i + 1] & 0xFF);
+		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].gpio_volt[i + 2] & 0xFF);
+		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].gpio_volt[i + 3] & 0xFF);
+		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].gpio_volt[i + 4] & 0xFF);
+		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].gpio_volt[i + 5] & 0xFF);
+		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].gpio_volt[i + 6] & 0xFF);
+		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].gpio_volt[i + 7] & 0xFF);
 
 //		printf("temp1 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp2 in 8 bits:%d\n", ptr->data[1]);
@@ -323,10 +323,10 @@ void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
 
 		Set_CAN_Id(buffer, CAN_ID);
 
-		buffer->thermistorBuffer[0] = (uint8_t)(mod[i].cell_temp [i +  8] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].cell_temp [i +  9] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].cell_temp [i + 10] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].cell_temp [i + 11] & 0xFF);
+		buffer->thermistorBuffer[0] = (uint8_t)(mod[i].gpio_volt [i +  8] & 0xFF);
+		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].gpio_volt [i +  9] & 0xFF);
+		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].gpio_volt [i + 10] & 0xFF);
+		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].gpio_volt [i + 11] & 0xFF);
 		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].pressure           & 0xFF);
 		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].atmos_temp         & 0xFF);
 		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].humidity           & 0xFF);

@@ -112,23 +112,15 @@ void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adcValue) {
  *  - Writes the result into ‘actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex]’.
  *  - If data==0, writes 999.0f sentinel value (error) into the array.
  */
-void Get_Actual_Temps(uint8_t dev_idx, uint8_t tempindex, uint16_t *actual_temp, uint16_t data) {
-    if (data == 0) {
-        actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = 999.0f; // error value
-        return;
-    }
-
-    float scalar = 30000.0f / (float)(data) - 1.0f;
-    scalar = ntcSeriesResistance / scalar;
-
-    float steinhart = scalar / ntcNominal;
-    steinhart = log(steinhart);
-    steinhart *= invBetaFactor;
-    steinhart += invNominalTemp;
-    steinhart = 1.0f / steinhart;
-    steinhart -= 273.15f;
-
-    actual_temp[dev_idx * NUM_THERM_PER_MOD + tempindex] = steinhart;
+void Convert_GPIOVoltageToTemp(ModuleData *mod) {
+	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
+		for (int tempIndex = 0; tempIndex < NUM_THERM_PER_MOD; tempIndex++){
+			float TEMP_R = TEMP_Rp * (mod[modIndex].gpio_volt[tempIndex] / (mod[modIndex].vref2 - mod[modIndex].gpio_volt[tempIndex]));
+			float lnR_R0 = logf(TEMP_R / TEMP_R0);
+			float TEMP_T = (1 / (TEMPE_INVERCED_T0 + TEMP_INVERCED_BETA * lnR_R0)) - TEMP_KELVIN;
+			mod[modIndex].cell_temp[tempIndex] = TEMP_T;
+		}
+	}
 }
 
 void Get_Dew_Point(ModuleData *mod) {
@@ -143,7 +135,19 @@ void Get_Dew_Point(ModuleData *mod) {
 	}
 }
 
+/* ===== (Examples/Disabled) AUX MUX Read Path ================================
+ * The following routines illustrate how to steer an I²C MUX via COMM, kick an
+ * AUX conversion, read back AUX groups, and post-process into engineering units.
+ * They are left commented as TODO; enable and adapt to your hardware mapping.
+ */
+//TODO: gpio read
+void Read_Temp(ModuleData *mod) {
+	ADBMS_getVref2(mod);
+	ADBMS_getGPIOData(mod);
+	Convert_GPIOVoltageToTemp(mod); //+5 because vref is the last reg
 
+//	printf("Temperature read end\n");
+}
 
 
 

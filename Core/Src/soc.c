@@ -67,7 +67,7 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
 
     uint16_t temperature = 0;
     for (int i = 0; i < NUM_THERM_TOTAL; ++i) {
-        temperature += mod->cell_temp[i];
+        temperature += mod->gpio_volt[i];
     }
     temperature /= NUM_THERM_TOTAL;
 //    printf("temp:%d", temperature);
