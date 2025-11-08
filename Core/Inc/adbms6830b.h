@@ -240,6 +240,7 @@ void ADBMS_startAuxConversions();
 void ADBMS_getGpioVoltages(ModuleData *moduleData);
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getVref2(ModuleData *mod);
+void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *moduleData);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).
