@@ -240,8 +240,9 @@ void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
 void ADBMS_parseVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
-LTC_SPI_StatusTypeDef ADBMS_getGPIOData(ModuleData *mod);
-LTC_SPI_StatusTypeDef ADBMS_getVref2(ModuleData *mod);
+void ADBMS_startAdax(); 
+void ADBMS_getGPIOData(ModuleData *mod);
+void ADBMS_getVref2(ModuleData *mod);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).
