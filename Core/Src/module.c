@@ -142,9 +142,10 @@ void Get_Dew_Point(ModuleData *mod) {
  */
 //TODO: gpio read
 void Module_getTemperatures(ModuleData *mod) {
+	ADBMS_startAuxConversions(OW_OFF, PUP_OFF, AUX_CHANNEL_ALL);
 	ADBMS_getVref2(mod);
 	ADBMS_getGpioVoltages(mod);
-	Convert_GPIOVoltageToTemp(mod); //+5 because vref is the last reg
+	//Convert_GPIOVoltageToTemp(mod); //+5 because vref is the last reg
 
 //	printf("Temperature read end\n");
 }

@@ -236,7 +236,7 @@ void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
 void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
-void ADBMS_startAuxConversions(); 
+void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect);
 void ADBMS_getGpioVoltages(ModuleData *moduleData);
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getVref2(ModuleData *mod);

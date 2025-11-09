@@ -180,12 +180,15 @@ int main(void)
 			//HAL_ADCEx_Calibration_Start(&hadc2);
 
 			Module_getVoltages(modData);
+      Accumulator_getMinVolatage(&accmData, modData);
+			Accumulator_getMaxVolatage(&accmData, modData);
+
+      Module_getTemperatures(modData);
 
 			// ReadHVInput(&accmData);
 			// getSumPackVoltage(&accmData, modData);
 
-			Accumulator_getMinVolatage(&accmData, modData);
-			Accumulator_getMaxVolatage(&accmData, modData);
+			
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
             Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);

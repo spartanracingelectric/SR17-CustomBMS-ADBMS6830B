@@ -122,7 +122,7 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 	ADBMS_csHigh();
 }
 
-void ADBMS_startGPIOConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
+void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
     uint16_t command = ADAX | (openWireMode << 8) | (pullUpPinMode << 7) | channelSelect;
 
 	isoSPI_Idle_to_Ready();
@@ -356,6 +356,25 @@ void ADBMS_getGpioVoltages(ModuleData *moduleData)
 
 		ADBMS_parseGpioVoltages(rxBuffer, registerIndex, moduleData);
 	}
+	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+    {
+        printf("Module %d GPIO Voltages:\n", moduleIndex);
+        
+        for (int gpioIndex = 0; gpioIndex < GPIOS_PER_IC; gpioIndex++)
+        {
+            uint16_t voltage = moduleData[moduleIndex].gpio_volt[gpioIndex];
+            
+            if (voltage == 0xFFFF)
+            {
+                printf("  GPIO%d: INVALID\n", gpioIndex);
+            }
+            else
+            {
+                printf("  GPIO%d: %u mV\n", gpioIndex, voltage);
+            }
+        }
+        printf("\n");
+    }
 }
 
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
