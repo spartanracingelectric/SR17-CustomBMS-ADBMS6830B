@@ -117,9 +117,23 @@ typedef struct ModuleData {
 } ModuleData;
 
 typedef struct BalanceStatus {
+    //TODO: These should be same data type maybe
 	uint8_t cellsToBalance[NUM_CELL_PER_MOD];
 	uint16_t cellsBalancing;
 } BalanceStatus;
+
+
+typedef struct FaultStatus 
+{
+    uint16_t overVoltFaultCells;
+    uint16_t underVoltFaultCells;
+    uint16_t overTempFaultPoints;
+    uint16_t underTempFaultPoints;
+    uint16_t redundantVoltageFaultCells;
+    uint16_t redudantVoltageFaultGpios;
+    uint16_t openWireFaultCells;
+    uint16_t openWireFaultGpios;
+} FaultStatus;
 
 typedef struct ConfigurationRegisterB {
 	uint16_t underVoltageThreshold_V;

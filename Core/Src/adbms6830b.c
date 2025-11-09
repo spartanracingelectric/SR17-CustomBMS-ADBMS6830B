@@ -104,18 +104,7 @@ void ADBMS_init()
  */
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
 {
-	uint16_t command = 0;
-
-	command |= (0 << 10);    					// bit10 = 0        (fixed)
-	command |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
-	command |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
-	command |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
-	command |= (1 << 6);     					// bit6  = 1        (fixed)
-	command |= (1 << 5);     					// bit5  = 1        (fixed)
-	command |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
-	command |= (0 << 3);     					// bit3  = 0        (fixed)
-	command |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
-	command |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
+	uint16_t command = ADCV | (redundantMode << 8) | (continuousMode << 7) | (dischargeMode << 4) | (openWireMode & 0x03);
 
 	isoSPI_Idle_to_Ready();
 	ADBMS_csLow();
@@ -123,13 +112,49 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 	ADBMS_csHigh();
 }
 
-void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
+void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode)
+{
+    uint16_t command = ADSV | (continuousMode << 7) | (dischargeMode << 4) | (openWireMode & 0x03);
+
+	isoSPI_Idle_to_Ready();
+	ADBMS_csLow();
+	ADBMS_sendCommand(command);
+	ADBMS_csHigh();
+}
+
+void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) 
+{
     uint16_t command = ADAX | (openWireMode << 8) | (pullUpPinMode << 7) | channelSelect;
 
 	isoSPI_Idle_to_Ready();
     ADBMS_csLow();
     ADBMS_sendCommand(command);
     ADBMS_csHigh();
+}
+
+
+void ADBMS_readStatusRegisterC(FaultStatus *faultStatus) {
+
+    uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN];
+
+	isoSPI_Idle_to_Ready();
+    ADBMS_csLow();
+    ADBMS_sendCommand(RDSTATC);
+    ADBMS_receiveData(rxBuffer);
+    ADBMS_parseRedundantCellVoltageFaults(rxBuffer, faultStatus);
+    ADBMS_csHigh();
+}
+
+void ADBMS_parseRedundantCellVoltageFaults(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN], FaultStatus *faultStatus)
+{
+    for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--)
+    {
+        uint16_t cellsFaulting = 0;
+        cellsFaulting = rxBuffer[moduleIndex][0] | (rxBuffer[moduleIndex][1] << 8);
+        // Mask only 14 bits for a 14-cell module
+        // cellsFaulting &= 0x3FFF;
+        faultStatus[moduleIndex].redundantVoltageFaultCells = cellsFaulting;
+    }
 }
 
 /**

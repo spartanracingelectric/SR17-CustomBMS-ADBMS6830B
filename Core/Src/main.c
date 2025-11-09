@@ -104,6 +104,7 @@ int main(void)
 	ModuleData modData[NUM_MOD];
 	BalanceStatus balanceStatus[NUM_MOD];
 	ConfigurationRegisterB configB[NUM_MOD];
+    FaultStatus faultStatus[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;

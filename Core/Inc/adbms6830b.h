@@ -38,6 +38,16 @@
 #define RDACE 0x0049
 #define RDACF 0x004B
 
+#define RDSVA 0x0003   
+#define RDSVB 0x000B 
+#define RDSVC 0x000F
+#define RDSVD 0x001F
+#define RDSVE 0x003E
+#define RDSVF 0x007F
+
+#define ADCV 0x0130
+#define ADSV 0x0168
+
 #define RDSID 0x002C
 
 
@@ -227,6 +237,7 @@ void ADBMS_clearRegisters();
  */
 void ADBMS_init();
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
+void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
 void ADBMS_snap();
 void ADBMS_unsnap();
 
@@ -247,6 +258,7 @@ void ADBMS_getGpioVoltages(ModuleData *moduleData);
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getVref2(ModuleData *mod);
 void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *moduleData);
+void ADBMS_parseRedundantCellVoltageFaults(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN], FaultStatus *faultStatus);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).
