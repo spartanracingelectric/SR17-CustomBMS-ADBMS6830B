@@ -25,6 +25,7 @@
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
 static const uint16_t AUX_REGISTERS[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
+static const uint16_t REDUNDANT_AUX_REGISTERS[4] = { RDRAXA, RDRAXB, RDRAXC, RDRAXD };
 static const uint16_t ADBMS_CMD_RDSTAT[5] = {RDSTATA, RDSTATB, RDSTATC, RDSTATD, RDSTATE};
 
 /**
@@ -161,7 +162,7 @@ void ADBMS_unsnap()
 
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN])
 {
-	//TODO: Verify PEC
+	//TODO: Error check
 	HAL_SPI_Receive(&hspi1, (uint8_t*)&rxBuffer[0][0], NUM_MOD * (DATA_LEN + PEC_LEN), 100);
 }
 
@@ -345,7 +346,7 @@ void ADBMS_getGpioVoltages(ModuleData *moduleData)
 {
 	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 
-	int numberOfRegisters = (NUM_CELL_PER_MOD + (GPIOS_PER_AUX_REGISTER - 1)) / GPIOS_PER_AUX_REGISTER;
+	int numberOfRegisters = NUMBER_OF_AUX_REGISTERS;
 	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
 	{
 		isoSPI_Idle_to_Ready();
@@ -356,25 +357,7 @@ void ADBMS_getGpioVoltages(ModuleData *moduleData)
 
 		ADBMS_parseGpioVoltages(rxBuffer, registerIndex, moduleData);
 	}
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
-    {
-        printf("Module %d GPIO Voltages:\n", moduleIndex);
-        
-        for (int gpioIndex = 0; gpioIndex < GPIOS_PER_IC; gpioIndex++)
-        {
-            uint16_t voltage = moduleData[moduleIndex].gpio_volt[gpioIndex];
-            
-            if (voltage == 0xFFFF)
-            {
-                printf("  GPIO%d: INVALID\n", gpioIndex);
-            }
-            else
-            {
-                printf("  GPIO%d: %u mV\n", gpioIndex, voltage);
-            }
-        }
-        printf("\n");
-    }
+	
 }
 
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
@@ -401,8 +384,10 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * gpioOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * gpioOffset + 1];
 			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			//printf("Module: %d, GPIO: %d, Raw Voltage: %d\n", moduleIndex, gpioIndex, rawVoltage);
 
-			if (rawVoltage == 0x8000u) //Default value
+
+			if (rawVoltage == 0x8000) //Default value
 			{
 				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 			}
@@ -411,6 +396,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
 				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
 				moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
+				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex, milliVoltage);
 			}
 		}
 	}
@@ -453,6 +439,7 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
             uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
             uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
             moduleData[moduleIndex].vref2 = milliVoltage;
+			printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
         }
 	}
 }
