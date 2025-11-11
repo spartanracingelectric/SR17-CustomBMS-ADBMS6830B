@@ -14,6 +14,7 @@
  *  @warning All functions are blocking and not thread-safe.
  */
 #include <adbms6830b.h>
+#include "module.h"
 #include "spi.h"
 #include "main.h"
 #include <stdint.h>
@@ -395,7 +396,18 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 			{
 				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
 				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
+
+                //TODO: Figure out why this offset exists
+                milliVoltage = milliVoltage - GPIO_VOLTAGE_OFFSET_MV;
+                
+                if (milliVoltage < 0 || milliVoltage >= moduleData[moduleIndex].vref2)
+                {
+                    moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+                }
+                else 
+                {
+				    moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
+                }
 				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex, milliVoltage);
 			}
 		}
