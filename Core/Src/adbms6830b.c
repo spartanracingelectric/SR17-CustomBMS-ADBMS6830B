@@ -17,6 +17,7 @@
 #include "module.h"
 #include "spi.h"
 #include "main.h"
+#include "stm32f1xx_hal.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -24,10 +25,13 @@
 
 
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
+static const uint16_t REDUDANT_CELL_VOLTAGE_REGISTERS[6] = {RDSVA, RDSVB, RDSVC, RDSVD, RDSVE, RDSVF};
 static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
 static const uint16_t AUX_REGISTERS[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
 static const uint16_t REDUNDANT_AUX_REGISTERS[4] = { RDRAXA, RDRAXB, RDRAXC, RDRAXD };
 static const uint16_t ADBMS_CMD_RDSTAT[5] = {RDSTATA, RDSTATB, RDSTATC, RDSTATD, RDSTATE};
+
+DiagnosticPhase diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
 
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
@@ -105,18 +109,7 @@ void ADBMS_init()
  */
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
 {
-	uint16_t command = 0;
-
-	command |= (0 << 10);    					// bit10 = 0        (fixed)
-	command |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
-	command |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
-	command |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
-	command |= (1 << 6);     					// bit6  = 1        (fixed)
-	command |= (1 << 5);     					// bit5  = 1        (fixed)
-	command |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
-	command |= (0 << 3);     					// bit3  = 0        (fixed)
-	command |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
-	command |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
+	uint16_t command = ADCV | (redundantMode << 8) | (continuousMode << 7) | (dischargeMode << 4) | (filterResetMode << 2) | (openWireMode & 0x03);
 
 	isoSPI_Idle_to_Ready();
 	ADBMS_csLow();
@@ -124,7 +117,19 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 	ADBMS_csHigh();
 }
 
-void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
+void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode)
+{
+    uint16_t command = ADSV | (continuousMode << 7) | (dischargeMode << 4) | (openWireMode & 0x03);
+
+	isoSPI_Idle_to_Ready();
+	ADBMS_csLow();
+	ADBMS_sendCommand(command);
+	ADBMS_csHigh();
+}
+
+
+void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) 
+{
     uint16_t command = ADAX | (openWireMode << 8) | (pullUpPinMode << 7) | channelSelect;
 
 	isoSPI_Idle_to_Ready();
@@ -259,6 +264,110 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 		}
 	}
 }
+
+void ADBMS_getRedundantCellVoltages(ModuleData *moduleData) 
+{
+	uint8_t rxBuffer[NUM_MOD][REG_LEN];
+	
+	ADBMS_snap(); 
+	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_ADC_REGISTER - 1)) / CELLS_PER_ADC_REGISTER;
+	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
+	{
+		isoSPI_Idle_to_Ready();
+		ADBMS_csLow();
+		ADBMS_sendCommand(REDUDANT_CELL_VOLTAGE_REGISTERS[registerIndex]);
+		ADBMS_receiveData(rxBuffer);
+		ADBMS_csHigh();
+
+		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
+	}
+	ADBMS_unsnap();
+}
+
+
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
+{
+	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
+
+	//Receive data from last module first
+	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
+	{
+		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		
+		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
+		{
+			uint8_t cellIndex = initialCellIndex + cellOffset;
+
+			if (cellIndex > NUM_CELL_PER_MOD - 1) break;
+
+			if (!isDataValid) 
+			{
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+				continue;
+			}
+
+			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
+			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
+			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+
+			if (rawVoltage == 0x8000u) // Default value
+			{
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+                continue;
+			}
+
+            uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
+            uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+
+            if ((diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN || diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD) && milliVoltage <= OPEN_WIRE_CHECK_VOLTAGE_MV)
+            {
+                //TODO: Add open wire fault
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+                continue;
+            }
+
+            moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = milliVoltage;
+		}
+	}
+}
+
+void ADBMS_checkDiagnostics(ModuleData *moduleData)
+{
+    static uint32_t lastOpenWireCheck_ms = 0;
+    uint32_t now_ms = HAL_GetTick();
+
+    switch (diagnosticPhase) 
+    {
+        case DIAGNOSTIC_PHASE_REDUNDANT_START:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ALL_OFF);
+            diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_RUNNING; 
+            break;
+
+        case DIAGNOSTIC_PHASE_REDUNDANT_RUNNING:
+            ADBMS_getRedundantCellVoltages(moduleData);
+            if (now_ms - lastOpenWireCheck_ms >= 1000)
+            {
+                diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN;
+                lastOpenWireCheck_ms = now_ms;
+            }
+            break;
+
+        case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_EVEN_ON);
+            ADBMS_getRedundantCellVoltages(moduleData);
+            diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD;
+            break;
+        
+        case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ODD_ON);
+            ADBMS_getRedundantCellVoltages(moduleData);
+            diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
+            break;
+    }
+}
+
+
+
 
 void ADBMS_sendData(uint8_t data[NUM_MOD][DATA_LEN])  
 {
