@@ -253,6 +253,8 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
 void ADBMS_checkDiagnostics(ModuleData *moduleData);
 void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
 void ADBMS_snap();
 void ADBMS_unsnap();
 

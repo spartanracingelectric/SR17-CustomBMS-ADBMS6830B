@@ -344,7 +344,7 @@ void ADBMS_checkDiagnostics(ModuleData *moduleData)
             break;
 
         case DIAGNOSTIC_PHASE_REDUNDANT_RUNNING:
-            ADBMS_getRedundantCellVoltages(moduleData);
+            ADBMS_getRedundantFaultFlags(moduleData);
             if (now_ms - lastOpenWireCheck_ms >= 1000)
             {
                 diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN;
@@ -563,6 +563,43 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
 			printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
         }
 	}
+}
+
+void ADBMS_getRedundantFaultFlags(ModuleData *moduleData)
+{
+	uint8_t rxBuffer[NUM_MOD][REG_LEN];
+
+	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
+	ADBMS_csLow();
+    ADBMS_sendCommand(RDSTATC); 
+    ADBMS_receiveData(rxBuffer);
+	ADBMS_csHigh();
+    ADBMS_parseRedundantFaultFlags(moduleData, rxBuffer);
+}
+
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN])
+{
+    for (int moduleIndex = NUM_MOD; moduleIndex >=0; moduleIndex--) 
+    {
+		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+        if (!isDataValid) 
+        {
+            continue;
+        }
+        uint16_t lowByte = rxBuffer[moduleIndex][0];
+        uint16_t highByte = rxBuffer[moduleIndex][1];
+        uint16_t faultBits = (uint16_t)((highByte << 8) | lowByte);
+
+        // loop through fault bits 
+        for (uint8_t cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+        {
+            if (faultBits & (1 << cellIndex))  
+            {
+                //TODO: Set redundant fault flag
+                moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+            }
+        }
+    }
 }
 
 /** CRC15 lookup table for command PEC15 (Linear/ADI LTC/ADBMS family).
