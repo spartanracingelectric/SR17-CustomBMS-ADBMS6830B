@@ -57,4 +57,9 @@
 void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
 
+uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t voltage, uint16_t size);
+uint16_t SOC_getChargeData0C(uint16_t voltage);
+uint16_t SOC_getChargeData25C(uint16_t voltage);
+uint16_t SOC_getChargeData40C(uint16_t voltage);
+
 #endif

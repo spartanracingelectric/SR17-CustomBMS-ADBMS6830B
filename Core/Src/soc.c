@@ -43,10 +43,9 @@
  */
 void SOC_updateCurrent(AccumulatorData *batt);
 
-uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX,
-                          uint16_t lowerY, uint16_t upperY);
-uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t voltage, uint16_t size);
+//uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX, uint16_t lowerY, uint16_t upperY);
 
+uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t voltage, uint16_t size);
 uint16_t SOC_getChargeData0C(uint16_t voltage);
 uint16_t SOC_getChargeData25C(uint16_t voltage);
 uint16_t SOC_getChargeData40C(uint16_t voltage);
@@ -121,6 +120,7 @@ void SOC_updateCurrent(AccumulatorData *batt) {
  *      ΔQ[µAh] = 1000 * I[mA] * (Δt[ms] / 3600000)
  *      soc_new = soc_old - ΔQ
  */
+
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
 	if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
 		batt->current = 0;
@@ -128,7 +128,11 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
 		SOC_updateCurrent(batt);
 	}
 
-	batt->soc -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
+	batt->soc -= (batt->current * (float)(elapsed_time / 3600.0f));
+}
+
+void SOC_store(AccumulatorData *batt) {
+
 }
 
 /* ===== OCV Table Binary Search ==============================================

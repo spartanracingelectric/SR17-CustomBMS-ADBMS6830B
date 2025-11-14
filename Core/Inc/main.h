@@ -28,6 +28,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
+#include <stdint.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -71,24 +72,25 @@ extern "C" {
  *
  * Units:
  *  - cell_volt_*: millivolts (mV)
- *  - cell_temp_*: typically 0.1°C or raw ADC-derived units (project-defined)
- *  - sum_pack_voltage / hvsens_pack_voltage: millivolts (mV)
+ *  - cell_temp_*: typically °C or raw ADC-derived units (project-defined)
+ *  - sum_pack_voltage / hvsens_pack_voltage: millivolts (cV)
  *  - balance_status: bitfield per module (bit i = cell i discharging)
  *  - soc: microamp-seconds or project-defined scaled SoC accumulator
  *  - current: microamps or project-defined current units
  */
 typedef struct AccumulatorData {
-	uint16_t cell_volt_lowest;
-	uint16_t cell_volt_highest;
-	uint16_t cell_difference;
-	uint16_t cell_temp_lowest;
-	uint16_t cell_temp_highest;
-	uint16_t sum_pack_voltage;
-	uint16_t hvsens_pack_voltage;
+	uint16_t cell_volt_lowest; // mV, according to dbc this is 0.1mV
+	uint16_t cell_volt_highest; // mV, same dbc predicament
+	uint16_t cell_difference; // 0.1mV
+	uint16_t cell_temp_lowest; // C
+	uint16_t cell_temp_highest; // C
+	uint16_t sum_pack_voltage; // cV
+	uint16_t hvsens_pack_voltage; // cV
 	uint16_t balance_status[NUM_MOD];
     uint32_t soc; // uAh!!!!!
     uint32_t current; // mA (from SoC)
 	uint32_t sop; // mW (from SoP)
+	uint32_t ichg; // mA
 } AccumulatorData;
 
 /**
