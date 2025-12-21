@@ -104,9 +104,9 @@ typedef struct AccumulatorData {
 typedef struct ModuleData {
 	uint16_t cell_volt[NUM_CELL_PER_MOD];
     uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
-	uint16_t gpio_volt[NUM_THERM_PER_MOD];
+	int16_t gpio_volt[NUM_THERM_PER_MOD];
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
-	uint16_t vref2;
+	int16_t vref2;
 	uint16_t average_volt;
 	uint16_t average_temp;
 	uint16_t sum_volt_module;

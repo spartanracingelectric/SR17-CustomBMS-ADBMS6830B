@@ -493,31 +493,29 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * gpioOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * gpioOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			uint16_t rawVoltageUnsigned = (uint16_t)((highByte << 8) | lowByte);
+            int16_t rawVoltageSigned = (int16_t)((highByte << 8) | lowByte);
 			//printf("Module: %d, GPIO: %d, Raw Voltage: %d\n", moduleIndex, gpioIndex, rawVoltage);
 
 
-			if (rawVoltage == 0x8000) //Default value
+			if (rawVoltageUnsigned == 0x8000) // Default value
 			{
 				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 			}
 			else 
 			{
-				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
-
-                //TODO: Figure out why this offset exists
-                milliVoltage = milliVoltage - GPIO_VOLTAGE_OFFSET_MV;
+                int32_t microVoltageSigned = 1500000 + (int32_t)rawVoltageSigned * 150;
+                int16_t milliVoltageSigned = (int16_t)(microVoltageSigned / 1000);
                 
-                if (milliVoltage < 0 || milliVoltage >= moduleData[moduleIndex].vref2)
+                if (milliVoltageSigned < 0 || milliVoltageSigned >= moduleData[moduleIndex].vref2)
                 {
                     moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
                 }
                 else 
                 {
-				    moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
+                    moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
                 }
-				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex, milliVoltage);
+				// printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
 		}
 	}
