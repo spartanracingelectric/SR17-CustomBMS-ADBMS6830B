@@ -115,10 +115,13 @@ void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adcValue) {
 void Convert_GPIOVoltageToTemp(ModuleData *mod) {
 	for(int modIndex = 0; modIndex < NUM_MOD; modIndex++){
 		for (int tempIndex = 0; tempIndex < NUM_THERM_PER_MOD; tempIndex++){
+            printf("gpio volt %d", mod[modIndex].gpio_volt[tempIndex]);
+            printf("vref2: %d", mod[modIndex].vref2);
 			float TEMP_R = TEMP_Rp * (mod[modIndex].gpio_volt[tempIndex] / (mod[modIndex].vref2 - mod[modIndex].gpio_volt[tempIndex]));
 			float lnR_R0 = logf(TEMP_R / TEMP_R0);
 			float TEMP_T = (1 / (TEMPE_INVERCED_T0 + TEMP_INVERCED_BETA * lnR_R0)) - TEMP_KELVIN;
 			mod[modIndex].pointTemp_C[tempIndex] = TEMP_T;
+            printf("Module %d, Cell %d old_Temp_C: %f\n", modIndex, tempIndex + 1, TEMP_T);
 		}
 	}
 }
@@ -147,11 +150,12 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
             // T = 1/(A1 + B1 * LN(RT/R25) + C1 * LN(RT/R25)^2 + D1 * LN(RT/R25)^3) -273.15
             float lnRR = logf(ntcResistance / NOMINAL_RESISTANCE_25C_OHMS);
             float inverseTemperature_K = STEINHART_HART_COEFFICIENT_A + (STEINHART_HART_COEFFICIENT_B * lnRR) + (STEINHART_HART_COEFFICIENT_C * lnRR * lnRR) + (STEINHART_HART_COEFFICIENT_D * lnRR * lnRR * lnRR);
-            
+
             // Convert to Celsius
             float temperature_K = 1.0f / fmaxf(inverseTemperature_K, 1e-12f); // guard against division by 0
             float temperature_C = temperature_K - KELVIN_OFFSET;
             modData[moduleIndex].pointTemp_C[tempIndex] = temperature_C;
+            printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, temperature_C);
         }
     }
 }
