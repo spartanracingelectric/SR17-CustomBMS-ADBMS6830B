@@ -176,8 +176,8 @@ int main(void)
 		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
 		if (TimerPacket_FixedPulse(&cycleTimeCap)) {
 			//ADBMS_ReadSID(modData);
-			//HAL_ADCEx_Calibration_Start(&hadc1);
-			//HAL_ADCEx_Calibration_Start(&hadc2);
+			HAL_ADCEx_Calibration_Start(&hadc1);
+			HAL_ADCEx_Calibration_Start(&hadc2);
 
 			Module_getVoltages(modData);
       Accumulator_getMinVolatage(&accmData, modData);
@@ -185,7 +185,7 @@ int main(void)
 
       Module_getTemperatures(modData);
 
-			// ReadHVInput(&accmData);
+			HVSense_getPackVoltage(&accmData);
 			// getSumPackVoltage(&accmData, modData);
 
 			

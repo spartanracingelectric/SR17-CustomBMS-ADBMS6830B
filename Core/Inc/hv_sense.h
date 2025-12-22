@@ -45,6 +45,6 @@
  *  - Aggregates per-cell voltages from ModuleData into batt->sum_pack_voltage.
  *  - Does not perform HV-sense measurement; it purely sums cell readings.
  */
-void ReadHVInput(AccumulatorData *batt);
+void HVSense_getPackVoltage(AccumulatorData *batt);
 
 #endif /* INC_HV_SENSE_H_ */

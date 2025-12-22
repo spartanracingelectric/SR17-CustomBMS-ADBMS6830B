@@ -31,21 +31,23 @@
  *  - Unscales analog front-end (op-amp + divider) to reconstruct pack voltage.
  *  - Publishes centivolts into batt->hvsens_pack_voltage when > 10 V; else 0.
  */
-void ReadHVInput(AccumulatorData *batt) {
-	uint32_t adcValue = 0;
-	float vRef = 0;
+void HVSense_getPackVoltage(AccumulatorData *batt)
+{
+	uint32_t adcValue = readADCChannel(ADC_CHANNEL_15);
+    float vRef = getVref();
+	printf("hvsense adcValue:%ld\n", adcValue);
+    printf("hvsense vref: %f\n", vRef);
 
-	adcValue = readADCChannel(ADC_CHANNEL_15);
-	vRef = getVref();
-//		printf("adcValue:%d\n", adcValue);
-
-	//calculate voltage based on  resolution and gain on opamp, voltage divider ratio
+	// Calculate voltage based on resolution and gain on opamp, voltage divider ratio
 	float adcVoltage = ((float)adcValue / ADC_RESOLUTION) * vRef;
-//		printf("adcVoltage for hv is: %f\n", adcVoltage);
-	float amcOutput = adcVoltage / GAIN_TLV9001;
-	float hvInput = (amcOutput) * (DIVIDER_RATIO);
-	if(hvInput > 10){//if hvsens is greater than 10V(connected)
-		batt->hvsens_pack_voltage = hvInput * 100;
+    printf("hvsense adcVoltage: %f\n", adcVoltage);
+
+	float dividerVoltage = adcVoltage / GAIN_TLV9001;
+	float hvPackVoltage = (dividerVoltage) * (DIVIDER_RATIO);
+    printf("hvsense pack voltage: %f\n", hvPackVoltage);
+	if(hvPackVoltage > 10) //if hvsens is greater than 10V(connected)
+    {
+		batt->hvsens_pack_voltage = hvPackVoltage * 100;
 	}
 	else{
 		batt->hvsens_pack_voltage = 0;
