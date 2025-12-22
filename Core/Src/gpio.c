@@ -58,6 +58,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(MCU_HEARTBEAT_LED_GPIO_Port, MCU_HEARTBEAT_LED_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : CONTACTOR_SENSE_Pin */
+  GPIO_InitStruct.Pin = CONTACTOR_SENSE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(CONTACTOR_SENSE_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : LTC_nCS_Pin */
   GPIO_InitStruct.Pin = LTC_nCS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;

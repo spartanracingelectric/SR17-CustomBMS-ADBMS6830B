@@ -88,6 +88,7 @@ typedef struct AccumulatorData {
 	uint16_t balance_status[NUM_MOD];
     uint32_t soc; // microamps!!!!!
     uint32_t current;
+    uint8_t contactorState;
 } AccumulatorData;
 
 /**
@@ -177,6 +178,8 @@ void Error_Handler(void);
  */
 #define Shunt_PIN_FOR_2A_Pin GPIO_PIN_2
 #define Shunt_PIN_FOR_2A_GPIO_Port GPIOC
+#define CONTACTOR_SENSE_Pin GPIO_PIN_2
+#define CONTACTOR_SENSE_GPIO_Port GPIOA
 #define LTC_nCS_Pin GPIO_PIN_4
 #define LTC_nCS_GPIO_Port GPIOA
 #define MCU_ADC_VSENSE_Pin GPIO_PIN_5

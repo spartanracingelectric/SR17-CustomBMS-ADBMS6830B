@@ -38,6 +38,7 @@
 #include "soc.h"
 #include <stdint.h>
 #include "hv_sense.h"
+#include "contactor_sense.h"
 
 /* USER CODE END Includes */
 
@@ -186,6 +187,7 @@ int main(void)
       Module_getTemperatures(modData);
 
 			HVSense_getPackVoltage(&accmData);
+            ContactorSense_getContactorState(&accmData);
 			// getSumPackVoltage(&accmData, modData);
 
 			
