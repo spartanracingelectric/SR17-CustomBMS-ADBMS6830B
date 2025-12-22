@@ -515,7 +515,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
                 {
                     moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
                 }
-				// printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
+				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
 		}
 	}

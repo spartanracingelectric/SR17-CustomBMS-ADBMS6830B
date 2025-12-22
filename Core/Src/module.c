@@ -136,10 +136,11 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
             float outputVoltage = modData[moduleIndex].gpio_volt[tempIndex];
 
             // Guard against invalid values
-            if (outputVoltage <= 0 || outputVoltage >= referenceVoltage) 
+            if (outputVoltage <= 0 || outputVoltage >= (referenceVoltage - VREF2_MARGIN_MV)) 
             {
                 //TODO: Set invalid temp fault
-                modData[moduleIndex].pointTemp_C[tempIndex] = 0xFFFF;
+                modData[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
+                printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, DISCONNECTED_TEMP_C);
                 continue;
             }
 
