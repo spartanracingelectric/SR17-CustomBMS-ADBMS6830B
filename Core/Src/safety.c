@@ -37,12 +37,13 @@
  * These persist across calls to provide debounce and latch behavior for
  * over-voltage, under-voltage, imbalance, and temperature conditions.
  */
-uint8_t high_volt_fault_lock = 0;
-uint8_t high_volt_hysteresis = 0;
-uint8_t low_volt_hysteresis = 0;
-uint8_t low_volt_fault_lock = 0;
-uint8_t cell_imbalance_hysteresis = 0;
-uint8_t high_temp_hysteresis = 0;
+static uint32_t Timer_OverVolt[NUM_MOD][NUM_CELL_PER_MOD];
+static uint32_t Timer_UnderVolt[NUM_MOD][NUM_CELL_PER_MOD];
+static uint32_t Timer_OverTemp[NUM_MOD][NUM_THERM_PER_MOD];
+static uint32_t Timer_UnderTemp[NUM_MOD][NUM_THERM_PER_MOD];
+
+static FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
+static WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
 
 /* ===== Cell Voltage Evaluation ==============================================
  * Cell_Voltage_Fault():
@@ -53,58 +54,59 @@ uint8_t high_temp_hysteresis = 0;
  *  - Clears/relaxes a latched fault only after the measurement crosses back by
  *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
  */
-void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod, uint8_t *fault, uint8_t *warnings){
-//high cell volt warning
-		if (acc->cell_volt_highest >= CELL_HIGH_VOLT_WARNING) {
-			*warnings |= WARNING_BIT_HIGH_VOLT;
-		}
-//high cell volt fault
-		if ((acc->cell_volt_highest >= CELL_HIGH_VOLT_FAULT)) {
-			if (high_volt_hysteresis > 16) {  //takes 50 cycle to fault
-				high_volt_fault_lock = 1;
-				*warnings &= ~WARNING_BIT_HIGH_VOLT;
-				*fault |= FAULT_BIT_HIGH_VOLT;
-				SendFaultSignal();
-			}
-			else {
-				high_volt_hysteresis++;
-			}
-//			printf("high voltage fault signal on\n");
-		}
-//reset high cell volt fault
-		else if (((acc->cell_volt_highest < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT)) || (acc->cell_volt_highest > CELL_HIGH_VOLT_DISCONNECT))&& high_volt_fault_lock == 1){
-			if (high_volt_hysteresis > 0){
-				high_volt_hysteresis = 0;
-				high_volt_fault_lock = 0;
-				*warnings &= ~WARNING_BIT_HIGH_VOLT;
-				*fault &= ~FAULT_BIT_HIGH_VOLT;
-				ClearFaultSignal();
-			}
-		}
+void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
+	uint32_t current_time = HAL_GetTick();
+    acc->cell_volt_highest = mod[0].cell_volt[0];
+    acc->cell_volt_lowest  = mod[0].cell_volt[0];
 
-//low cell volt warning
-		if (acc->cell_volt_lowest <= CELL_LOW_VOLT_WARNING) {
-			*warnings |= WARNING_BIT_LOW_VOLT;
-		}
-//low cell volt fault
-		if (acc->cell_volt_lowest <= CELL_LOW_VOLT_FAULT){
-			if (low_volt_hysteresis > 16) {
-				low_volt_fault_lock = 1;
-				*warnings &= ~WARNING_BIT_LOW_VOLT;
-				*fault |= FAULT_BIT_LOW_VOLT;
-				SendFaultSignal();
-			} else {
-				low_volt_hysteresis++;
-			}
-//reset low cell volt fault
-		} else if (acc->cell_volt_lowest > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT)) {
-			if (low_volt_hysteresis > 0) {
-				low_volt_hysteresis = 0;
-				*warnings &= ~WARNING_BIT_LOW_VOLT;
-				*fault &= ~FAULT_BIT_LOW_VOLT;
+    for (int m = 0; m < NUM_MOD; m++) {
+        for (int c = 0; c < NUM_CELL_PER_MOD; c++) {
+            uint16_t voltage = mod[m].cell_volt[c];
+            
+            if (voltage > acc->cell_volt_highest) acc->cell_volt_highest = voltage;
+            if (voltage < acc->cell_volt_lowest)  acc->cell_volt_lowest = voltage;
+
+            FaultFlags_t   *faults = &GlobalFaults[m][c];
+            WarningFlags_t *warns  = &GlobalWarnings[m][c];
+
+            if (voltage >= CELL_HIGH_VOLT_WARNING) warns->OverVoltWarn = 1;
+            else warns->OverVoltWarn = 0;
+
+            if (voltage >= CELL_HIGH_VOLT_FAULT) {
+                if (Timer_OverVolt[m][c] == 0) {
+                    Timer_OverVolt[m][c] = current_time;
+                } 
+				
+				else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT) {
+                    faults->OverVoltage = 1;
+                    SendFaultSignal(); 
+                }
+            } 
+			else if (voltage < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT)) {
+                Timer_OverVolt[m][c] = 0; 
+                faults->OverVoltage = 0; 
+                ClearFaultSignal();  
+            }
+
+            if (voltage <= CELL_LOW_VOLT_WARNING) warns->UnderVoltWarn = 1;
+            else warns->UnderVoltWarn = 0;
+
+            if (voltage <= CELL_LOW_VOLT_FAULT) {
+                if (Timer_UnderVolt[m][c] == 0) {
+                    Timer_UnderVolt[m][c] = current_time;
+                } 
+                else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT) {
+                    faults->UnderVoltage = 1;
+                    SendFaultSignal();
+                }
+            } 
+            else if (voltage > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT)) {
+                Timer_UnderVolt[m][c] = 0;
+                faults->UnderVoltage = 0;
 				ClearFaultSignal();
-			}
-		}
+            }
+        }
+    }
 }
 //void Cell_Balance_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings) {
 //	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
@@ -122,42 +124,56 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod, uint8_t *fault, u
  *    fault and SendFaultSignal(); clears once temperature falls below the
  *    threshold by FAULT_LOCK_MARGIN_HIGH_TEMP and calls ClearFaultSignal().
  */
-void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod, uint8_t *fault, uint8_t *warnings) {
-	batt->cell_temp_highest = mod->gpio_volt[0];
-	batt->cell_temp_lowest = mod->gpio_volt[0];
+void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod) {
+	uint32_t current_time = HAL_GetTick();
+    batt->cell_temp_highest = mod[0].pointTemp_C[0];
+    batt->cell_temp_lowest  = mod[0].pointTemp_C[0];
 
-	for (int i = 0; i < NUM_THERM_TOTAL; i++) {
-		//find highest temp
-		if (batt->cell_temp_highest < mod->gpio_volt[i]) {
-			batt->cell_temp_highest = mod->gpio_volt[i];
-		}
-		if (batt->cell_temp_lowest > mod->gpio_volt[i]) {
-			batt->cell_temp_lowest = mod->gpio_volt[i];
-		}
-	}
+    for (int m = 0; m < NUM_MOD; m++) {
+        for (int t = 0; t < NUM_THERM_PER_MOD; t++) {
+            uint16_t temp = mod[m].pointTemp_C[t];
 
-	//highest cell temp warning
-	if (batt->cell_temp_highest >= CELL_HIGH_TEMP_WARNING && batt->cell_temp_highest < CELL_HIGH_TEMP_FAULT) {
-		*warnings |= WARNING_BIT_HIGH_TEMP;
-	}
-	//highest cell temp fault
+            if (temp > batt->cell_temp_highest) batt->cell_temp_highest = temp;
+            if (temp < batt->cell_temp_lowest)  batt->cell_temp_lowest  = temp;
 
-	if (batt->cell_temp_highest >= CELL_HIGH_TEMP_FAULT) {
-		if (high_temp_hysteresis > 2) {
-			*warnings &= ~WARNING_BIT_HIGH_TEMP;
-			*fault |= FAULT_BIT_HIGH_TEMP;
-			SendFaultSignal();
-		} else {
-			(high_temp_hysteresis)++;
+            FaultFlags_t   *faults = &GlobalFaults[m][t]; 
+            WarningFlags_t *warns  = &GlobalWarnings[m][t];
+
+            if (temp >= CELL_HIGH_TEMP_WARNING) warns->OverTempWarn = 1;
+            else warns->OverTempWarn = 0;
+
+            if (temp >= CELL_HIGH_TEMP_FAULT) {
+                if (Timer_OverTemp[m][t] == 0) {
+                    Timer_OverTemp[m][t] = current_time;
+                }
+                else if ((current_time - Timer_OverTemp[m][t]) > TIME_LIMIT_OVER_TEMP) {
+                    faults->OverTemp = 1;
+                    SendFaultSignal();
+                }
+            } 
+            else if (temp < (CELL_HIGH_TEMP_FAULT - FAULT_LOCK_MARGIN_HIGH_TEMP)) {
+                Timer_OverTemp[m][t] = 0;
+                faults->OverTemp = 0;
+            }
+
+            if (temp <= CELL_LOW_TEMP_WARNING) warns->UnderTempWarn = 1;
+			else warns->UnderTempWarn = 0;
+
+			if (temp <= CELL_LOW_TEMP_FAULT) {
+				if (Timer_UnderTemp[m][t] == 0) {
+					Timer_UnderTemp[m][t] = current_time;
+				}
+				else if ((current_time - Timer_UnderTemp[m][t]) > TIME_LIMIT_UNDER_TEMP) {
+					faults->UnderTemp = 1;
+					SendFaultSignal();
+				}
+			} 
+			else if (temp > (CELL_LOW_TEMP_FAULT + FAULT_LOCK_MARGIN_HIGH_TEMP)) {
+				Timer_UnderTemp[m][t] = 0;
+				faults->UnderTemp = 0;
+			}
 		}
-	} else if (batt->cell_temp_highest < (CELL_HIGH_TEMP_FAULT - FAULT_LOCK_MARGIN_HIGH_TEMP)) {
-		if (high_temp_hysteresis > 0) {
-			high_temp_hysteresis = 0;
-			*warnings &= ~WARNING_BIT_HIGH_TEMP;
-			*fault &= ~FAULT_BIT_HIGH_TEMP;
-			ClearFaultSignal();
-		}
-	}
+    }
 }
 
 /* ===== (Examples/Disabled) Pack-Level & Module Aggregates ====================
