@@ -270,16 +270,43 @@ void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
 				buffer->voltageBuffer[1] = (mod[i].cell_volt[  j  ] >> 8) & 0xFF;
 				buffer->voltageBuffer[2] =  mod[i].cell_volt[j + 1]       & 0xFF;
 				buffer->voltageBuffer[3] = (mod[i].cell_volt[j + 1] >> 8) & 0xFF;
-				buffer->voltageBuffer[4] =  mod[i].average_volt           & 0xFF;
-				buffer->voltageBuffer[5] = (mod[i].average_volt     >> 8) & 0xFF;
-				buffer->voltageBuffer[6] =  mod[i].sum_volt_module        & 0xFF;
-				buffer->voltageBuffer[7] = (mod[i].sum_volt_module  >> 8) & 0xFF;
+				buffer->voltageBuffer[4] =  mod[i].max_voltage  	  	  & 0xFF;
+				buffer->voltageBuffer[5] = (mod[i].max_voltage		>> 8) & 0xFF;
+				buffer->voltageBuffer[6] = mod[i].min_voltage 	  		  & 0xFF;
+				buffer->voltageBuffer[7] = (mod[i].min_voltage  	>> 8) & 0xFF;
+//				buffer->voltageBuffer[4] =  mod[i].average_volt           & 0xFF;
+//				buffer->voltageBuffer[5] = (mod[i].average_volt     >> 8) & 0xFF;
+//				buffer->voltageBuffer[6] =  mod[i].sum_volt_module        & 0xFF;
+//				buffer->voltageBuffer[7] = (mod[i].sum_volt_module  >> 8) & 0xFF;
+
+				Set_CAN_Id(buffer, CAN_ID);
+				CAN_Send(buffer);
+				CAN_ID++;
+
+			}
+    	}
+    }
+}
+
+void CAN_Send_Voltage1(CANMessage *buffer, ModuleData *mod) {
+	uint32_t CAN_ID = (uint32_t)CAN_ID_VOLTAGE;
+    for (int i = 0; i < NUM_MOD; i ++) {  //pack every 4 cell group in 1 CAN message
+    	for (int j = 0; j < NUM_CELL_PER_MOD; j += 4) {
+    		if(j + 3 < NUM_CELL_PER_MOD){
+    			buffer->voltageBuffer[0] = mod[i].total_pack_voltage     	& 0xFF;
+    			buffer->voltageBuffer[1] = (mod[i].total_pack_voltage >> 8) & 0xFF;
+    			buffer->voltageBuffer[2] = mod[i].imbalance_voltage  	 	& 0xFF;
+    			buffer->voltageBuffer[3] = (mod[i].imbalance_voltage  >> 8) & 0xFF;
+    			buffer->voltageBuffer[4] = mod[i].hv_sens  		 		 	& 0xFF;
+    			buffer->voltageBuffer[5] = (mod[i].hv_sens  		  >> 8) & 0xFF;
+    			buffer->voltageBuffer[6] = 0;
+    			buffer->voltageBuffer[7] = 0;
 		//        printf("can id for voltage: %d\n", CAN_ID);
 
 				Set_CAN_Id(buffer, CAN_ID);
 				CAN_Send(buffer);
 				CAN_ID++;
-			}
+    		}
     	}
     }
 }
@@ -326,11 +353,11 @@ void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
 		buffer->thermistorBuffer[0] = (uint8_t)(mod[i].gpio_volt [i +  8] & 0xFF);
 		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].gpio_volt [i +  9] & 0xFF);
 		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].gpio_volt [i + 10] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].gpio_volt [i + 11] & 0xFF);
 		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].pressure           & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].atmos_temp         & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].humidity           & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].dew_point          & 0xFF);
+		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].humidity           & 0xFF);
+		buffer->thermistorBuffer[6] = 0;
+		buffer->thermistorBuffer[7] = 0;
+//		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].atmos_temp         & 0xFF);  move atmosphere into accumulator data
 
 //		printf("temp9 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp10 in 8 bits:%d\n", ptr->data[1]);

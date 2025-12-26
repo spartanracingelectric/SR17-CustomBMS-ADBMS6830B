@@ -204,13 +204,12 @@ SG_ BMS_M1_Cell_12_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 BO_ 1587 BMS_M1_Cell_Voltage_Data_4: 8 Custom_BMS
 SG_ BMS_M1_Cell_13_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_Cell_14_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M1_Max_Voltage     : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS			CM_ change the decimal points and 60 degrees is the max temp
+SG_ BMS_M1_Max_Voltage     : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	
 SG_ BMS_M1_Min_Voltage     : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1588 BMS_M1_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M1_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_Total_Pack_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS CM_check
-SG_ BMS_M1_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1588 BMS_M2_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -238,9 +237,8 @@ SG_ BMS_M2_Max_Voltage	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M2_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1592 BMS_M2_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M1_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_Total_Pack_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS CM_ check
-SG_ BMS_M1_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1592 BMS_M3_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -268,9 +266,8 @@ SG_ BMS_M3_Max_Voltage	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M3_Min_Voltage	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M3_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M1_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_Total_Pack_Voltage :16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_check
-SG_ BMS_M1_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M4_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -298,9 +295,8 @@ SG_ BMS_M4_Max_Voltage 	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M4_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M4_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M1_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_Total_Pack_Voltage :16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M1_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1600 BMS_M5_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -328,9 +324,8 @@ SG_ BMS_M5_Max_Voltage 	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS				CM_
 SG_ BMS_M5_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1604 BMS_M5_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M5_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M5_Total_Pack_Voltage :16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_check
-SG_ BMS_M5_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M5_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M5_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1604 BMS_M6_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -358,9 +353,8 @@ SG_ BMS_M6_Max_Voltage 	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M6_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M6_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M6_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M6_Total_Pack_Voltage :16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M6_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M6_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M6_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1607 BMS_M7_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -388,9 +382,8 @@ SG_ BMS_M7_Max_Voltage 	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M7_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BM7_M1_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M7_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M7_Total_Pack_Voltage :16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M7_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M7_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M7_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1610 BMS_M8_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -418,9 +411,8 @@ SG_ BMS_M8_Max_Voltage 	   : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M8_Min_Voltage 	   : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M8_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M8_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M8_Total_Pack_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS 	CM_ check
-SG_ BMS_M8_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M8_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M8_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1612 BMS_M9_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -448,9 +440,8 @@ SG_ BMS_M9_Max_Voltage : 32|16@1+ (0,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M9_Min_Voltage : 48|16@1+ (0,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1596 BMS_M9_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M9_Max/Min_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M9_Total_Pack_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M9_Max-Min_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M9_Imbalance_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M9_HV_Sens	       : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1615 BMS_M10_Cell_Voltage_Data_1: 8 Custom_BMS
@@ -478,9 +469,8 @@ SG_ BMS_M10_Max_Voltage     : 32|16@1+ (0,0) [0|60] "C" Custom_BMS
 SG_ BMS_M10_Min_Voltage     : 48|16@1+ (0,0) [0|60] "C" Custom_BMS
 
 BO_ 1596 BMS_M10_Cell_Voltage_Data_5: 8 Custom_BMS
-SG_ BMS_M10_Max/Min_Voltage    : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M10_Total_Pack_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS	CM_ check
-SG_ BMS_M10_Max-Min_Voltage    : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M10_Imbalance_Voltage    : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M10_HV_Sens	           : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1664 BMS_M1_Cell_Thermistor_Data_1: 8 Custom_BMS
@@ -645,7 +635,7 @@ SG_ BMS_M1_avg_M3_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_avg_M4_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 
 BO_ 1696 avg_module_temp  : 8 Custom_BMS
-SG_ BMS_M1_avg_M5_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_M5_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_avg_M6_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_avg_M7_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
 SG_ BMS_M1_avg_M8_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
