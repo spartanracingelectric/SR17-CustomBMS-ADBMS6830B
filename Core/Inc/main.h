@@ -115,6 +115,7 @@ typedef struct ModuleData {
 	uint16_t atmos_temp;
     uint16_t dew_point;
     uint8_t sid[6];
+	uint8_t pec_error_count;
 } ModuleData;
 
 typedef struct BalanceStatus {

@@ -180,8 +180,8 @@ int main(void)
 			//HAL_ADCEx_Calibration_Start(&hadc2);
 
 			Module_getVoltages(modData);
-      Accumulator_getMinVolatage(&accmData, modData);
-			Accumulator_getMaxVolatage(&accmData, modData);
+      Accumulator_getMinVoltage(&accmData, modData);
+			Accumulator_getMaxVoltage(&accmData, modData);
 
       Module_getTemperatures(modData);
 
@@ -191,8 +191,8 @@ int main(void)
 			
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
-            Cell_Voltage_Fault(	&accmData, modData, &safetyFaults, &safetyWarnings);
-			Cell_Temperature_Fault(&accmData, modData, &safetyFaults, &safetyWarnings);
+            Cell_Voltage_Fault(	&accmData, modData);
+			Cell_Temperature_Fault(&accmData, modData);
 
 			// Passive balancing is called unless a fault has occurred
 			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);

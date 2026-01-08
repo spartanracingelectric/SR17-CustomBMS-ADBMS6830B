@@ -36,6 +36,8 @@
 #define CELL_VOLT_IMBALANCE_FAULT   2000 //0.1 V
 #define CELL_HIGH_TEMP_FAULT		70
 #define CELL_LOW_TEMP_FAULT         0
+#define CELL_OPEN_WIRE_FAULT        2000 
+#define REDUNDANCY_VOLT_FAULT       5000
 
 /* ===== Voltage & Temperature Thresholds (WARNING) ============================
  * Units:
@@ -67,6 +69,7 @@
 #define TIME_LIMIT_UNDER_VOLT   500  
 #define TIME_LIMIT_OVER_TEMP    100  
 #define TIME_LIMIT_UNDER_TEMP   100  
+#define TIME_LIMIT_PEC  100
 
 /* ===== Warning/Fault Summary Bit Masks ======================================
  * These masks map conditions into compact summary bytes for CAN/telemetry.

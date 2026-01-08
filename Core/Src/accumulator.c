@@ -16,7 +16,7 @@ void Accumulator_init(AccumulatorData *acc)
 	acc->current = 0x00000000;
 }
 
-void Accumulator_getMinVolatage(AccumulatorData *acc, ModuleData *mod)
+void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod)
 {
 	acc->cell_volt_lowest = mod[0].cell_volt[0];
 
@@ -32,7 +32,7 @@ void Accumulator_getMinVolatage(AccumulatorData *acc, ModuleData *mod)
 	}
 }
 
-void Accumulator_getMaxVolatage(AccumulatorData *acc, ModuleData *mod){
+void Accumulator_getMaxVoltage(AccumulatorData *acc, ModuleData *mod){
 	acc->cell_volt_highest = mod[0].cell_volt[0];
 
 	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
