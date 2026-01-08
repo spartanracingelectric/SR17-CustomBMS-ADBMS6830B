@@ -200,7 +200,7 @@ HAL_StatusTypeDef CAN_Send(CANMessage *ptr) {
 	 if(ptr->TxHeader.StdId >= CAN_ID_VOLTAGE &&  ptr->TxHeader.StdId < CAN_ID_VOLTAGE + (NUM_CELLS * 2 / CAN_BYTE_NUM)) {//(NUM_CELLS * 2 / CAN_BYTE_NUM is just a number of can message
 	   dataPtr = (uint8_t *)ptr->voltageBuffer;
 	 }
-	 else if(ptr->TxHeader.StdId >= CAN_ID_THERMISTOR &&  ptr->TxHeader.StdId < CAN_ID_THERMISTOR + ((NUM_THERM_TOTAL + (4 * NUM_MOD)) / CAN_BYTE_NUM)) {//(NUM_THERM_TOTAL + (4 * NUM_MOD)) is a total num of thermistor + sensor, (4 * NUM_MOD) is number of sensors
+	 else if(ptr->TxHeader.StdId >= CAN_ID_THERMISTOR &&  ptr->TxHeader.StdId < CAN_ID_THERMISTOR + (NUM_MOD * 2)) {//(NUM_THERM_TOTAL + (4 * NUM_MOD)) is a total num of thermistor + sensor, (4 * NUM_MOD) is number of sensors
 	   dataPtr = (uint8_t *)ptr->thermistorBuffer;
 	 }
 	 else if (ptr->TxHeader.StdId == CAN_ID_SUMMARY) {
@@ -298,16 +298,12 @@ void CAN_Send_Voltage(CANMessage *buffer, ModuleData *mod) {
 void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
     uint32_t CAN_ID = (uint32_t)CAN_ID_THERMISTOR;
 
-    for (int i = 0; i < NUM_THERM_TOTAL; i += 12) {
+    for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) {
         Set_CAN_Id(buffer, CAN_ID);
-        buffer->thermistorBuffer[0] = (uint8_t)(mod[i].gpio_volt[  i  ] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].gpio_volt[i + 1] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].gpio_volt[i + 2] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].gpio_volt[i + 3] & 0xFF);
-		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].gpio_volt[i + 4] & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].gpio_volt[i + 5] & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].gpio_volt[i + 6] & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].gpio_volt[i + 7] & 0xFF);
+        for (int i = 0; i < 8; i++)
+        {
+            buffer->thermistorBuffer[i] = (uint8_t)mod[moduleIndex].pointTemp_C[i];
+        }
 
 //		printf("temp1 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp2 in 8 bits:%d\n", ptr->data[1]);
@@ -322,15 +318,14 @@ void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod) {
 		CAN_ID++;
 
 		Set_CAN_Id(buffer, CAN_ID);
-
-		buffer->thermistorBuffer[0] = (uint8_t)(mod[i].gpio_volt [i +  8] & 0xFF);
-		buffer->thermistorBuffer[1] = (uint8_t)(mod[i].gpio_volt [i +  9] & 0xFF);
-		buffer->thermistorBuffer[2] = (uint8_t)(mod[i].gpio_volt [i + 10] & 0xFF);
-		buffer->thermistorBuffer[3] = (uint8_t)(mod[i].gpio_volt [i + 11] & 0xFF);
-		buffer->thermistorBuffer[4] = (uint8_t)(mod[i].pressure           & 0xFF);
-		buffer->thermistorBuffer[5] = (uint8_t)(mod[i].atmos_temp         & 0xFF);
-		buffer->thermistorBuffer[6] = (uint8_t)(mod[i].humidity           & 0xFF);
-		buffer->thermistorBuffer[7] = (uint8_t)(mod[i].dew_point          & 0xFF);
+		buffer->thermistorBuffer[0] = (uint8_t)(mod[moduleIndex].pointTemp_C[8] & 0xFF);
+		buffer->thermistorBuffer[1] = (uint8_t)(mod[moduleIndex].pointTemp_C[9] & 0xFF);
+		buffer->thermistorBuffer[2] = (uint8_t)(mod[moduleIndex].pointTemp_C[9] & 0xFF);
+		buffer->thermistorBuffer[3] = (uint8_t)(mod[moduleIndex].pointTemp_C[9] & 0xFF);
+		buffer->thermistorBuffer[4] = (uint8_t)(mod[moduleIndex].pressure           & 0xFF);
+		buffer->thermistorBuffer[5] = (uint8_t)(mod[moduleIndex].atmos_temp         & 0xFF);
+		buffer->thermistorBuffer[6] = (uint8_t)(mod[moduleIndex].humidity           & 0xFF);
+		buffer->thermistorBuffer[7] = (uint8_t)(mod[moduleIndex].dew_point          & 0xFF);
 
 //		printf("temp9 in 8 bits:%d\n", ptr->data[0]);
 //		printf("temp10 in 8 bits:%d\n", ptr->data[1]);

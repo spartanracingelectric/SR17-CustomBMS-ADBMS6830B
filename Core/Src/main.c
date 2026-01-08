@@ -203,7 +203,7 @@ int main(void)
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 			CAN_Send_Cell_Summary(&msg, &accmData);
 			CAN_Send_Voltage(&msg, modData);
-//			CAN_Send_Temperature(&msg, modData);
+			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_Send_Balance_Status(&msg, balanceStatus);
 		}
