@@ -28,16 +28,16 @@
  *  - PACK_* and CELL_* voltage thresholds → 0.1 mV steps (deci-mV).
  *  - CELL_HIGH_TEMP_FAULT → °C.
  */
-#define PACK_HIGH_VOLT_FAULT	    4100000
-#define PACK_LOW_VOLT_FAULT         2880000
+#define PACK_HIGH_VOLT_FAULT	    590000
+#define PACK_LOW_VOLT_FAULT         288000
 #define CELL_HIGH_VOLT_DISCONNECT	45000
-#define CELL_HIGH_VOLT_FAULT	    42500
-#define CELL_LOW_VOLT_FAULT		    25000
+#define CELL_HIGH_VOLT_FAULT	    4250
+#define CELL_LOW_VOLT_FAULT		    2500
 #define CELL_VOLT_IMBALANCE_FAULT   2000 //0.1 V
 #define CELL_HIGH_TEMP_FAULT		70
 #define CELL_LOW_TEMP_FAULT         0
 #define CELL_OPEN_WIRE_FAULT        2000 
-#define REDUNDANCY_VOLT_FAULT       5000
+#define REDUNDANCY_VOLT_FAULT       5
 
 /* ===== Voltage & Temperature Thresholds (WARNING) ============================
  * Units:
@@ -61,15 +61,17 @@
 #define FAULT_LOCK_MARGIN_LOW_VOLT 	1000		//100 mV
 #define FAULT_LOCK_MARGIN_IMBALANCE 1000		//100 mV
 #define FAULT_LOCK_MARGIN_HIGH_TEMP 10			//10 ℃
+#define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 50	//5 mV
 
 /* ===== Time Limits (Hysteresis to Assert States) =========================
  * Time limits (in ms) that a fault condition must persist before being asserted. 
  */
-#define TIME_LIMIT_OVER_VOLT    50  
+#define TIME_LIMIT_OVER_VOLT    500  
 #define TIME_LIMIT_UNDER_VOLT   500  
 #define TIME_LIMIT_OVER_TEMP    100  
 #define TIME_LIMIT_UNDER_TEMP   100  
-#define TIME_LIMIT_PEC  100
+#define TIME_LIMIT_PEC          100
+#define TIME_LIMIT_REDUNDANCY_VOLT 1000
 
 /* ===== Warning/Fault Summary Bit Masks ======================================
  * These masks map conditions into compact summary bytes for CAN/telemetry.
@@ -86,16 +88,19 @@ typedef struct {
 } WarningFlags_t;
 
 // Fault byte
-typedef struct {
-    uint8_t OverVoltage      : 1;  
+typedef struct {  
     uint8_t UnderVoltage     : 1;  
     uint8_t OpenWire         : 1;  
     uint8_t PEC              : 1;  
     uint8_t OverTemp         : 1;  
     uint8_t UnderTemp        : 1;
+    uint8_t OverVoltage      : 1;
     uint8_t RedundancyVolt   : 1;  
     uint8_t RedundancyTemp   : 1;
 } FaultFlags_t;
+
+extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
+extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
 
 typedef enum {
     FAULT_NONE = 0,

@@ -42,9 +42,10 @@ static uint32_t Timer_UnderVolt[NUM_MOD][NUM_CELL_PER_MOD];
 static uint32_t Timer_OverTemp[NUM_MOD][NUM_THERM_PER_MOD];
 static uint32_t Timer_UnderTemp[NUM_MOD][NUM_THERM_PER_MOD];
 static uint32_t Timer_PEC[NUM_MOD];
+static uint32_t Timer_RedundancyVolt[NUM_MOD][NUM_CELL_PER_MOD] = {0};
 
-static FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
-static WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
+FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD] = {0};
+WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD] = {0};
 
 /* ===== Cell Voltage Evaluation ==============================================
  * Cell_Voltage_Fault():
@@ -62,7 +63,7 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
 
     for (int m = 0; m < NUM_MOD; m++) 
     {
-        if (mod[m].pec_error_count > 0) 
+        /*if (mod[m].pec_error_count > 0) 
         {
             if (Timer_PEC[m] == 0) {
                 Timer_PEC[m] = current_time;
@@ -90,6 +91,7 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
 
             ClearFaultSignal();
         }
+            */
 
         for (int c = 0; c < NUM_CELL_PER_MOD; c++) 
         {
@@ -107,7 +109,7 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
                 faults->OpenWire = 0;
             }
 
-            int32_t diff = (int32_t)voltage - (int32_t)mod[m].redundantCellVoltage_mV[c];
+            int16_t diff = (int16_t)voltage - (int16_t)mod[m].redundantCellVoltage_mV[c];
 
             if (diff < 0) 
             {
@@ -116,13 +118,33 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
 
             if (diff > REDUNDANCY_VOLT_FAULT) 
             {
-                faults->RedundancyVolt = 1;
-                SendFaultSignal();
-            } 
-            else 
-            {
-                faults->RedundancyVolt = 0;
+                if (Timer_RedundancyVolt[m][c] == 0) 
+                {
+                    Timer_RedundancyVolt[m][c] = current_time;
+                }
+                else if ((current_time - Timer_RedundancyVolt[m][c]) > TIME_LIMIT_REDUNDANCY_VOLT) 
+                {
+                    faults->RedundancyVolt = 1;
+
+                    /*if (m == 0 && c ==0)
+                    {
+                        printf("voltage %d\r redundantVoltage %d\r module %d \r cell %d \r faults %d \r diff %d \r\n", mod[m].cell_volt[c], mod[m].redundantCellVoltage_mV[c], m, c, *(uint8_t*)&GlobalFaults[m][c], diff);
+                    }
+                    */
+
+                    SendFaultSignal();
+                }
             }
+            else
+            {
+                Timer_RedundancyVolt[m][c] = 0;
+    
+                if (diff < (REDUNDANCY_VOLT_FAULT - FAULT_LOCK_MARGIN_REDUNDANCY_VOLT))
+                {
+                    faults->RedundancyVolt = 0;
+                    ClearFaultSignal();
+                }
+            }   
 
             if (voltage >= CELL_HIGH_VOLT_WARNING) 
             {
@@ -180,6 +202,7 @@ void Cell_Voltage_Fault(AccumulatorData *acc, ModuleData *mod){
                 faults->UnderVoltage = 0;
 				ClearFaultSignal();
             }
+                */
         }
     }
 }
@@ -243,7 +266,7 @@ void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod) {
                 faults->OverTemp = 0;
                 ClearFaultSignal();
             }
-
+                
             if (temp <= CELL_LOW_TEMP_WARNING) 
             {
                 warns->UnderTempWarn = 1;
@@ -270,6 +293,7 @@ void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod) {
 				faults->UnderTemp = 0;
                 ClearFaultSignal();
 			}
+                
 		}
     }
 }

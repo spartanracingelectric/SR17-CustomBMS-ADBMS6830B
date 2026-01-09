@@ -191,8 +191,31 @@ int main(void)
 			
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
+      static uint32_t lastToggle = 0;
+      static uint16_t testRedundantVolt = 3700;
+      uint32_t current_time = HAL_GetTick();
+    if (current_time - lastToggle > 1500) { 
+        if (testRedundantVolt == 3700) {
+            testRedundantVolt = 3706;
+        } else {
+            testRedundantVolt = 3700;
+        }
+
+        lastToggle = current_time;
+    }
+      
+
+    modData[0].cell_volt[0] = 3700;
+    modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
+      
             Cell_Voltage_Fault(	&accmData, modData);
 			Cell_Temperature_Fault(&accmData, modData);
+
+      for (int m = 0; m < NUM_MOD; m++) {
+        for (int c = 0; c < NUM_CELL_PER_MOD; c++) {
+            //printf("Module %d Cell %d Voltage: %d mV, Redundant Voltage: %d mV\r\n", m, c, modData[m].cell_volt[c], modData[m].redundantCellVoltage_mV[c]);
+        }
+    }
 
 			// Passive balancing is called unless a fault has occurred
 			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
