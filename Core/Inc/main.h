@@ -30,7 +30,7 @@ extern "C" {
 #include "stm32f1xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -115,7 +115,7 @@ typedef struct ModuleData {
 	uint16_t atmos_temp;
     uint16_t dew_point;
     uint8_t sid[6];
-	uint8_t pec_error_count;
+	bool pec_error;
 } ModuleData;
 
 typedef struct BalanceStatus {

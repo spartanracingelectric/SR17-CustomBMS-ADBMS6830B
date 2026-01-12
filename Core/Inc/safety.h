@@ -60,7 +60,7 @@
 #define FAULT_LOCK_MARGIN_HIGH_VOLT 100			//10 mV
 #define FAULT_LOCK_MARGIN_LOW_VOLT 	1000		//100 mV
 #define FAULT_LOCK_MARGIN_IMBALANCE 1000		//100 mV
-#define FAULT_LOCK_MARGIN_HIGH_TEMP 10			//10 ℃
+#define FAULT_LOCK_MARGIN_TEMP 10			    //10 ℃
 #define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 50	//5 mV
 
 /* ===== Time Limits (Hysteresis to Assert States) =========================
@@ -72,6 +72,13 @@
 #define TIME_LIMIT_UNDER_TEMP   100  
 #define TIME_LIMIT_PEC          100
 #define TIME_LIMIT_REDUNDANCY_VOLT 1000
+#define TIME_LIMIT_OPEN_WIRE    100
+
+/* ===== Additional Margins/Heuristics ========================================
+ * SLAVE_VOLT_WARNING_MARGIN:
+ *  - Per-module average voltage margin (0.1 mV units) for slave/module warnings.
+ */
+#define SLAVE_VOLT_WARNING_MARGIN 	100			//10 mV
 
 /* ===== Warning/Fault Summary Bit Masks ======================================
  * These masks map conditions into compact summary bytes for CAN/telemetry.
@@ -99,9 +106,6 @@ typedef struct {
     uint8_t RedundancyTemp   : 1;
 } FaultFlags_t;
 
-extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
-extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
-
 typedef enum {
     FAULT_NONE = 0,
     FAULT_OVER_VOLT,
@@ -110,8 +114,8 @@ typedef enum {
     FAULT_PEC,
     FAULT_OVER_TEMP,
     FAULT_UNDER_TEMP,
-    FAULT_RED_VOLT,
-    FAULT_RED_TEMP
+    FAULT_REDUNDANT_VOLT,
+    FAULT_REDUNDANT_TEMP
 } FaultType_e;
 
 typedef struct {
@@ -119,11 +123,9 @@ typedef struct {
     uint8_t CellID;        // 0 to 13
     FaultType_e FaultType; 
 } FaultMessage_t;
-/* ===== Additional Margins/Heuristics ========================================
- * SLAVE_VOLT_WARNING_MARGIN:
- *  - Per-module average voltage margin (0.1 mV units) for slave/module warnings.
- */
-#define SLAVE_VOLT_WARNING_MARGIN 	100			//10 mV
+
+extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
+extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
 
 /* ===== Public API: Safety Evaluators & Aggregates ============================
  * Cell_Voltage_Fault():
@@ -150,6 +152,6 @@ void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod);
 void High_Voltage_Fault(AccumulatorData *batt, ModuleData *mod); 
 void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod); 
 void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod); 
-bool GetNextFault(FaultMessage_t *faultMsg);
+bool Safety_getNextFault(FaultMessage_t *faultMsg);
 
 #endif /* INC_SAFETY_H_ */

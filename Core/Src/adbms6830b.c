@@ -234,6 +234,15 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+
+		if (!isDataValid) 
+		{
+            moduleData[moduleIndex].pec_error = true; 
+        } 
+		else 
+		{
+            moduleData[moduleIndex].pec_error = false; 
+        }
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
@@ -292,12 +301,15 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 	//Receive data from last module first
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
-		/*if (registerIndex == 0) 
-		{
-			moduleData[moduleIndex].pec_error_count = 0;
-		}
-		*/
 		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+
+		if (!isDataValid) {
+            moduleData[moduleIndex].pec_error = true; 
+        } 
+		else 
+		{
+            moduleData[moduleIndex].pec_error = false; 
+        }
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
@@ -307,10 +319,6 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 
 			if (!isDataValid) 
 			{
-				/*if (cellOffset == 0 && moduleData[moduleIndex].pec_error_count < 10) 
-				{
-					moduleData[moduleIndex].pec_error_count++;
-				}*/
 				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
