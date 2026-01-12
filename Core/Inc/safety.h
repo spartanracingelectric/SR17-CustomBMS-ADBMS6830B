@@ -60,7 +60,7 @@
 #define FAULT_LOCK_MARGIN_HIGH_VOLT 100			//10 mV
 #define FAULT_LOCK_MARGIN_LOW_VOLT 	1000		//100 mV
 #define FAULT_LOCK_MARGIN_IMBALANCE 1000		//100 mV
-#define FAULT_LOCK_MARGIN_TEMP 10			    //10 ℃
+#define FAULT_LOCK_MARGIN_TEMP  10			    //10 ℃
 #define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 50	//5 mV
 
 /* ===== Time Limits (Hysteresis to Assert States) =========================
@@ -85,7 +85,7 @@
  * Bit positions are shown in comments for clarity.
  */
 // Warning byte
-typedef struct {
+typedef struct WarningFlags_t {
     uint8_t OverVoltWarn     : 1;  
     uint8_t UnderVoltWarn    : 1;  
     uint8_t OverTempWarn     : 1;  
@@ -95,7 +95,7 @@ typedef struct {
 } WarningFlags_t;
 
 // Fault byte
-typedef struct {  
+typedef struct FaultFlags_t {  
     uint8_t UnderVoltage     : 1;  
     uint8_t OpenWire         : 1;  
     uint8_t PEC              : 1;  
@@ -106,7 +106,7 @@ typedef struct {
     uint8_t RedundancyTemp   : 1;
 } FaultFlags_t;
 
-typedef enum {
+typedef enum FaultType_e {
     FAULT_NONE = 0,
     FAULT_OVER_VOLT,
     FAULT_UNDER_VOLT,
@@ -118,7 +118,7 @@ typedef enum {
     FAULT_REDUNDANT_TEMP
 } FaultType_e;
 
-typedef struct {
+typedef struct FaultMessage_t {
     uint8_t ModuleID;      // 0 to 9
     uint8_t CellID;        // 0 to 13
     FaultType_e FaultType; 
