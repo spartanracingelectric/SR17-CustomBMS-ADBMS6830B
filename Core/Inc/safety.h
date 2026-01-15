@@ -146,9 +146,9 @@ extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
  * Module_Temperature_Averages():
  *  - Compute per-module average temperatures.
  */
-void Cell_Voltage_Fault(AccumulatorData *batt, ModuleData *mod);
+void Safety_cellVoltageFault(AccumulatorData *batt, ModuleData *mod);
 void Cell_Balance_Fault(AccumulatorData *batt, ModuleData *mod); 
-void Cell_Temperature_Fault(AccumulatorData *batt, ModuleData *mod);
+void Safety_cellTemperatureFault(AccumulatorData *batt, ModuleData *mod);
 void High_Voltage_Fault(AccumulatorData *batt, ModuleData *mod); 
 void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod); 
 void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod); 
