@@ -24,9 +24,12 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "main.h"
 #include "usart.h"
 #include "stdio.h"
 #include "balance.h"
+#include <string.h>
+#include <sys/types.h>
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -214,6 +217,9 @@ HAL_StatusTypeDef CAN_Send(CANMessage *ptr) {
 	 }
 	 else if (ptr->TxHeader.StdId == CAN_ID_BALANCE_STATUS || ptr->TxHeader.StdId == CAN_ID_BALANCE_STATUS + 1) {
 		dataPtr = (uint8_t *)ptr->balanceStatus;
+	}
+	else if (ptr->TxHeader.StdId >= CAN_ID_REDUNDANT_VOLTAGE_START && ptr->TxHeader.StdId < CAN_ID_REDUNDANT_VOLTAGE_START + (NUM_CELLS * 2 + CAN_BYTE_NUM - 1) / CAN_BYTE_NUM) {
+		dataPtr = (uint8_t *)ptr->voltageBuffer;
 	}
 	return HAL_CAN_AddTxMessage(&hcan1, &ptr->TxHeader, dataPtr, &ptr->TxMailbox);
 }
@@ -459,6 +465,40 @@ void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst) {
 		CAN_Send(buffer);
 		CAN_ID++;
 	}
+}
+
+void CAN_sendRedundantCellVoltages(CANMessage *message, ModuleData *mod)
+{
+	uint32_t CAN_ID = (uint32_t)CAN_ID_REDUNDANT_VOLTAGE_START;
+    for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
+    	for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex += CELL_VOLTAGES_PER_FRAME)
+		{
+			if (cellIndex + CELL_VOLTAGES_PER_FRAME >= NUM_CELL_PER_MOD)
+			{
+				memset(message->voltageBuffer, 0, CAN_MESSAGE_SIZE_BYTES);
+				message->voltageBuffer[0] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex];
+				message->voltageBuffer[1] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex] >> 8);
+				message->voltageBuffer[2] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 1];
+				message->voltageBuffer[3] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 1] >> 8);
+			}
+			else {
+				message->voltageBuffer[0] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex];
+				message->voltageBuffer[1] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex] >> 8);
+				message->voltageBuffer[2] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 1];
+				message->voltageBuffer[3] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 1] >> 8);
+				message->voltageBuffer[4] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 2];
+				message->voltageBuffer[5] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 2] >> 8);
+				message->voltageBuffer[6] = (uint8_t)mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 3];
+				message->voltageBuffer[7] = (uint8_t)(mod[moduleIndex].redundantCellVoltage_mV[cellIndex + 3] >> 8);
+			}
+
+			Set_CAN_Id(message, CAN_ID);
+			CAN_Send(message);
+			CAN_ID++;
+    	}
+		
+    }
 }
 
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {

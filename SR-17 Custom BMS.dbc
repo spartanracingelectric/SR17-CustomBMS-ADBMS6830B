@@ -440,3 +440,22 @@ SG_ BMS_M8_Pressure : 32|8@1+ (0.01,0) [0|2.55 ]"PSI" Custom_BMS
 SG_ BMS_M8_Atmosphere_Temp : 40|8@1+ (1,0) [0|255] "C" Custom_BMS
 SG_ BMS_M8_Humidity : 48|8@1+ (1,0) [0|255] "%" Custom_BMS
 SG_ BMS_M8_Dew_Point : 56|8@1+ (1,0) [0|255] "C" Custom_BMS
+
+BO_ 1792 BMS_M1_Redundant_Cell_Voltage_Data_1: 8 Custom_BMS
+SG_ BMS_M1_Redundant_Cell_1_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_2_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_3_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_4_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+
+BO_ 1793 BMS_M1_RedundantCell_Voltage_Data_2: 8 Custom_BMS
+SG_ BMS_M1_Redundant_Cell_5_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_6_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_7_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_8_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+
+BO_ 1794 BMS_M1_Redundant_Cell_Voltage_Data_3: 8 Custom_BMS
+SG_ BMS_M1_Redundant_Cell_9_Voltage : 0|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_10_Voltage : 16|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_11_Voltage : 32|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+SG_ BMS_M1_Redundant_Cell_12_Voltage : 48|16@1+ (0.001,0) [0|6.5535] "V" Custom_BMS
+

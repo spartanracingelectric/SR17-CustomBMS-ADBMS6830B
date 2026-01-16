@@ -101,7 +101,7 @@ int main(void)
 	TimerPacket cycleTimeCap;
 	TimerPacket canReconnection;
 	AccumulatorData accmData;
-	ModuleData modData[NUM_MOD];
+	ModuleData modData[NUM_MOD] = {0};
 	BalanceStatus balanceStatus[NUM_MOD];
 	ConfigurationRegisterB configB[NUM_MOD];
 	CANMessage msg;
@@ -179,8 +179,11 @@ int main(void)
 			//HAL_ADCEx_Calibration_Start(&hadc1);
 			//HAL_ADCEx_Calibration_Start(&hadc2);
 
+			// ADBMS_startCellVoltageConversions(REDUNDANT_MODE_OFF, CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, FILTER_RESET_MODE_ON, OPEN_WIRE_MODE_EVEN_ON);
 			Module_getVoltages(modData);
       Accumulator_getMinVolatage(&accmData, modData);
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ALL_OFF);
+            ADBMS_getRedundantCellVoltages(modData);
 			Accumulator_getMaxVolatage(&accmData, modData);
 
       Module_getTemperatures(modData);
@@ -203,6 +206,7 @@ int main(void)
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 			CAN_Send_Cell_Summary(&msg, &accmData);
 			CAN_Send_Voltage(&msg, modData);
+			CAN_sendRedundantCellVoltages(&msg, modData);
 			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_Send_Balance_Status(&msg, balanceStatus);

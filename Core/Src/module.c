@@ -52,6 +52,7 @@ void Module_init(ModuleData *mod){
 		for(int thermIndex = 0; thermIndex < NUM_THERM_PER_MOD; thermIndex++){
 			mod[modIndex].pointTemp_C[thermIndex] = 0xFF;
 		}
+
 		mod[modIndex].average_volt = 0xFFFF;
 		mod[modIndex].average_temp = 0xFFFF;
 		mod[modIndex].sum_volt_module = 0xFFFF;
@@ -140,7 +141,7 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
             {
                 //TODO: Set invalid temp fault
                 modData[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
-                printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, DISCONNECTED_TEMP_C);
+                // printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, DISCONNECTED_TEMP_C);
                 continue;
             }
 
@@ -156,7 +157,7 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
             float temperature_K = 1.0f / fmaxf(inverseTemperature_K, 1e-12f); // guard against division by 0
             float temperature_C = temperature_K - KELVIN_OFFSET;
             modData[moduleIndex].pointTemp_C[tempIndex] = temperature_C;
-            printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, temperature_C);
+            // printf("Module %d, Cell %d Temp_C: %f\n", moduleIndex, tempIndex + 1, temperature_C);
         }
     }
 }

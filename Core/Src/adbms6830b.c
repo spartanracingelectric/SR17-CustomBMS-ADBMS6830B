@@ -23,7 +23,7 @@
 #include <sys/types.h>
 
 
-
+static const uint16_t CELL_VOLTAGE_REGISTERS[6] = { RDCVA, RDCVB, RDCVC, RDCVD, RDCVE, RDCVF };
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
 static const uint16_t REDUDANT_CELL_VOLTAGE_REGISTERS[6] = {RDSVA, RDSVB, RDSVC, RDSVD, RDSVE, RDSVF};
 static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
@@ -88,6 +88,7 @@ void ADBMS_init()
 	ADBMS_unsnap();
 	ADBMS_clearRegisters();
 	ADBMS_startCellVoltageConversions(REDUNDANT_MODE_OFF, CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, FILTER_RESET_MODE_ON, OPEN_WIRE_MODE_ALL_OFF);
+	// ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ALL_OFF);
 }
 
 /**
@@ -217,7 +218,7 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 	{
 		isoSPI_Idle_to_Ready();
 		ADBMS_csLow();
-		ADBMS_sendCommand(AVERAGE_CELL_VOLTAGE_REGISTERS[registerIndex]);
+		ADBMS_sendCommand(CELL_VOLTAGE_REGISTERS[registerIndex]);
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
@@ -243,23 +244,28 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid) 
 			{
+				printf("not valid data\n");
 				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
 				continue;
 			}
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			// uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			uint16_t rawVoltageUnsigned = (uint16_t)((highByte << 8) | lowByte);
+            int16_t rawVoltageSigned = (int16_t)((highByte << 8) | lowByte);
 
-			if (rawVoltage == 0x8000u) //Default value
+			if (rawVoltageUnsigned == 0x8000u) //Default value
 			{
+				printf("default value\n");
 				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
 			}
 			else 
 			{
-				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+				int32_t microVoltage = 1500000 + (int32_t)rawVoltageSigned * 150;
+				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
 				moduleData[moduleIndex].cell_volt[cellIndex] = milliVoltage;
+				printf("Module %d, Cell %d, Cell voltage %d\n", moduleIndex + 1, cellIndex + 1, milliVoltage);
 			}
 		}
 	}
@@ -279,7 +285,7 @@ void ADBMS_getRedundantCellVoltages(ModuleData *moduleData)
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
-		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
+		ADBMS_parseRedundantCellVoltages(rxBuffer, registerIndex, moduleData);
 	}
 	ADBMS_unsnap();
 }
@@ -308,16 +314,17 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			uint16_t rawVoltageUnsigned = (uint16_t)((highByte << 8) | lowByte);
+            int16_t rawVoltageSigned = (int16_t)((highByte << 8) | lowByte);
 
-			if (rawVoltage == 0x8000u) // Default value
+			if (rawVoltageUnsigned == 0x8000u) // Default value
 			{
 				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
                 continue;
 			}
 
-            uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-            uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+            int32_t microVoltage = 1500000 + (int32_t)rawVoltageSigned * 150;
+            int16_t milliVoltage = (int16_t)(microVoltage / 1000);
 
             if ((diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN || diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD) && milliVoltage <= OPEN_WIRE_CHECK_VOLTAGE_MV)
             {
@@ -327,6 +334,7 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
             }
 
             moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = milliVoltage;
+			printf("Module %d, Cell %d, redunndant Cell voltage %d\n", moduleIndex + 1, cellIndex + 1, milliVoltage);
 		}
 	}
 }
@@ -515,7 +523,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
                 {
                     moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
                 }
-				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
+				// printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
 		}
 	}
@@ -558,7 +566,7 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
             uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
             uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
             moduleData[moduleIndex].vref2 = milliVoltage;
-			printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
+			// printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
         }
 	}
 }

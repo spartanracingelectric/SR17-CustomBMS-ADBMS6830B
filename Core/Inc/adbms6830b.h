@@ -34,6 +34,13 @@
 #define ADCV 0x0260
 #define ADSV 0x0168
 
+#define RDCVA 0x0004
+#define RDCVB 0x0006
+#define RDCVC 0x0008
+#define RDCVD 0x000A
+#define RDCVE 0x0009
+#define RDCVF 0x000B
+
 #define RDACA 0x0044
 #define RDACB 0x0046
 #define RDACC 0x0048
@@ -253,6 +260,7 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
 void ADBMS_checkDiagnostics(ModuleData *moduleData);
 void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_getRedundantCellVoltages(ModuleData *moduleData);
 void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
 void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
 void ADBMS_snap();

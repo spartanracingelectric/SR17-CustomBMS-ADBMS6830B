@@ -55,11 +55,15 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_ID_SAFETY 				0x600
 #define CAN_ID_SOC 					0x621
 #define CAN_ID_BALANCE_STATUS		0x623
+#define CAN_ID_REDUNDANT_VOLTAGE_START 0x700 // TODO: Check if this is an open CAN ID
 #define CAN_BYTE_NUM				8
 #define CAN_MESSAGE_NUM_VOLTAGE 	NUM_CELLS * 2 / CAN_BYTE_NUM
 #define CAN_MESSAGE_NUM_THERMISTOR 	NUM_THERM_TOTAL / CAN_BYTE_NUM
 #define CAN_16BIT_SIZE				2
 #define CAN_8BIT_SIZE 				1
+#define CAN_MESSAGE_SIZE_BYTES 8
+
+#define CELL_VOLTAGES_PER_FRAME 4
 
 extern ModuleData modData[NUM_MOD];
 
@@ -104,6 +108,7 @@ void CAN_Send_Cell_Summary(CANMessage *ptr, struct AccumulatorData *batt);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings);
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst);
+void CAN_sendRedundantCellVoltages(CANMessage *message, ModuleData *mod);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 
