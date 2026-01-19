@@ -64,6 +64,7 @@ extern "C" {
 #define BALANCE 				0 	//FALSE
 #define MAX_CELL_CAPACITY 		3000
 #define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
+#define MOD_SUM_TOTAL			10 // num of modules for module summary
 /* USER CODE END Private defines */
 
 /**
@@ -119,6 +120,8 @@ typedef struct ModuleData {
     uint16_t imbalance_voltage;
     uint16_t hv_sens;
     uint8_t sid[6];
+    uint8_t max_cell_index;
+    uint8_t min_cell_index;
 } ModuleData;
 
 typedef struct BalanceStatus {

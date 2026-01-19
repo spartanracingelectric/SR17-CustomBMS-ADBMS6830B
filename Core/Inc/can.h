@@ -27,6 +27,11 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+typedef struct CANMessage CANMessage;
+typedef struct ModuleData ModuleData;
+typedef struct BalanceStatus BalanceStatus;
+typedef struct AccumulatorData AccumulatorData;
+typedef struct batteryModule batteryModule;
 /* USER CODE BEGIN Includes */
 
 
@@ -55,6 +60,7 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_ID_SAFETY 				0x600
 #define CAN_ID_SOC 					0x621
 #define CAN_ID_BALANCE_STATUS		0x623
+#define CAN_ID_MODULE_SUMMARY_BASE  0x6A4 // hex of 1700 can id #
 #define CAN_BYTE_NUM				8
 #define CAN_MESSAGE_NUM_VOLTAGE 	NUM_CELLS * 2 / CAN_BYTE_NUM
 #define CAN_MESSAGE_NUM_THERMISTOR 	NUM_THERM_TOTAL / CAN_BYTE_NUM
@@ -99,9 +105,10 @@ void Set_CAN_Id(CANMessage *ptr, uint32_t id);
  *  - Caller should set or rely on contiguous IDs starting at the defined bases.
  */
 void CAN_Send_Voltage(CANMessage *ptr, ModuleData *mod);
-void CAN_Send_Voltage1(CANMessage *ptr, ModuleData *mod);
+void CAN_Send_Module_Data(CANMessage *ptr, ModuleData *mod);
 void CAN_Send_Temperature(CANMessage *buffer, ModuleData *mod);
 void CAN_Send_Cell_Summary(CANMessage *ptr, struct AccumulatorData *batt);
+void CAN_Send_Module_Summary(CANMessage *ptr, ModuleData *mod);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings);
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_Send_Balance_Status(CANMessage *buffer, BalanceStatus *blst);
