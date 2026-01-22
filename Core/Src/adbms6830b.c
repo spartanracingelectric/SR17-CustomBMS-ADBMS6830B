@@ -251,16 +251,16 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			int16_t rawVoltage = (int16_t)(((uint16_t)highByte << 8) | (uint16_t)lowByte);
 
-			if (rawVoltage == 0x8000u) //Default value
+			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE) 
 			{
 				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
 			}
 			else 
 			{
-				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
+				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
 				moduleData[moduleIndex].cell_volt[cellIndex] = milliVoltage;
 				printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}

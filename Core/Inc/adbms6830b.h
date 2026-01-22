@@ -74,6 +74,8 @@
 #define COMMAND_CRC_POLYNOMIAL 0x4599
 #define DATA_CRC_POLYNOMIAL 0x08F
 
+#define DEFAULT_VOLTAGE_VALUE 0x8000
+
 
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
  * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
