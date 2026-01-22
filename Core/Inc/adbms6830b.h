@@ -71,7 +71,8 @@
 #define VOV   VOV_FROM_VOLTAGE(4.2f) 
 
 #define INITIAL_CRC_SEED 0x10
-#define COMMAND_PEC_POLYNOMIAL 0x4599
+#define COMMAND_CRC_POLYNOMIAL 0x4599
+#define DATA_CRC_POLYNOMIAL 0x08F
 
 
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
@@ -284,7 +285,10 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
  * ADBMS_calcPec10(): compute CRC10 (PEC10) for data bytes; can fold 6-bit CC.
  * ADBMS_checkRxPec(): extract CC+CRC10 from 2-byte field and verify against data.
  */
-uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter);
 uint16_t ADBMS_calculateCommandPec(uint8_t *data, int length);
-bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2]);
+uint16_t ADBMS_calculateDataPec(uint8_t *data, int length, uint8_t commandCounter);
+bool ADBMS_checkDataPec(uint8_t *rxBuffer, uint16_t length, uint8_t pec[2]);
 void ADBMS_generateCrc15Table(void);
+void ADBMS_generateCrc10Table8Bit(void);
+void ADBMS_generateCrc10Table6Bit(void);
+void ADBMS_generateCrcTables(void);

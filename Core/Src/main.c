@@ -145,7 +145,7 @@ int main(void)
 
     // Pull SPI1 nCS HIGH (deselect)
     ADBMS_csHigh();
-	ADBMS_generateCrc15Table();
+	ADBMS_generateCrcTables();
     ADBMS_init();
     Module_init(modData);
     Accumulator_init(&accmData);
