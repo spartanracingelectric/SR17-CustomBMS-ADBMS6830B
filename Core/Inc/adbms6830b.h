@@ -31,12 +31,24 @@
  * Exact mapping (which cells appear in A/B/C/…) depends on the device family/datasheet.
  * These are 16-bit opcodes that will be followed by a PEC15 when transmitted.
  */
+#define ADCV 0x0260
+#define ADSV 0x0168
+
 #define RDACA 0x0044
 #define RDACB 0x0046
 #define RDACC 0x0048
 #define RDACD 0x004A
 #define RDACE 0x0049
 #define RDACF 0x004B
+
+#define RDSVA 0x0003
+#define RDSVB 0x0005
+#define RDSVC 0x0007
+#define RDSVD 0x000D
+#define RDSVE 0x000E
+#define RDSVF 0x000F
+
+#define OPEN_WIRE_CHECK_VOLTAGE_MV 1000.0f
 
 #define RDSID 0x002C
 
@@ -57,6 +69,12 @@
 
 #define VUV   VUV_FROM_VOLTAGE(2.50f)
 #define VOV   VOV_FROM_VOLTAGE(4.2f) 
+
+#define INITIAL_CRC_SEED 0x10
+#define COMMAND_CRC_POLYNOMIAL 0x4599
+#define DATA_CRC_POLYNOMIAL 0x08F
+
+#define DEFAULT_VOLTAGE_VALUE 0x8000
 
 
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
@@ -103,6 +121,8 @@
 #define REG_NUM_RDAUX 4
 #define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
+
+#define GPIO_VOLTAGE_OFFSET_MV 9830.0f
 
 #define WRCFGA 0x0001
 #define WRCFGB 0x0024
@@ -197,6 +217,13 @@ typedef enum {
     AUX_CHANNEL_NONE = 0x1F   // Reserved / invalid
 } AuxChannelSelect;
 
+typedef enum {
+    DIAGNOSTIC_PHASE_REDUNDANT_START,
+    DIAGNOSTIC_PHASE_REDUNDANT_RUNNING,
+    DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD,
+    DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN,
+} DiagnosticPhase;
+
 
 /* ===== SPI Status Bitfield ===================================================
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
@@ -211,6 +238,8 @@ typedef enum {
 extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
 extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
+
+extern DiagnosticPhase diagnosticPhase;
 
 /* ===== Public API: Link/Power State Helpers =================================
  * isoSPI_Idle_to_Ready(): send a dummy 0xFF while nCS is low to wake IDLE->READY.
@@ -227,6 +256,11 @@ void ADBMS_clearRegisters();
  */
 void ADBMS_init();
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
+void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
+void ADBMS_checkDiagnostics(ModuleData *moduleData);
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
 void ADBMS_snap();
 void ADBMS_unsnap();
 
@@ -253,6 +287,10 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
  * ADBMS_calcPec10(): compute CRC10 (PEC10) for data bytes; can fold 6-bit CC.
  * ADBMS_checkRxPec(): extract CC+CRC10 from 2-byte field and verify against data.
  */
-uint16_t ADBMS_calcPec15(uint8_t *data, uint8_t len);
-uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter);
-bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2]);
+uint16_t ADBMS_calculateCommandPec(uint8_t *data, int length);
+uint16_t ADBMS_calculateDataPec(uint8_t *data, int length, uint8_t commandCounter);
+bool ADBMS_checkDataPec(uint8_t *rxBuffer, uint16_t length, uint8_t pec[2]);
+void ADBMS_generateCrc15Table(void);
+void ADBMS_generateCrc10Table8Bit(void);
+void ADBMS_generateCrc10Table6Bit(void);
+void ADBMS_generateCrcTables(void);

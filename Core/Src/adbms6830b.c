@@ -14,19 +14,26 @@
  *  @warning All functions are blocking and not thread-safe.
  */
 #include <adbms6830b.h>
+#include "module.h"
 #include "spi.h"
 #include "main.h"
+#include "stm32f1xx_hal.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
 
-
-
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[6] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; //command to read average from register
+static const uint16_t REDUDANT_CELL_VOLTAGE_REGISTERS[6] = {RDSVA, RDSVB, RDSVC, RDSVD, RDSVE, RDSVF};
 static const uint16_t CLEAR_REGISTERS_COMMANDS[6] = {CLRCELL, CLRAUX, CLRFC, CLOVUV, CLRSPIN, CLRFLAG};
 static const uint16_t AUX_REGISTERS[4] = { RDAUXA, RDAUXB, RDAUXC, RDAUXD };
 static const uint16_t REDUNDANT_AUX_REGISTERS[4] = { RDRAXA, RDRAXB, RDRAXC, RDRAXD };
 static const uint16_t ADBMS_CMD_RDSTAT[5] = {RDSTATA, RDSTATB, RDSTATC, RDSTATD, RDSTATE};
+
+static uint16_t crc15Table[256];
+static uint16_t crc10Table8Bit[256];
+static uint16_t crc10Table6Bit[256];
+
+DiagnosticPhase diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
 
 /**
  * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
@@ -104,18 +111,7 @@ void ADBMS_init()
  */
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
 {
-	uint16_t command = 0;
-
-	command |= (0 << 10);    					// bit10 = 0        (fixed)
-	command |= (1 << 9);     					// bit9  = 1        (fixed sync bit)
-	command |= (redundantMode << 8);     		// bit8  = RD       (rate/redundancy)
-	command |= (continuousMode << 7);     		// bit7  = CONT     (continuous mode)
-	command |= (1 << 6);     					// bit6  = 1        (fixed)
-	command |= (1 << 5);     					// bit5  = 1        (fixed)
-	command |= (dischargeMode << 4);     		// bit4  = DCP      (balance during conv)
-	command |= (0 << 3);     					// bit3  = 0        (fixed)
-	command |= (filterResetMode << 2);     		// bit2  = RSTF     (reset digital filter)
-	command |= (openWireMode & 0x03);     		// bit1-0 = OW[1:0] (open-wire mode)
+	uint16_t command = ADCV | (redundantMode << 8) | (continuousMode << 7) | (dischargeMode << 4) | (filterResetMode << 2) | (openWireMode & 0x03);
 
 	isoSPI_Idle_to_Ready();
 	ADBMS_csLow();
@@ -123,7 +119,19 @@ void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContin
 	ADBMS_csHigh();
 }
 
-void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) {
+void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode)
+{
+    uint16_t command = ADSV | (continuousMode << 7) | (dischargeMode << 4) | (openWireMode & 0x03);
+
+	isoSPI_Idle_to_Ready();
+	ADBMS_csLow();
+	ADBMS_sendCommand(command);
+	ADBMS_csHigh();
+}
+
+
+void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect) 
+{
     uint16_t command = ADAX | (openWireMode << 8) | (pullUpPinMode << 7) | channelSelect;
 
 	isoSPI_Idle_to_Ready();
@@ -172,7 +180,7 @@ void ADBMS_sendCommand(uint16_t command)
 	txBuffer[0] = (uint8_t)(command >> 8);
 	txBuffer[1] = (uint8_t)(command);
 	
-	uint16_t pec = ADBMS_calcPec15(txBuffer, 2);
+	uint16_t pec = ADBMS_calculateCommandPec(txBuffer, COMMAND_LENGTH);
 	txBuffer[2] = (uint8_t)(pec >> 8);
 	txBuffer[3] = (uint8_t)(pec);
 
@@ -227,7 +235,7 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 	//Receive data from last module first
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
-		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
@@ -243,20 +251,122 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			int16_t rawVoltage = (int16_t)(((uint16_t)highByte << 8) | (uint16_t)lowByte);
 
-			if (rawVoltage == 0x8000u) //Default value
+			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE) 
 			{
 				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
 			}
 			else 
 			{
-				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
+				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
 				moduleData[moduleIndex].cell_volt[cellIndex] = milliVoltage;
+				printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
 	}
+}
+
+void ADBMS_getRedundantCellVoltages(ModuleData *moduleData) 
+{
+	uint8_t rxBuffer[NUM_MOD][REG_LEN];
+	
+	ADBMS_snap(); 
+	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_ADC_REGISTER - 1)) / CELLS_PER_ADC_REGISTER;
+	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++) 
+	{
+		isoSPI_Idle_to_Ready();
+		ADBMS_csLow();
+		ADBMS_sendCommand(REDUDANT_CELL_VOLTAGE_REGISTERS[registerIndex]);
+		ADBMS_receiveData(rxBuffer);
+		ADBMS_csHigh();
+
+		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
+	}
+	ADBMS_unsnap();
+}
+
+
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData) 
+{
+	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
+
+	//Receive data from last module first
+	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
+	{
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		
+		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
+		{
+			uint8_t cellIndex = initialCellIndex + cellOffset;
+
+			if (cellIndex > NUM_CELL_PER_MOD - 1) break;
+
+			if (!isDataValid) 
+			{
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+				continue;
+			}
+
+			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
+			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
+			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+
+			if (rawVoltage == 0x8000u) // Default value
+			{
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+                continue;
+			}
+
+            uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
+            uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
+
+            if ((diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN || diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD) && milliVoltage <= OPEN_WIRE_CHECK_VOLTAGE_MV)
+            {
+                //TODO: Add open wire fault
+				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+                continue;
+            }
+
+            moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = milliVoltage;
+		}
+	}
+}
+
+void ADBMS_checkDiagnostics(ModuleData *moduleData)
+{
+    static uint32_t lastOpenWireCheck_ms = 0;
+    uint32_t now_ms = HAL_GetTick();
+
+    switch (diagnosticPhase) 
+    {
+        case DIAGNOSTIC_PHASE_REDUNDANT_START:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ALL_OFF);
+            diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_RUNNING; 
+            break;
+
+        case DIAGNOSTIC_PHASE_REDUNDANT_RUNNING:
+            ADBMS_getRedundantFaultFlags(moduleData);
+            if (now_ms - lastOpenWireCheck_ms >= 1000)
+            {
+                diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN;
+                lastOpenWireCheck_ms = now_ms;
+            }
+            break;
+
+        case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_EVEN_ON);
+            ADBMS_getRedundantCellVoltages(moduleData);
+            diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD;
+            break;
+        
+        case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD:
+            ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ODD_ON);
+            ADBMS_getRedundantCellVoltages(moduleData);
+            diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
+            break;
+    }
 }
 
 void ADBMS_sendData(uint8_t data[NUM_MOD][DATA_LEN])  
@@ -267,7 +377,7 @@ void ADBMS_sendData(uint8_t data[NUM_MOD][DATA_LEN])
 	{
 		memcpy(txBuffer[moduleIndex], data[moduleIndex], DATA_LEN);
 
-		uint16_t dataPec = ADBMS_calcPec10(data[moduleIndex], DATA_LEN, NULL);
+		uint16_t dataPec = ADBMS_calculateDataPec(data[moduleIndex], DATA_LEN, 0);
 		txBuffer[moduleIndex][DATA_LEN + 0] = (uint8_t)(dataPec >> 8);
 		txBuffer[moduleIndex][DATA_LEN + 1] = (uint8_t)(dataPec);
 	}
@@ -324,7 +434,7 @@ void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB)
 
 	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++) 
 	{
-		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN + 0]);
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN + 0]);
 		if (!isDataValid) 
 		{
 			//TODO: Add proper error state
@@ -367,7 +477,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 	//Receive data from last module first
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
-		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		
 		for (uint8_t gpioOffset = 0; gpioOffset < GPIOS_PER_AUX_REGISTER; gpioOffset++) 
 		{
@@ -383,20 +493,29 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			uint8_t lowByte = rxBuffer[moduleIndex][2 * gpioOffset];
 			uint8_t highByte = rxBuffer[moduleIndex][2 * gpioOffset + 1];
-			uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
+			uint16_t rawVoltageUnsigned = (uint16_t)((highByte << 8) | lowByte);
+            int16_t rawVoltageSigned = (int16_t)((highByte << 8) | lowByte);
 			//printf("Module: %d, GPIO: %d, Raw Voltage: %d\n", moduleIndex, gpioIndex, rawVoltage);
 
 
-			if (rawVoltage == 0x8000) //Default value
+			if (rawVoltageUnsigned == 0x8000) // Default value
 			{
 				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 			}
 			else 
 			{
-				uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
-				uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltage;
-				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex, milliVoltage);
+                int32_t microVoltageSigned = 1500000 + (int32_t)rawVoltageSigned * 150;
+                int16_t milliVoltageSigned = (int16_t)(microVoltageSigned / 1000);
+                
+                if (milliVoltageSigned < 0 || milliVoltageSigned >= moduleData[moduleIndex].vref2)
+                {
+                    moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+                }
+                else 
+                {
+                    moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
+                }
+				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
 		}
 	}
@@ -418,7 +537,7 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
 	//Receive data from last module first
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
-		bool isDataValid = ADBMS_checkRxPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 		
         if (!isDataValid) 
         {
@@ -444,63 +563,43 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
 	}
 }
 
-/** CRC15 lookup table for command PEC15 (Linear/ADI LTC/ADBMS family).
- *  - Polynomial: 0x4599 (x^15 + x^14 + x^10 + x^8 + x^7 + x^4 + x^3 + 1)
- *  - Seed: 0x0010 (decimal 16)
- *  - Implementation detail: returned value is left-shifted by 1 so LSB is 0.
- */
-const uint16_t Crc15Table[256] =
+void ADBMS_getRedundantFaultFlags(ModuleData *moduleData)
 {
-    0x0000, 0xc599, 0xceab, 0xb32,  0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
-    0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
-    0xbbf3, 0x7e6a, 0x5990, 0x9c09, 0x973b, 0x52a2, 0x815f, 0x44c6, 0x4ff4, 0x8a6d, 0x5b2e,
-    0x9eb7, 0x9585, 0x501c, 0x83e1, 0x4678, 0x4d4a, 0x88d3, 0xaf29, 0x6ab0, 0x6182, 0xa41b,
-    0x77e6, 0xb27f, 0xb94d, 0x7cd4, 0xf6b9, 0x3320, 0x3812, 0xfd8b, 0x2e76, 0xebef, 0xe0dd,
-    0x2544, 0x2be,  0xc727, 0xcc15, 0x98c,  0xda71, 0x1fe8, 0x14da, 0xd143, 0xf3c5, 0x365c,
-    0x3d6e, 0xf8f7, 0x2b0a, 0xee93, 0xe5a1, 0x2038, 0x7c2,  0xc25b, 0xc969, 0xcf0,  0xdf0d,
-    0x1a94, 0x11a6, 0xd43f, 0x5e52, 0x9bcb, 0x90f9, 0x5560, 0x869d, 0x4304, 0x4836, 0x8daf,
-    0xaa55, 0x6fcc, 0x64fe, 0xa167, 0x729a, 0xb703, 0xbc31, 0x79a8, 0xa8eb, 0x6d72, 0x6640,
-    0xa3d9, 0x7024, 0xb5bd, 0xbe8f, 0x7b16, 0x5cec, 0x9975, 0x9247, 0x57de, 0x8423, 0x41ba,
-    0x4a88, 0x8f11, 0x57c,  0xc0e5, 0xcbd7, 0xe4e,  0xddb3, 0x182a, 0x1318, 0xd681, 0xf17b,
-    0x34e2, 0x3fd0, 0xfa49, 0x29b4, 0xec2d, 0xe71f, 0x2286, 0xa213, 0x678a, 0x6cb8, 0xa921,
-    0x7adc, 0xbf45, 0xb477, 0x71ee, 0x5614, 0x938d, 0x98bf, 0x5d26, 0x8edb, 0x4b42, 0x4070,
-    0x85e9, 0xf84,  0xca1d, 0xc12f, 0x4b6,  0xd74b, 0x12d2, 0x19e0, 0xdc79, 0xfb83, 0x3e1a,
-	0x3528, 0xf0b1, 0x234c, 0xe6d5, 0xede7, 0x287e, 0xf93d, 0x3ca4, 0x3796, 0xf20f, 0x21f2,
-	0xe46b, 0xef59, 0x2ac0, 0xd3a,  0xc8a3, 0xc391, 0x608,  0xd5f5, 0x106c, 0x1b5e, 0xdec7,
-	0x54aa, 0x9133, 0x9a01, 0x5f98, 0x8c65, 0x49fc, 0x42ce, 0x8757, 0xa0ad, 0x6534, 0x6e06,
-	0xab9f, 0x7862, 0xbdfb, 0xb6c9, 0x7350, 0x51d6, 0x944f, 0x9f7d, 0x5ae4, 0x8919, 0x4c80,
-	0x47b2, 0x822b, 0xa5d1, 0x6048, 0x6b7a, 0xaee3, 0x7d1e, 0xb887, 0xb3b5, 0x762c, 0xfc41,
-	0x39d8, 0x32ea, 0xf773, 0x248e, 0xe117, 0xea25, 0x2fbc, 0x846,  0xcddf, 0xc6ed, 0x374,
-	0xd089, 0x1510, 0x1e22, 0xdbbb, 0xaf8,  0xcf61, 0xc453, 0x1ca,  0xd237, 0x17ae, 0x1c9c,
-	0xd905, 0xfeff, 0x3b66, 0x3054, 0xf5cd, 0x2630, 0xe3a9, 0xe89b, 0x2d02, 0xa76f, 0x62f6,
-	0x69c4, 0xac5d, 0x7fa0, 0xba39, 0xb10b, 0x7492, 0x5368, 0x96f1, 0x9dc3, 0x585a, 0x8ba7,
-	0x4e3e, 0x450c, 0x8095
-};
+	uint8_t rxBuffer[NUM_MOD][REG_LEN];
 
-/** CRC10 lookup table for data PEC10 (used by RX frames from devices).
- *  - Polynomial: x^10 + x^7 + x^3 + x^2 + x + 1
- *  - Represented here with helper constant 0x08F during the final bit-walk.
- *  - Seed: 0x0010 (decimal 16)
- */
-static const uint16_t crc10Table[256] =
+	isoSPI_Idle_to_Ready(); // Ensure link is up before transaction
+	ADBMS_csLow();
+    ADBMS_sendCommand(RDSTATC); 
+    ADBMS_receiveData(rxBuffer);
+	ADBMS_csHigh();
+    ADBMS_parseRedundantFaultFlags(moduleData, rxBuffer);
+}
+
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN])
 {
-    0x000, 0x08f, 0x11e, 0x191, 0x23c, 0x2b3, 0x322, 0x3ad, 0x0f7, 0x078, 0x1e9, 0x166, 0x2cb, 0x244, 0x3d5, 0x35a,
-    0x1ee, 0x161, 0x0f0, 0x07f, 0x3d2, 0x35d, 0x2cc, 0x243, 0x119, 0x196, 0x007, 0x088, 0x325, 0x3aa, 0x23b, 0x2b4,
-    0x3dc, 0x353, 0x2c2, 0x24d, 0x1e0, 0x16f, 0x0fe, 0x071, 0x32b, 0x3a4, 0x235, 0x2ba, 0x117, 0x198, 0x009, 0x086,
-    0x232, 0x2bd, 0x32c, 0x3a3, 0x00e, 0x081, 0x110, 0x19f, 0x2c5, 0x24a, 0x3db, 0x354, 0x0f9, 0x076, 0x1e7, 0x168,
-    0x337, 0x3b8, 0x229, 0x2a6, 0x10b, 0x184, 0x015, 0x09a, 0x3c0, 0x34f, 0x2de, 0x251, 0x1fc, 0x173, 0x0e2, 0x06d,
-    0x2d9, 0x256, 0x3c7, 0x348, 0x0e5, 0x06a, 0x1fb, 0x174, 0x22e, 0x2a1, 0x330, 0x3bf, 0x012, 0x09d, 0x10c, 0x183,
-    0x0eb, 0x064, 0x1f5, 0x17a, 0x2d7, 0x258, 0x3c9, 0x346, 0x01c, 0x093, 0x102, 0x18d, 0x220, 0x2af, 0x33e, 0x3b1,
-    0x105, 0x18a, 0x01b, 0x094, 0x339, 0x3b6, 0x227, 0x2a8, 0x1f2, 0x17d, 0x0ec, 0x063, 0x3ce, 0x341, 0x2d0, 0x25f,
-    0x2e1, 0x26e, 0x3ff, 0x370, 0x0dd, 0x052, 0x1c3, 0x14c, 0x216, 0x299, 0x308, 0x387, 0x02a, 0x0a5, 0x134, 0x1bb,
-    0x30f, 0x380, 0x211, 0x29e, 0x133, 0x1bc, 0x02d, 0x0a2, 0x3f8, 0x377, 0x2e6, 0x269, 0x1c4, 0x14b, 0x0da, 0x055,
-    0x13d, 0x1b2, 0x023, 0x0ac, 0x301, 0x38e, 0x21f, 0x290, 0x1ca, 0x145, 0x0d4, 0x05b, 0x3f6, 0x379, 0x2e8, 0x267,
-    0x0d3, 0x05c, 0x1cd, 0x142, 0x2ef, 0x260, 0x3f1, 0x37e, 0x024, 0x0ab, 0x13a, 0x1b5, 0x218, 0x297, 0x306, 0x389,
-    0x1d6, 0x159, 0x0c8, 0x047, 0x3ea, 0x365, 0x2f4, 0x27b, 0x121, 0x1ae, 0x03f, 0x0b0, 0x31d, 0x392, 0x203, 0x28c,
-    0x038, 0x0b7, 0x126, 0x1a9, 0x204, 0x28b, 0x31a, 0x395, 0x0cf, 0x040, 0x1d1, 0x15e, 0x2f3, 0x27c, 0x3ed, 0x362,
-    0x20a, 0x285, 0x314, 0x39b, 0x036, 0x0b9, 0x128, 0x1a7, 0x2fd, 0x272, 0x3e3, 0x36c, 0x0c1, 0x04e, 0x1df, 0x150,
-    0x3e4, 0x36b, 0x2fa, 0x275, 0x1d8, 0x157, 0x0c6, 0x049, 0x313, 0x39c, 0x20d, 0x282, 0x12f, 0x1a0, 0x031, 0x0be
-};
+    for (int moduleIndex = NUM_MOD; moduleIndex >=0; moduleIndex--) 
+    {
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+        if (!isDataValid) 
+        {
+            continue;
+        }
+        uint16_t lowByte = rxBuffer[moduleIndex][0];
+        uint16_t highByte = rxBuffer[moduleIndex][1];
+        uint16_t faultBits = (uint16_t)((highByte << 8) | lowByte);
+
+        // loop through fault bits 
+        for (uint8_t cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+        {
+            if (faultBits & (1 << cellIndex))  
+            {
+                //TODO: Set redundant fault flag
+                moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+            }
+        }
+    }
+}
+
 
 /**
  * @brief Read 6-byte Serial IDs (SID) from each module in the daisy chain.
@@ -543,113 +642,108 @@ void ADBMS_ReadSID(ModuleData *mod) {
 //     }
 }
 
-/**
- * @brief Compute PEC15 (CRC15) for command frames using a 256-entry lookup table.
- *
- * Details:
- *  - Seed (remainder) starts at 0x0010.
- *  - Each input byte indexes into Crc15Table using (remainder >> 7) ^ data[i].
- *  - The final remainder is left-shifted by 1 (LSB = 0 per LTC/ADI convention).
- *
- * @param data Pointer to the bytes over which PEC15 is calculated (typically 2-byte command).
- * @param len  Number of bytes included in the PEC calculation.
- * @return 16-bit PEC value (with LSB cleared).
- */
-uint16_t ADBMS_calcPec15(uint8_t *data, uint8_t len)
+uint16_t ADBMS_calculateDataPec(uint8_t *data, int length, uint8_t commandCounter) 
 {
-    uint16_t remainder, addr;
-    remainder = 16; // PEC seed = 0x0010
-    for (uint8_t i = 0; i < len; i ++)
-    {
-    	// Table index uses top 9 bits of remainder (>>7 gives 9 bits but we AND 0xFF for 8-bit index here)
-        addr = (((remainder >> 7) ^ data[i]) & 0xff);
-        remainder = ((remainder<<8)^Crc15Table[addr]);
-    }
-    // CRC15 for LTC devices is 15-bit with a zero LSB; multiply by 2 to force bit0 = 0
-    return(remainder*2);
+	uint16_t crc = INITIAL_CRC_SEED;
+	for (uint16_t i = 0; i < length; i++)
+	{
+        crc = (crc << 8) ^ crc10Table8Bit[((crc >> 2) ^ data[i]) & 0xFF];
+	}
+	crc = (crc << 6) ^ crc10Table6Bit[((crc >> 4) ^ commandCounter) & 0x3F];
+	return crc &= 0x03FF;
 }
 
-/**
- * @brief Compute PEC10 (CRC10) used on received data blocks from the device.
- *
- * The device appends a 10-bit CRC (plus a 6-bit command counter in the same 2-byte field).
- * We first run bytes through a 256-entry table (seed = 0x0010), then (optionally) fold in
- * the 6-bit command counter (CC) by XORing it into the top bits, and finally “walk” 6 bits
- * to align the 10-bit remainder (per datasheet convention).
- *
- * Polynomial: x^10 + x^7 + x^3 + x^2 + x + 1.
- *
- * @param pDataBuf        Pointer to received data bytes to check (e.g., 6-byte SID or 6-byte voltage page).
- * @param nLength         Number of bytes to include in the CRC calculation.
- * @param commandCounter  Optional pointer to a 6-bit CC value (0..63). Pass NULL if not used.
- * @return 10-bit CRC value in the low bits of the return (mask with 0x03FF if needed).
- */
-uint16_t ADBMS_calcPec10(uint8_t *pDataBuf, int nLength, uint8_t *commandCounter)
+uint16_t ADBMS_calculateCommandPec(uint8_t *data, int length)
 {
-    uint16_t nRemainder = 16u; // Seed 0x0010
-    uint16_t nPolynomial = 0x8Fu; // Helper constant used during final 6-bit modulation
-    uint8_t nByteIndex, nBitIndex;
-    uint16_t nTableAddr;
-
-    // Table-driven accumulation over data bytes
-    for (nByteIndex = 0u; nByteIndex < nLength; ++nByteIndex)
-    {
-    	// Index = ((remainder >> 2) ^ dataByte) & 0xFF
-        nTableAddr = (uint16_t)(((uint16_t)(nRemainder >> 2) ^ (uint8_t)pDataBuf[nByteIndex]) & (uint8_t)0xff);
-        nRemainder = (uint16_t)(((uint16_t)(nRemainder << 8)) ^ crc10Table[nTableAddr]);
-    }
-
-    // Some frames encode a 6-bit command counter (CC) alongside CRC10 in the 2-byte PEC field.
-    // If caller provides CC, fold it in before the final 6-bit “bit-walk.”
-    if (commandCounter != NULL)
-    {
-        nRemainder ^= (uint16_t)(*commandCounter << 4u);
-    }
-
-    // Finish with a 6-bit modulo-2 division to land on the 10-bit remainder
-    for (nBitIndex = 6u; nBitIndex > 0u; --nBitIndex)
-    {
-        if ((nRemainder & 0x200u) > 0u) // If MSB (bit9) is set
-        {
-            nRemainder = (uint16_t)((nRemainder << 1u));
-            nRemainder = (uint16_t)(nRemainder ^ nPolynomial);
-        }
-        else
-        {
-            nRemainder = (uint16_t)((nRemainder << 1u));
-        }
-    }
-
-    // Return only the 10 valid bits
-    return ((uint16_t)(nRemainder & 0x3FFu));
+	uint16_t crc = INITIAL_CRC_SEED;
+	for (int i = 0; i < length; i++)
+	{
+		uint8_t index = (uint8_t)(crc >> 7) ^ data[i];
+		crc = (crc << 8) ^ crc15Table[index];
+	}
+	return crc <<= 1;
 }
 
-/**
- * @brief Check a received frame’s PEC10 against the two PEC bytes from the device.
- *
- * The device’s 2-byte PEC field packs:
- *   - Bits [15:10]: 6-bit command counter (CC)
- *   - Bits [9:0]  : 10-bit CRC (DPEC)
- *
- * We extract CC and DPEC, recompute CRC10 over the data (including CC),
- * and compare the 10 LSBs.
- *
- * @param rxBuffer Pointer to the received data bytes (e.g., 6-byte SID or 6-byte data block).
- * @param len      Number of data bytes.
- * @param pec      Pointer to the two PEC bytes from the device (big-endian: pec[0] first, pec[1] second).
- * @return true if CRC matches; false on mismatch.
- */
-bool ADBMS_checkRxPec(const uint8_t *rxBuffer, int len, const uint8_t pec[2])
+bool ADBMS_checkDataPec(uint8_t *rxBuffer, uint16_t length, uint8_t pec[2])
 {
 	// Extract 6-bit command counter from the top 6 bits of pec[0]
-    uint8_t  cc   = (uint8_t)((pec[0] >> 2) & 0x3F);
+    uint8_t commandCounter = (uint8_t)((pec[0] >> 2) & 0x3F);
 
     // Extract 10-bit CRC from the bottom 2 bits of pec[0] and all 8 bits of pec[1]
-    uint16_t dpec = (uint16_t)(((pec[0] & 0x03) << 8) | pec[1]);  // 10bit
+    uint16_t receivedCrc = (uint16_t)(((pec[0] & 0x03) << 8) | pec[1]);  
 
-    // Recompute CRC10 over rxBuffer, including the same CC if present
-    uint16_t calc = (uint16_t)(ADBMS_calcPec10((uint8_t*)rxBuffer, len, &cc) & 0x03FF);
+    uint16_t calculatedCrc = ADBMS_calculateDataPec(rxBuffer, length, commandCounter);
 
-    // Compare only the 10 LSBs
-    return ((dpec & 0x03FF) == calc);
+    return (receivedCrc == calculatedCrc);
 }
+
+void ADBMS_generateCrcTables(void)
+{
+	ADBMS_generateCrc15Table();
+	ADBMS_generateCrc10Table8Bit();
+	ADBMS_generateCrc10Table6Bit();
+}
+
+void ADBMS_generateCrc15Table(void)
+{
+	for (uint16_t i = 0; i < 256; i++)
+	{
+		uint16_t crc = i << 7;		
+		for (int bit = 0; bit < 8; bit++)
+		{
+			if (crc & 0x4000) // MSB of 15-bit CRC (bit 14)
+			{       
+				crc = (uint16_t)((crc << 1) ^ COMMAND_CRC_POLYNOMIAL);
+			}
+			else
+			{
+				crc <<= 1;
+			}
+		}
+		crc15Table[i] = crc & 0x7FFF;
+	}
+}
+
+void ADBMS_generateCrc10Table6Bit(void)
+{
+    for (uint16_t i = 0; i < 64; ++i)
+    {
+        uint16_t crc = (uint16_t)(i << 4);
+
+        // Clock 6 bits through the LFSR
+        for (int bit = 0; bit < 6; ++bit)
+        {
+            if (crc & 0x200u) // MSB of 10-bit CRC
+			{
+                crc = (uint16_t)((crc << 1) ^ DATA_CRC_POLYNOMIAL);
+			}
+            else
+			{
+                crc <<= 1;
+			}
+        }
+        crc10Table6Bit[i] = (uint16_t)(crc & 0x03FFu);   // keep 10 bits
+    }
+}
+
+void ADBMS_generateCrc10Table8Bit(void)
+{
+	for (uint16_t i = 0; i < 256; ++i)
+	{
+		uint16_t crc = i << 2;
+		
+		for (int bit = 0; bit < 8; ++bit)
+		{
+			if (crc & 0x200) 
+			{
+				crc = (uint16_t)((crc << 1) ^ DATA_CRC_POLYNOMIAL);
+			}
+			else 
+			{
+				crc <<= 1;
+			}
+		}
+		crc10Table8Bit[i] = (uint16_t)(crc & 0x03FF);
+	}
+}
+

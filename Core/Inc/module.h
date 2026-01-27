@@ -54,9 +54,19 @@
 #define TEMP_R0 10000.0f
 #define TEMP_INVERCED_BETA (1.0f / 3435.0f)
 #define TEMP_KELVIN 273.15f
-
-
 #define LTC6811_Vdd 51450.0f
+
+#define STEINHART_HART_COEFFICIENT_A 3.3540164e-03f
+#define STEINHART_HART_COEFFICIENT_B 3.0740376e-04f
+#define STEINHART_HART_COEFFICIENT_C 1.0191529e-06f
+#define STEINHART_HART_COEFFICIENT_D 9.0937118e-08f
+#define NOMINAL_RESISTANCE_25C_OHMS 10000.0f  
+#define PULL_UP_RESISTANCE_OHMS 10000.0f
+#define KELVIN_OFFSET 273.15f
+#define DISCONNECTED_TEMP_C 0.0f
+#define VREF2_MARGIN_MV 10.0f
+
+
 
 void Module_init(ModuleData *mod);
 /* ===== Public API: Cell Voltages ============================================
@@ -73,6 +83,7 @@ void Module_getVoltages(ModuleData *mod);
  *
  */
 void Convert_GPIOVoltageToTemp(ModuleData *mod);
+void Module_convertGpioVoltageToTemp(ModuleData *modData);
 void Module_getTemperatures(ModuleData *mod);
 
 /* ===== Public API: Ambient Sensors (Pressure / Air Temp / Humidity) =========

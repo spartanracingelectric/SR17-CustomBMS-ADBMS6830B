@@ -145,7 +145,7 @@ int main(void)
 
     // Pull SPI1 nCS HIGH (deselect)
     ADBMS_csHigh();
-
+	ADBMS_generateCrcTables();
     ADBMS_init();
     Module_init(modData);
     Accumulator_init(&accmData);
@@ -201,6 +201,7 @@ int main(void)
 				can_skip_flag = 0;
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
+
 			CAN_sendCellSummary(&msg, &accmData);
 			CAN_sendVoltageData(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
