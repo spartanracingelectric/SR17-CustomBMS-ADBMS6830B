@@ -136,7 +136,7 @@ int main(void)
   MX_CAN1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  CAN_SettingsInit(&msg);  // Start CAN at 0x00
+  CAN_settingsInit(&msg);  // Start CAN at 0x00
     // Start timer
     GpioTimePacket_Init(&tp_led_heartbeat, MCU_HEARTBEAT_LED_GPIO_Port,
                         MCU_HEARTBEAT_LED_Pin);
@@ -201,11 +201,11 @@ int main(void)
 				can_skip_flag = 0;
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
-			CAN_Send_Cell_Summary(&msg, &accmData);
-			CAN_Send_Voltage(&msg, modData);
+			CAN_sendCellSummary(&msg, &accmData);
+			CAN_sendVoltageData(&msg, modData);
 //			CAN_Send_Temperature(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_Send_Balance_Status(&msg, balanceStatus);
+			CAN_sendBalanceStatus(&msg, balanceStatus);
 		}
     }
   /* USER CODE END 3 */
