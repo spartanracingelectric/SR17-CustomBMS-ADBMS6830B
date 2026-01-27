@@ -204,7 +204,7 @@ int main(void)
 
 			CAN_sendCellSummary(&msg, &accmData);
 			CAN_sendVoltageData(&msg, modData);
-//			CAN_Send_Temperature(&msg, modData);
+			CAN_sendTemperatureData(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_sendBalanceStatus(&msg, balanceStatus);
 		}

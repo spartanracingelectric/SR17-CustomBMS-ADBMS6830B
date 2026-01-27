@@ -283,14 +283,14 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
     		if(j + 3 < NUM_THERM_TOTAL)
     		{
     			CAN_setId(buffer, canId);
-    			buffer->buffer[0] = (uint8_t)(mod[i].gpio_volt[  j  ]);
-    			buffer->buffer[1] = (uint8_t)(mod[i].gpio_volt[  j  ] >> 8);
-    			buffer->buffer[2] = (uint8_t)(mod[i].gpio_volt[j + 1]);
-    			buffer->buffer[3] = (uint8_t)(mod[i].gpio_volt[j + 1] >> 8);
-    			buffer->buffer[4] = (uint8_t)(mod[i].gpio_volt[j + 2]);
-    			buffer->buffer[5] = (uint8_t)(mod[i].gpio_volt[j + 2] >> 8);
-    			buffer->buffer[6] = (uint8_t)(mod[i].gpio_volt[j + 3]);
-    			buffer->buffer[7] = (uint8_t)(mod[i].gpio_volt[j + 3] >> 8);
+    			buffer->buffer[0] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
+    			buffer->buffer[1] = (uint8_t)(mod[i].pointTemp_C[  j  ] >> 8);
+    			buffer->buffer[2] = (uint8_t)(mod[i].pointTemp_C[j + 1]);
+    			buffer->buffer[3] = (uint8_t)(mod[i].pointTemp_C[j + 1] >> 8);
+    			buffer->buffer[4] = (uint8_t)(mod[i].pointTemp_C[j + 2]);
+    			buffer->buffer[5] = (uint8_t)(mod[i].pointTemp_C[j + 2] >> 8);
+    			buffer->buffer[6] = (uint8_t)(mod[i].pointTemp_C[j + 3]);
+    			buffer->buffer[7] = (uint8_t)(mod[i].pointTemp_C[j + 3] >> 8);
 
     			CAN_send(buffer);
     			canId++;
@@ -299,10 +299,10 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
     		}
     		else
     		{
-    			buffer->buffer[0] = (uint8_t)(mod[i].gpio_volt [  j  ]);
-    			buffer->buffer[1] = (uint8_t)(mod[i].gpio_volt [  j  ] >> 8);
-    			buffer->buffer[2] = (uint8_t)(mod[i].gpio_volt [j +  1]);
-    			buffer->buffer[3] = (uint8_t)(mod[i].gpio_volt [j +  1] >> 8);
+    			buffer->buffer[0] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
+    			buffer->buffer[1] = (uint8_t)(mod[i].pointTemp_C[  j  ] >> 8);
+    			buffer->buffer[2] = (uint8_t)(mod[i].pointTemp_C[j +  1]);
+    			buffer->buffer[3] = (uint8_t)(mod[i].pointTemp_C[j +  1] >> 8);
     			buffer->buffer[4] = 0;
     			buffer->buffer[5] = 0;
     			buffer->buffer[6] = 0;
