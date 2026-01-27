@@ -136,7 +136,7 @@ int main(void)
   MX_CAN1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  CAN_SettingsInit(&msg);  // Start CAN at 0x00
+  CAN_settingsInit(&msg);  // Start CAN at 0x00
     // Start timer
     GpioTimePacket_Init(&tp_led_heartbeat, MCU_HEARTBEAT_LED_GPIO_Port,
                         MCU_HEARTBEAT_LED_Pin);
@@ -201,11 +201,12 @@ int main(void)
 				can_skip_flag = 0;
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
-			CAN_Send_Cell_Summary(&msg, &accmData);
-			CAN_Send_Voltage(&msg, modData);
-			CAN_Send_Temperature(&msg, modData);
+
+			CAN_sendCellSummary(&msg, &accmData);
+			CAN_sendVoltageData(&msg, modData);
+			CAN_sendTemperatureData(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_Send_Balance_Status(&msg, balanceStatus);
+			CAN_sendBalanceStatus(&msg, balanceStatus);
 		}
     }
   /* USER CODE END 3 */
@@ -300,6 +301,41 @@ uint8_t TimerPacket_FixedPulse(TimerPacket *tp) {
     }
     return 0;  // Do not enact event
 }
+
+//void Checking_Faults(CANMessage *msg,batteryModule *batt ) {
+//	uint32_t now = HAL_GetTick(); //read in ms
+//	uint8_t faults = 0;
+//	uint8_t warnings = 0;
+//
+//	static uint8_t rec_faults = 0;
+//	static uint8_t rec_warnings = 0;
+//	static uint32_t last = 0;
+//
+//	Cell_Voltage_Fault(&modPackInfo, &safetyFaults, &safetyWarnings);
+//	Cell_Balance_Fault(&modPackInfo, &safetyFaults, &safetyWarnings);
+//	Cell_Temperature_Fault(&modPackInfo, &safetyFaults, &safetyWarnings);
+//
+//	if(faults != rec_faults || warnings != rec_warnings) {
+//		CAN_Send_Safety_Checker(msg, &modPackInfo, &safetyFaults, &safetyWarnings);
+//		CAN_Send_Cell_Summary(msg, &modPackInfo);
+//		CAN_Send_Voltage(msg, modPackInfo.cell_volt);
+//		CAN_Send_Temperature(msg, modPackInfo.cell_temp, modPackInfo.pressure, modPackInfo.atmos_temp, modPackInfo.humidity, modPackInfo.dew_point);
+//		CAN_Send_SOC(msg, &modPackInfo, MAX_BATTERY_CAPACITY);
+//		CAN_Send_Balance_Status(msg, modPackInfo.balance_status);
+//		rec_faults = faults;
+//		rec_warnings = warnings;
+//	}
+//
+//
+//	if((uint32_t)(now - last) >= 1000) {
+//		CAN_Send_Safety_Checker(msg, &modPackInfo, &safetyFaults, &safetyWarnings);
+//		CAN_Send_Cell_Summary(msg, &modPackInfo);
+//		CAN_Send_Voltage(msg, modPackInfo.cell_volt);
+//		CAN_Send_Temperature(msg, modPackInfo.cell_temp, modPackInfo.pressure, modPackInfo.atmos_temp, modPackInfo.humidity, modPackInfo.dew_point);
+//		CAN_Send_SOC(msg, &modPackInfo, MAX_BATTERY_CAPACITY);
+//		CAN_Send_Balance_Status(msg, modPackInfo.balance_status);
+//		last = now;
+//	}
 
 
 /* USER CODE END 4 */

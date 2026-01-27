@@ -1,0 +1,57 @@
+Conversion Warnings Log
+
+
+MSG_ID: 1694 	MSG_TYPE: S 	MSG_NAME: BMS_Faults_Message_1
+	SIG_NAME: BMS_Enable_Balance_Message, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Cell_Overvolt_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Cell_Undervolt_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Cell_High_Temp_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Cell_Low_Temp_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Redundant_Voltage_Fault, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Redundant_Temp_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Invalid_Data_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Open_Wire_Detection_Fault, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1695 	MSG_TYPE: S 	MSG_NAME: Pack_Data
+	SIG_NAME: MCU_Pressure, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: MCU_Humidity, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1700 	MSG_TYPE: S 	MSG_NAME: M1_Module_Summary
+	SIG_NAME: BMS_M1_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M1_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1701 	MSG_TYPE: S 	MSG_NAME: M2_Module_Summary
+	SIG_NAME: BMS_M2_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M2_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1702 	MSG_TYPE: S 	MSG_NAME: M3_Module_Summary
+	SIG_NAME: BMS_M3_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M3_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1703 	MSG_TYPE: S 	MSG_NAME: M4_Module_Summary
+	SIG_NAME: BMS_M4_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M4_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1704 	MSG_TYPE: S 	MSG_NAME: M5_Module_Summary
+	SIG_NAME: BMS_M5_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M5_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1705 	MSG_TYPE: S 	MSG_NAME: M6_Module_Summary
+	SIG_NAME: BMS_M6_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M6_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1706 	MSG_TYPE: S 	MSG_NAME: M7_Module_Summary
+	SIG_NAME: BMS_M7_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M7_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1707 	MSG_TYPE: S 	MSG_NAME: M8_Module_Summary
+	SIG_NAME: BMS_M8_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M8_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1708 	MSG_TYPE: S 	MSG_NAME: M9_Module_Summary
+	SIG_NAME: BMS_M9_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M9_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1709 	MSG_TYPE: S 	MSG_NAME: M10_Module_Summary
+	SIG_NAME: BMS_M10_Max_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_M10_Min_Cell_Index, STATUS: Invalid Max or Min value., ACTION: Value Set to default
