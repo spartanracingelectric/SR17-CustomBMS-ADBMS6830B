@@ -89,7 +89,7 @@ HAL_StatusTypeDef CAN_Start();
 
 HAL_StatusTypeDef CAN_Activate();
 
-HAL_StatusTypeDef CAN_send(CANMessage *ptr);
+HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length);
 
 void CAN_settingsInit(CANMessage *ptr);
 
