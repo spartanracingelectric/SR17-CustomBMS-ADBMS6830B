@@ -209,8 +209,7 @@ int main(void)
     modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
     */
       
-            Safety_cellVoltageFault(&accmData, modData);
-			Safety_cellTemperatureFault(&accmData, modData);
+      Safety_checkFaults(&accmData, modData);
 
 
 			// Passive balancing is called unless a fault has occurred

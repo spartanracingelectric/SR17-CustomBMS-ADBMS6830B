@@ -56,6 +56,11 @@ static uint32_t Timer_OverTemp[NUM_MOD][NUM_THERM_PER_MOD]      = {0};
 static uint32_t Timer_OpenWire[NUM_MOD][NUM_CELL_PER_MOD]       = {0};
 static uint32_t Timer_PEC[NUM_MOD]                              = {0};
 
+void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod) {
+    Safety_checkCellVoltageFault(batt, mod);
+    Safety_checkCellTemperatureFault(batt, mod);
+}
+
 /* ===== Cell Voltage Evaluation ==============================================
  * Cell_Voltage_Fault():
  *  - Scans all cells to determine highest and lowest voltages.
@@ -65,7 +70,7 @@ static uint32_t Timer_PEC[NUM_MOD]                              = {0};
  *  - Clears/relaxes a latched fault only after the measurement crosses back by
  *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
  */
-void Safety_cellVoltageFault(AccumulatorData *acc, ModuleData *mod){
+void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod){
 	uint32_t current_time = HAL_GetTick();
     Accumulator_getMaxVoltage(acc, mod);
     Accumulator_getMinVoltage(acc, mod);
@@ -107,7 +112,7 @@ void Safety_cellVoltageFault(AccumulatorData *acc, ModuleData *mod){
  *    fault and SendFaultSignal(); clears once temperature falls below the
  *    threshold by FAULT_LOCK_MARGIN_HIGH_TEMP and calls ClearFaultSignal().
  */
-void Safety_cellTemperatureFault(AccumulatorData *batt, ModuleData *mod) {
+void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod) {
 	uint32_t current_time = HAL_GetTick();
     batt->cell_temp_highest = mod[0].pointTemp_C[0];
     batt->cell_temp_lowest  = mod[0].pointTemp_C[0];
