@@ -88,6 +88,9 @@ typedef struct AccumulatorData {
 	uint16_t balance_status[NUM_MOD];
     uint32_t soc; // microamps!!!!!
     uint32_t current;
+    uint16_t atmos_temp;
+    uint16_t hv_sens;
+    uint16_t total_pack_voltage;
 } AccumulatorData;
 
 /**
@@ -102,7 +105,7 @@ typedef struct AccumulatorData {
  *  - sid:           6-byte silicon ID (if supported/read)
  */
 typedef struct ModuleData {
-	uint16_t cell_volt[NUM_CELL_PER_MOD];
+	int16_t cell_volt[NUM_CELL_PER_MOD];
     uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
 	int16_t gpio_volt[NUM_THERM_PER_MOD];
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
@@ -112,10 +115,14 @@ typedef struct ModuleData {
 	uint16_t sum_volt_module;
 	uint16_t pressure;
 	uint16_t humidity;
-	uint16_t atmos_temp;
     uint16_t dew_point;
+    uint16_t max_voltage;
+    uint16_t min_voltage;
     uint8_t sid[6];
 	bool pec_error;
+    uint8_t max_cell_index;
+    uint8_t min_cell_index;
+    uint16_t total_module_voltage;
 } ModuleData;
 
 typedef struct BalanceStatus {
@@ -141,16 +148,17 @@ typedef struct ConfigurationRegisterB {
  *  - Populate the relevant buffer and header, then queue with HAL CAN APIs.
  *  - ID and DLC are configured in the associated source file before sending.
  */
-typedef struct CANMessage{
-    CAN_TxHeaderTypeDef TxHeader;
-    uint32_t TxMailbox;
-    uint8_t voltageBuffer[8];
-    uint8_t thermistorBuffer[8];
-    uint8_t summaryBuffer[8];
-    uint8_t safetyBuffer[8];
-    uint8_t socBuffer[8];
-    uint8_t balanceStatus[8];
-} CANMessage;
+//moved to can.h already
+//typedef struct CANMessage{
+//    CAN_TxHeaderTypeDef TxHeader;
+//    uint32_t TxMailbox;
+//    uint8_t voltageBuffer[8];
+//    uint8_t thermistorBuffer[8];
+//    uint8_t summaryBuffer[8];
+//    uint8_t safetyBuffer[8];
+//    uint8_t socBuffer[8];
+//    uint8_t balanceStatus[8];
+//} CANMessage;
 
 /* USER CODE END ET */
 

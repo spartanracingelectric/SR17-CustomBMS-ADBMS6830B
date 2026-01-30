@@ -57,7 +57,7 @@ void Module_init(ModuleData *mod){
 		mod[modIndex].sum_volt_module = 0xFFFF;
 		mod[modIndex].pressure = 0xFFFF;
 		mod[modIndex].humidity = 0xFFFF;
-		mod[modIndex].atmos_temp = 0xFFFF;
+//		mod[modIndex].atmos_temp = 0xFFFF;
 	}
 
 }
@@ -91,7 +91,7 @@ void Atmos_Temp_To_Celsius(uint8_t dev_idx, ModuleData *mod, uint16_t adc_data) 
 
     float temperature_value = -66.875 + 218.75 * voltage_ratio;  //Calculate pressure
 
-    mod[dev_idx].atmos_temp = (uint16_t)temperature_value;
+//    mod[dev_idx].atmos_temp = (uint16_t)temperature_value;
 }
 
 void ADC_To_Humidity(uint8_t dev_idx, ModuleData *mod, uint16_t adcValue) {
@@ -162,12 +162,12 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 void Get_Dew_Point(ModuleData *mod) {
 	for (uint8_t dev_idx = 0; dev_idx < NUM_MOD; dev_idx++) {
 		uint16_t humidity = mod[dev_idx].humidity;
-		uint16_t atmos_temp = mod[dev_idx].atmos_temp;
+//		uint16_t atmos_temp = mod[dev_idx].atmos_temp;
 
 		// simple approximation that is accurate to within 1 deg C
 		// Only works well when Relative Humidity is above 50%
 
-		mod[dev_idx].dew_point = atmos_temp - ((float)(100 - humidity) / 5);
+//		mod[dev_idx].dew_point = atmos_temp - ((float)(100 - humidity) / 5);
 	}
 }
 
