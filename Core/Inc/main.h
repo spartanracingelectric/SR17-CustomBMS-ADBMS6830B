@@ -30,7 +30,7 @@ extern "C" {
 #include "stm32f1xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -119,6 +119,7 @@ typedef struct ModuleData {
     uint16_t max_voltage;
     uint16_t min_voltage;
     uint8_t sid[6];
+	bool pec_error;
     uint8_t max_cell_index;
     uint8_t min_cell_index;
     uint16_t total_module_voltage;

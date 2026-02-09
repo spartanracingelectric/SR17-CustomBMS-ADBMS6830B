@@ -236,6 +236,15 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+
+		if (!isDataValid) 
+		{
+            moduleData[moduleIndex].pec_error = true; 
+        } 
+		else 
+		{
+            moduleData[moduleIndex].pec_error = false; 
+        }
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
@@ -296,6 +305,14 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--) 
 	{
 		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+
+		if (!isDataValid) {
+            moduleData[moduleIndex].pec_error = true; 
+        } 
+		else 
+		{
+            moduleData[moduleIndex].pec_error = false; 
+        }
 		
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++) 
 		{
@@ -515,7 +532,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
                 {
                     moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
                 }
-				printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
+				//printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
 		}
 	}
@@ -558,7 +575,7 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
             uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
             uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
             moduleData[moduleIndex].vref2 = milliVoltage;
-			printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
+			//printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
         }
 	}
 }
