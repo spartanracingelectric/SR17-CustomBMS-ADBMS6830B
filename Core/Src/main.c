@@ -179,7 +179,7 @@ int main(void)
 			// ADBMS_ReadSID(modData);
 			// HAL_ADCEx_Calibration_Start(&hadc1);
 			// HAL_ADCEx_Calibration_Start(&hadc2);
-
+			printf("test\n");
 			Module_getVoltages(modData);
       Accumulator_getMinVoltage(&accmData, modData);
 			Accumulator_getMaxVoltage(&accmData, modData);

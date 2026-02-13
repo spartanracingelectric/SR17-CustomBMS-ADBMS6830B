@@ -191,7 +191,9 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
+    	printf("waiting\n");
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
+			printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
@@ -404,8 +406,7 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t 
  *      [3..6] = current (uint32_t, LSB..MSB)
  *      [7]    = (unused)
  */
-void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt,
-                  uint16_t max_capacity) {
+void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capacity) {
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
     uint8_t percent = (uint8_t)((float) (batt->soc / 1000) * 100 / (float) max_capacity);  // 1000 for micro->milli
@@ -464,6 +465,45 @@ void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst) {
 	return;
 }
 
+
+void CAN_sendFaultStatus(CANMessage *message, uint16_t fault[NUM_MOD][NUM_CELL_PER_MOD])
+{
+	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
+	uint16_t faultBitStorage[NUM_MOD];
+	
+		for (uint8_t i = 0; i < NUM_MOD; i++)
+		{
+			uint16_t faultBits = 0;
+
+			for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
+			{
+				if(fault[i][j] != 0)
+				{
+					faultBits |= (uint16_t)(1u << j);
+				}
+			}
+			faultBitStorage[i] = faultBits;
+		}
+	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
+	{
+		for (uint8_t j = 0; j < 8; j++)
+		{
+			message-> buffer[j] = 0; // make sure the whole can message starts at 00000000
+		}
+			int byteNumber = 0;
+			for (uint8_t i = start; i < (start + 4) && (i < NUM_MOD); i++)
+			{
+				uint16_t faultBits = faultBitStorage[i];
+
+				message->buffer[byteNumber++] = (uint8_t)faultBits;
+				message->buffer[byteNumber++] = (uint8_t)(faultBits >> 8);
+			
+			}
+		CAN_setId(message, canId);
+		CAN_send(message, byteNumber);
+		canId++;
+	}
+}
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
 //    uint16_t CAN_ID = 0x602;
 //	Set_CAN_Id(ptr, CAN_ID);
