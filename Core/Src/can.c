@@ -362,8 +362,8 @@ void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
 		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellVoltage_mV  		>> 8);
 		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].averageCellVoltage_mV;
 		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].averageCellVoltage_mV		>> 8);
-		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].maxCellIndex;
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellIndex  	>> 8);
+		buffer->buffer[byteNumber++] =  (uint8_t)(mod[i].maxCellIndex + 1);
+		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellIndex + 1);
 
 		CAN_send(buffer,byteNumber);
 		canId++;
