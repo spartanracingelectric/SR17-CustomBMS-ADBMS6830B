@@ -110,19 +110,18 @@ typedef struct ModuleData {
 	int16_t gpio_volt[NUM_THERM_PER_MOD];
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
 	int16_t vref2;
-	uint16_t average_volt;
+	int16_t averageCellVoltage_mV;
 	uint16_t average_temp;
-	uint16_t sum_volt_module;
+	int32_t totalCellVoltage_mV;
 	uint16_t pressure;
 	uint16_t humidity;
     uint16_t dew_point;
-    uint16_t max_voltage;
-    uint16_t min_voltage;
+    int16_t maxCellVoltage_mV;
+    int16_t minCellVoltage_mV;
     uint8_t sid[6];
 	bool pec_error;
-    uint8_t max_cell_index;
-    uint8_t min_cell_index;
-    uint16_t total_module_voltage;
+    uint8_t maxCellIndex;
+    uint8_t minCellIndex;
 } ModuleData;
 
 typedef struct BalanceStatus {

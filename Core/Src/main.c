@@ -62,9 +62,9 @@
 typedef struct _GpioTimePacket
 {
 	GPIO_TypeDef *gpio_port; // Port
-	uint16_t      gpio_pin;  // Pin number
-	uint32_t      ts_prev;   // Previous timestamp
-	uint32_t      ts_curr;   // Current timestamp
+	uint16_t gpio_pin;       // Pin number
+	uint32_t ts_prev;        // Previous timestamp
+	uint32_t ts_curr;        // Current timestamp
 } GpioTimePacket;
 typedef struct _TimerPacket
 {
@@ -98,16 +98,16 @@ uint8_t TimerPacket_FixedPulse(TimerPacket *tp);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	GpioTimePacket         tp_led_heartbeat;
-	TimerPacket            cycleTimeCap;
-	TimerPacket            canReconnection;
-	AccumulatorData        accmData;
-	ModuleData             modData[NUM_MOD];
-	BalanceStatus          balanceStatus[NUM_MOD];
+	GpioTimePacket tp_led_heartbeat;
+	TimerPacket cycleTimeCap;
+	TimerPacket canReconnection;
+	AccumulatorData accmData;
+	ModuleData modData[NUM_MOD];
+	BalanceStatus balanceStatus[NUM_MOD];
 	ConfigurationRegisterB configB[NUM_MOD];
-	CANMessage             msg;
-	uint8_t                safetyFaults   = 0;
-	uint8_t                safetyWarnings = 0;
+	CANMessage msg;
+	uint8_t safetyFaults = 0;
+	uint8_t safetyWarnings = 0;
 	//	uint8_t moduleCounts = 0;
 
 	/* USER CODE END 1 */
@@ -181,7 +181,9 @@ int main(void)
 			// HAL_ADCEx_Calibration_Start(&hadc2);
 
 			Module_getVoltages(modData);
-      Accumulator_getMinVoltage(&accmData, modData);
+			Module_getStats(modData);
+
+			Accumulator_getMinVoltage(&accmData, modData);
 			Accumulator_getMaxVoltage(&accmData, modData);
 
 			Module_getTemperatures(modData);
@@ -191,26 +193,25 @@ int main(void)
 
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
-      /*static uint32_t lastToggle = 0;
-      static uint16_t testRedundantVolt = 3700;
-      uint32_t current_time = HAL_GetTick();
-    if (current_time - lastToggle > 1500) { 
-        if (testRedundantVolt == 3700) {
-            testRedundantVolt = 3706;
-        } else {
-            testRedundantVolt = 3700;
-        }
+			/*static uint32_t lastToggle = 0;
+			static uint16_t testRedundantVolt = 3700;
+			uint32_t current_time = HAL_GetTick();
+		  if (current_time - lastToggle > 1500) {
+			  if (testRedundantVolt == 3700) {
+				  testRedundantVolt = 3706;
+			  } else {
+				  testRedundantVolt = 3700;
+			  }
 
-        lastToggle = current_time;
-    }
-      
+			  lastToggle = current_time;
+		  }
 
-    modData[0].cell_volt[0] = 3700;
-    modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
-    */
-      
-      Safety_checkFaults(&accmData, modData);
 
+		  modData[0].cell_volt[0] = 3700;
+		  modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
+		  */
+
+			Safety_checkFaults(&accmData, modData);
 
 			// Passive balancing is called unless a fault has occurred
 			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
@@ -226,6 +227,7 @@ int main(void)
 			CAN_sendTemperatureData(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_sendBalanceStatus(&msg, balanceStatus);
+			CAN_sendModuleSummary(&msg, modData);
 		}
 	}
 	/* USER CODE END 3 */
@@ -237,23 +239,23 @@ int main(void)
  */
 void SystemClock_Config(void)
 {
-	RCC_OscInitTypeDef       RCC_OscInitStruct = {0};
-	RCC_ClkInitTypeDef       RCC_ClkInitStruct = {0};
-	RCC_PeriphCLKInitTypeDef PeriphClkInit     = {0};
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
 	/** Initializes the RCC Oscillators according to the specified parameters
 	 * in the RCC_OscInitTypeDef structure.
 	 */
-	RCC_OscInitStruct.OscillatorType       = RCC_OSCILLATORTYPE_HSE;
-	RCC_OscInitStruct.HSEState             = RCC_HSE_ON;
-	RCC_OscInitStruct.HSEPredivValue       = RCC_HSE_PREDIV_DIV5;
-	RCC_OscInitStruct.HSIState             = RCC_HSI_ON;
-	RCC_OscInitStruct.Prediv1Source        = RCC_PREDIV1_SOURCE_PLL2;
-	RCC_OscInitStruct.PLL.PLLState         = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource        = RCC_PLLSOURCE_HSE;
-	RCC_OscInitStruct.PLL.PLLMUL           = RCC_PLL_MUL9;
-	RCC_OscInitStruct.PLL2.PLL2State       = RCC_PLL2_ON;
-	RCC_OscInitStruct.PLL2.PLL2MUL         = RCC_PLL2_MUL8;
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+	RCC_OscInitStruct.PLL2.PLL2State = RCC_PLL2_ON;
+	RCC_OscInitStruct.PLL2.PLL2MUL = RCC_PLL2_MUL8;
 	RCC_OscInitStruct.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
@@ -263,8 +265,8 @@ void SystemClock_Config(void)
 	/** Initializes the CPU, AHB and APB buses clocks
 	 */
 	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
@@ -273,7 +275,7 @@ void SystemClock_Config(void)
 		Error_Handler();
 	}
 	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-	PeriphClkInit.AdcClockSelection    = RCC_ADCPCLK2_DIV6;
+	PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
 	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
 	{
 		Error_Handler();
@@ -291,9 +293,9 @@ void GpioTimePacket_Init(GpioTimePacket *gtp, GPIO_TypeDef *port, uint16_t pin)
 {
 	HAL_GPIO_WritePin(port, pin, GPIO_PIN_RESET); // Set GPIO LOW
 	gtp->gpio_port = port;
-	gtp->gpio_pin  = pin;
-	gtp->ts_prev   = 0; // Init to 0
-	gtp->ts_curr   = 0; // Init to 0
+	gtp->gpio_pin = pin;
+	gtp->ts_prev = 0; // Init to 0
+	gtp->ts_curr = 0; // Init to 0
 }
 // update_ms = update after X ms
 void GpioFixedToggle(GpioTimePacket *gtp, uint16_t update_ms)
@@ -309,9 +311,9 @@ void GpioFixedToggle(GpioTimePacket *gtp, uint16_t update_ms)
 // Will initialize GPIO to LOW!
 void TimerPacket_Init(TimerPacket *tp, uint32_t delay)
 {
-	tp->ts_prev = 0;     // Init to 0
-	tp->ts_curr = 0;     // Init to 0
-	tp->delay   = delay; // Init to user value
+	tp->ts_prev = 0;   // Init to 0
+	tp->ts_curr = 0;   // Init to 0
+	tp->delay = delay; // Init to user value
 }
 // update_ms = update after X ms
 uint8_t TimerPacket_FixedPulse(TimerPacket *tp)

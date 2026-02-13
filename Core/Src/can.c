@@ -246,8 +246,8 @@ void CAN_sendVoltageData(CANMessage *buffer, ModuleData *mod) {
 				buffer->buffer[1] = (uint8_t)(mod[i].cell_volt[  j  ] >> 8);
 				buffer->buffer[2] =  (uint8_t)mod[i].cell_volt[j + 1];
 				buffer->buffer[3] = (uint8_t)(mod[i].cell_volt[j + 1] >> 8);
-				buffer->buffer[4] = (uint8_t)mod[i].total_module_voltage;
-				buffer->buffer[5] = (uint8_t)(mod[i].total_module_voltage >> 8);
+				buffer->buffer[4] = (uint8_t)mod[i].totalCellVoltage_mV;
+				buffer->buffer[5] = (uint8_t)(mod[i].totalCellVoltage_mV >> 8);
 				buffer->buffer[6] = 0;
 				buffer->buffer[7] = 0;
 
@@ -346,14 +346,14 @@ void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
 
 	for (int i = 0; i < NUM_MOD; i++) {
 		CAN_setId(buffer, canId);
-		buffer->buffer[0] =  (uint8_t)mod[i].max_voltage;
-		buffer->buffer[1] = (uint8_t)(mod[i].max_voltage		>> 8);
-		buffer->buffer[2] =  (uint8_t)mod[i].min_voltage;
-		buffer->buffer[3] = (uint8_t)(mod[i].min_voltage  		>> 8);
-		buffer->buffer[4] =  (uint8_t)mod[i].average_volt;
-		buffer->buffer[5] = (uint8_t)(mod[i].average_volt		>> 8);
-		buffer->buffer[6] =  (uint8_t)mod[i].max_cell_index;
-		buffer->buffer[7] = (uint8_t)(mod[i].min_cell_index  	>> 8);
+		buffer->buffer[0] =  (uint8_t)mod[i].maxCellVoltage_mV;
+		buffer->buffer[1] = (uint8_t)(mod[i].maxCellVoltage_mV	>> 8);
+		buffer->buffer[2] =  (uint8_t)mod[i].minCellVoltage_mV;
+		buffer->buffer[3] = (uint8_t)(mod[i].minCellVoltage_mV >> 8);
+		buffer->buffer[4] =  (uint8_t)mod[i].averageCellVoltage_mV;
+		buffer->buffer[5] = (uint8_t)(mod[i].averageCellVoltage_mV >> 8);
+		buffer->buffer[6] =  (uint8_t)mod[i].maxCellIndex;
+		buffer->buffer[7] = (uint8_t)(mod[i].minCellIndex >> 8);
 
 		CAN_send(buffer);
 		canId++;
