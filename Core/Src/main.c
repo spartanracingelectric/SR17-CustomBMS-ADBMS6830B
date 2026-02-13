@@ -179,7 +179,7 @@ int main(void)
 			// ADBMS_ReadSID(modData);
 			// HAL_ADCEx_Calibration_Start(&hadc1);
 			// HAL_ADCEx_Calibration_Start(&hadc2);
-
+			printf("test\n");
 			Module_getVoltages(modData);
 			Module_getStats(modData);
 
@@ -222,12 +222,13 @@ int main(void)
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 
-			CAN_sendCellSummary(&msg, &accmData);
+			CAN_sendPackSummary(&msg, &accmData);
 			CAN_sendVoltageData(&msg, modData);
 			CAN_sendTemperatureData(&msg, modData);
 			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
 			CAN_sendBalanceStatus(&msg, balanceStatus);
 			CAN_sendModuleSummary(&msg, modData);
+			CAN_sendFaultStatus(&msg);
 		}
 	}
 	/* USER CODE END 3 */

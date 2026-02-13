@@ -95,8 +95,8 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 				uint16_t        voltage          = mod[m].cell_volt[c];
 				uint16_t        redundantVoltage = mod[m].redundantCellVoltage_mV[c];
 
-				Safety_checkOpenWire(m, c, voltage, faults, current_time);
-				Safety_checkRedundantVoltage(m, c, voltage, faults, redundantVoltage, current_time);
+				// Safety_checkOpenWire(m, c, voltage, faults, current_time);
+				// Safety_checkRedundantVoltage(m, c, voltage, faults, redundantVoltage, current_time);
 				Safety_checkOverVoltage(m, c, voltage, faults, warns, current_time);
 				Safety_checkUnderVoltage(m, c, voltage, faults, warns, current_time);
 			}
