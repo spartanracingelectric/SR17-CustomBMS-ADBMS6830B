@@ -115,7 +115,7 @@ void CAN_sendModuleSummary(CANMessage *ptr, ModuleData *mod);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);
-void CAN_sendFaultStatus(CANMessage *buffer, uint16_t fault[NUM_MOD][NUM_CELL_PER_MOD]);
+void CAN_sendFaultStatus(CANMessage *buffer);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 

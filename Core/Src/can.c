@@ -23,10 +23,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
+
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
 #include "balance.h"
+#include "safety.h"
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -360,8 +362,8 @@ void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
 		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellVoltage_mV  		>> 8);
 		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].averageCellVoltage_mV;
 		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].averageCellVoltage_mV		>> 8);
-		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].max_cell_index;
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].min_cell_index  	>> 8);
+		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].maxCellIndex;
+		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellIndex  	>> 8);
 
 		CAN_send(buffer,byteNumber);
 		canId++;
@@ -466,10 +468,11 @@ void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst) {
 }
 
 
-void CAN_sendFaultStatus(CANMessage *message, uint16_t fault[NUM_MOD][NUM_CELL_PER_MOD])
+void CAN_sendFaultStatus(CANMessage *message)
 {
 	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
 	uint16_t faultBitStorage[NUM_MOD];
+
 	
 		for (uint8_t i = 0; i < NUM_MOD; i++)
 		{
@@ -477,9 +480,11 @@ void CAN_sendFaultStatus(CANMessage *message, uint16_t fault[NUM_MOD][NUM_CELL_P
 
 			for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
 			{
-				if(fault[i][j] != 0)
+				FaultFlags_t f = GlobalFaults[i][j];
+				if (f.UnderVoltage || f.OpenWire || f.PEC || f.OverTemp ||
+    			f.UnderTemp || f.OverVoltage || f.RedundancyVolt || f.RedundancyTemp)
 				{
-					faultBits |= (uint16_t)(1u << j);
+    				faultBits |= (uint16_t)(1u << j);
 				}
 			}
 			faultBitStorage[i] = faultBits;
