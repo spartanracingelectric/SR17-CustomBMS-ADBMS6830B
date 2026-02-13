@@ -10,7 +10,5 @@ AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false
 SpaceAfterCStyleCast: false
 KeepEmptyLinesAtTheStartOfBlocks: false
-AlignConsecutiveDeclarations: true
-AlignConsecutiveAssignments: true
 SortIncludes: CaseInsensitive
 
