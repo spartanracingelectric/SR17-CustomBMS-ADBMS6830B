@@ -59,36 +59,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-typedef struct _GpioTimePacket
-{
-	GPIO_TypeDef *gpio_port; // Port
-	uint16_t gpio_pin;       // Pin number
-	uint32_t ts_prev;        // Previous timestamp
-	uint32_t ts_curr;        // Current timestamp
-} GpioTimePacket;
-typedef struct _TimerPacket
-{
-	uint32_t ts_prev; // Previous timestamp
-	uint32_t ts_curr; // Current timestamp
-	uint32_t delay;   // Amount to delay
-} TimerPacket;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void GpioTimePacket_Init(GpioTimePacket *gtp, GPIO_TypeDef *port, uint16_t pin);
-void TimerPacket_Init(TimerPacket *tp, uint32_t delay);
-void GpioFixedToggle(GpioTimePacket *gtp, uint16_t update_ms);
-// Returns 1 at every tp->delay interval
-uint8_t TimerPacket_FixedPulse(TimerPacket *tp);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// static uint8_t BMS_MUX_PAUSE[2][6] = {{0x69, 0x28, 0x0F, 0x09, 0x7F, 0xF9},
-//                                       {0x69, 0x08, 0x0F, 0x09, 0x7F, 0xF9}};
+
 /* USER CODE END 0 */
 
 /**
@@ -98,15 +80,11 @@ uint8_t TimerPacket_FixedPulse(TimerPacket *tp);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	GpioTimePacket tp_led_heartbeat;
-	TimerPacket cycleTimeCap;
-	TimerPacket canReconnection;
 	AccumulatorData accmData;
 	ModuleData modData[NUM_MOD];
 	BalanceStatus balanceStatus[NUM_MOD];
 	ConfigurationRegisterB configB[NUM_MOD];
 	CANMessage msg;
-	uint8_t safetyFaults = 0;
 	uint8_t safetyWarnings = 0;
 	//	uint8_t moduleCounts = 0;
 
@@ -136,27 +114,18 @@ int main(void)
 	MX_SPI1_Init();
 	MX_CAN1_Init();
 	MX_USART1_UART_Init();
-	/* USER CODE BEGIN 2 */
-	CAN_settingsInit(&msg); // Start CAN at 0x00
-	// Start timer
-	GpioTimePacket_Init(&tp_led_heartbeat, MCU_HEARTBEAT_LED_GPIO_Port, MCU_HEARTBEAT_LED_Pin);
-	TimerPacket_Init(&cycleTimeCap, CYCLETIME_CAP);
-	TimerPacket_Init(&canReconnection, CAN_RECONNECTION_CHECK);
 
-	// Pull SPI1 nCS HIGH (deselect)
-	ADBMS_csHigh();
-	ADBMS_generateCrcTables();
+	/* USER CODE BEGIN 2 */
 	ADBMS_init();
 	Module_init(modData);
 	Accumulator_init(&accmData);
 	Balance_init(balanceStatus, configB);
+	CAN_settingsInit(&msg);
 
 	// Sending a fault signal and reseting it
 	// HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
 	HAL_Delay(1000);
 	ClearFaultSignal(); // those are for debug the charger and mobo
-
-	// Module_getVoltages(modData);
 
 	// ReadHVInput(&accmData);
 	// getSumPackVoltage(&accmData, modData);
@@ -173,63 +142,35 @@ int main(void)
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
-		if (TimerPacket_FixedPulse(&cycleTimeCap))
-		{
-			// ADBMS_ReadSID(modData);
-			// HAL_ADCEx_Calibration_Start(&hadc1);
-			// HAL_ADCEx_Calibration_Start(&hadc2);
-			printf("test\n");
-			Module_getVoltages(modData);
-			Module_getStats(modData);
 
-			Accumulator_getMinVoltage(&accmData, modData);
-			Accumulator_getMaxVoltage(&accmData, modData);
+		// ADBMS_ReadSID(modData);
+		// HAL_ADCEx_Calibration_Start(&hadc1);
+		// HAL_ADCEx_Calibration_Start(&hadc2);
+		Module_getCellVoltages(modData);
+		Module_getTemperatures(modData);
+		Module_getStats(modData);
 
-			Module_getTemperatures(modData);
+		Accumulator_getMinVoltage(&accmData, modData);
+		Accumulator_getMaxVoltage(&accmData, modData);
 
-			// ReadHVInput(&accmData);
-			// getSumPackVoltage(&accmData, modData);
+		// ReadHVInput(&accmData);
 
-			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
-			// prev_soc_time = HAL_GetTick();
-			/*static uint32_t lastToggle = 0;
-			static uint16_t testRedundantVolt = 3700;
-			uint32_t current_time = HAL_GetTick();
-		  if (current_time - lastToggle > 1500) {
-			  if (testRedundantVolt == 3700) {
-				  testRedundantVolt = 3706;
-			  } else {
-				  testRedundantVolt = 3700;
-			  }
+		// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
+		// prev_soc_time = HAL_GetTick();
 
-			  lastToggle = current_time;
-		  }
+		Safety_checkFaults(&accmData, modData);
 
+		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
 
-		  modData[0].cell_volt[0] = 3700;
-		  modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
-		  */
+		CAN_sendPackSummary(&msg, &accmData);
+		CAN_sendVoltageData(&msg, modData);
+		CAN_sendTemperatureData(&msg, modData);
+		CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
+		CAN_sendBalanceStatus(&msg, balanceStatus);
+		CAN_sendModuleSummary(&msg, modData);
+		CAN_sendFaultStatus(&msg);
 
-			Safety_checkFaults(&accmData, modData);
-
-			// Passive balancing is called unless a fault has occurred
-			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
-
-			if (TimerPacket_FixedPulse(&canReconnection))
-			{
-				can_skip_flag = 0;
-			}
-			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
-
-			CAN_sendPackSummary(&msg, &accmData);
-			CAN_sendVoltageData(&msg, modData);
-			CAN_sendTemperatureData(&msg, modData);
-			CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
-			CAN_sendBalanceStatus(&msg, balanceStatus);
-			CAN_sendModuleSummary(&msg, modData);
-			CAN_sendFaultStatus(&msg);
-		}
+		HAL_GPIO_TogglePin(MCU_HEARTBEAT_LED_GPIO_Port, MCU_HEARTBEAT_LED_Pin);
 	}
 	/* USER CODE END 3 */
 }
@@ -288,45 +229,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-// Initialize struct values
-// Will initialize GPIO to LOW!
-void GpioTimePacket_Init(GpioTimePacket *gtp, GPIO_TypeDef *port, uint16_t pin)
-{
-	HAL_GPIO_WritePin(port, pin, GPIO_PIN_RESET); // Set GPIO LOW
-	gtp->gpio_port = port;
-	gtp->gpio_pin = pin;
-	gtp->ts_prev = 0; // Init to 0
-	gtp->ts_curr = 0; // Init to 0
-}
-// update_ms = update after X ms
-void GpioFixedToggle(GpioTimePacket *gtp, uint16_t update_ms)
-{
-	gtp->ts_curr = HAL_GetTick(); // Record current timestamp
-	if (gtp->ts_curr - gtp->ts_prev > update_ms)
-	{
-		HAL_GPIO_TogglePin(gtp->gpio_port, gtp->gpio_pin); // Toggle GPIO
-		gtp->ts_prev = gtp->ts_curr;
-	}
-}
-// Initialize struct values
-// Will initialize GPIO to LOW!
-void TimerPacket_Init(TimerPacket *tp, uint32_t delay)
-{
-	tp->ts_prev = 0;   // Init to 0
-	tp->ts_curr = 0;   // Init to 0
-	tp->delay = delay; // Init to user value
-}
-// update_ms = update after X ms
-uint8_t TimerPacket_FixedPulse(TimerPacket *tp)
-{
-	tp->ts_curr = HAL_GetTick(); // Record current timestamp
-	if (tp->ts_curr - tp->ts_prev > tp->delay)
-	{
-		tp->ts_prev = tp->ts_curr; // Update prev timestamp to current
-		return 1;                  // Enact event (time interval is a go)
-	}
-	return 0; // Do not enact event
-}
 
 /* USER CODE END 4 */
 

@@ -193,9 +193,8 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
-    	printf("waiting\n");
+		//TODO: Handle canskip_flag
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
-			printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
