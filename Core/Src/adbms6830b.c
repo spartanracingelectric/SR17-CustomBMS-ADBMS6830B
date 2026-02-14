@@ -86,6 +86,8 @@ void ADBMS_clearRegisters()
  */
 void ADBMS_init()
 {
+	ADBMS_generateCrcTables();
+	ADBMS_csHigh();
 	ADBMS_wakeUp();
 	ADBMS_unsnap();
 	ADBMS_clearRegisters();
