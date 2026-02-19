@@ -189,6 +189,42 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 	return false;
 }
 
+bool Safety_getNextWarning(WarningMessage_t *msg)
+{
+	static int iterator = 0;
+
+	for (int i = 0; i < NUM_CELLS; i++)
+	{
+		int m = iterator / NUM_CELL_PER_MOD;
+		int c = iterator % NUM_CELL_PER_MOD;
+
+		iterator++;
+		if (iterator >= NUM_CELLS)
+			iterator = 0;
+
+		WarningFlags_t *w = &GlobalWarnings[m][c];
+		msg->WarningType = WARNING_NONE;
+
+		if (w->OverVoltWarn)
+			msg->WarningType = WARNING_OVER_VOLT;
+		else if (w->UnderVoltWarn)
+			msg->WarningType = WARNING_UNDER_VOLT;
+		else if (w->OverTempWarn)
+			msg->WarningType = WARNING_OVER_TEMP;
+		else if (w->UnderTempWarn)
+			msg->WarningType = WARNING_UNDER_TEMP;
+		else if (w->ImbalanceWarn)
+			msg->WarningType = WARNING_IMBALANCE;
+
+		if (msg->WarningType != WARNING_NONE)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void Safety_clearFaults(void)
 {
 	for (int m = 0; m < NUM_MOD; m++)

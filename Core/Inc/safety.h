@@ -94,6 +94,15 @@ typedef struct WarningFlags_t {
     uint8_t Reserved         : 3;  
 } WarningFlags_t;
 
+typedef enum WarningType_e {
+    WARNING_NONE = 0,
+    WARNING_OVER_VOLT,
+    WARNING_UNDER_VOLT,
+    WARNING_OVER_TEMP,
+    WARNING_UNDER_TEMP,
+    WARNING_IMBALANCE
+} WarningType_e;
+
 // Fault byte
 typedef struct FaultFlags_t {  
     uint8_t UnderVoltage     : 1;  
@@ -123,6 +132,10 @@ typedef struct FaultMessage_t {
     uint8_t CellID;        // 0 to 13
     FaultType_e FaultType; 
 } FaultMessage_t;
+
+typedef struct WarningMessage_t {
+    WarningType_e WarningType; 
+} WarningMessage_t;
 
 extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
 extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
