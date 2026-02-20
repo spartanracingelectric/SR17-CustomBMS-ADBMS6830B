@@ -16,6 +16,7 @@
  */
 #include "balance.h"
 #include "main.h"
+#include "module.h"
 #include "spi.h"
 #include "string.h"
 #include <stdbool.h>
@@ -249,10 +250,10 @@ void ADBMS_clearRegisters();
 void ADBMS_init();
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
 void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
-void ADBMS_checkDiagnostics(ModuleData *moduleData);
-void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
-void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
-void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES]);
+void ADBMS_checkDiagnostics(ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_getRedundantFaultFlags(ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_parseRedundantFaultFlags(ModuleData module[NUM_MODULES_TOTAL], uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES]);
 void ADBMS_snap();
 void ADBMS_unsnap();
 
@@ -260,19 +261,20 @@ void ADBMS_unsnap();
  * ADBMS_getCellVoltages(): read all RDCV pages from every IC (with PEC check),
  *                             convert raw counts to mV, and store into ModuleData.
  */
-void ADBMS_getCellVoltages(ModuleData *moduleData);
-void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst);
-void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], ConfigurationRegisterB *configB);
-void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
-void ADBMS_ReadSID(ModuleData *mod);
+void ADBMS_getCellVoltages(ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_writeConfigurationRegisterB(BalanceStatus balanceStatus[NUM_MODULES_TOTAL]);
+void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], ConfigurationRegisterB configB[NUM_MODULES_TOTAL]);
+void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB configB[NUM_MODULES_TOTAL]);
+void ADBMS_ReadSID(ModuleData module[NUM_MODULES_TOTAL]);
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES + PEC_LENGTH_BYTES]);
-void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_sendData(uint8_t data[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES]);
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL]);
 void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect);
-void ADBMS_getGpioVoltages(ModuleData *moduleData);
-void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
-void ADBMS_getVref2(ModuleData *mod);
-void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], ModuleData *moduleData);
+void ADBMS_getGpioVoltages(ModuleData moduleData[NUM_MODULES_TOTAL]);
+void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_getVref2(ModuleData module[NUM_MODULES_TOTAL]);
+void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], ModuleData module[NUM_MODULES_TOTAL]);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).

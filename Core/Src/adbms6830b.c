@@ -13,7 +13,6 @@
  *    - Topology macros: `NUM_MOD`, `NUM_CELL_PER_MOD`
  *  @warning All functions are blocking and not thread-safe.
  */
-#include "main.h"
 #include "module.h"
 #include "spi.h"
 #include "stm32f1xx_hal.h"
@@ -213,7 +212,7 @@ void ADBMS_sendCommand(uint16_t command)
  * @param[out] mod  Array of ModuleData; each entry receives cell voltages in mV.
  * @return LTC_SPI_StatusTypeDef  Bitfield with TX/RX error flags set on HAL failures.
  */
-void ADBMS_getCellVoltages(ModuleData *moduleData)
+void ADBMS_getCellVoltages(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES];
 
@@ -227,12 +226,12 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
-		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
+		ADBMS_parseCellVoltages(rxBuffer, registerIndex, module);
 	}
 	ADBMS_unsnap();
 }
 
-void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData)
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
 
@@ -243,11 +242,11 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].pecError = true;
+			module[moduleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[moduleIndex].pecError = false;
+			module[moduleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -259,7 +258,7 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -269,20 +268,20 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 
 			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE)
 			{
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 			}
 			else
 			{
 				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
 				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
+				module[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
 				printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
 	}
 }
 
-void ADBMS_getRedundantCellVoltages(ModuleData *moduleData)
+void ADBMS_getRedundantCellVoltages(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES];
 
@@ -296,12 +295,12 @@ void ADBMS_getRedundantCellVoltages(ModuleData *moduleData)
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
-		ADBMS_parseCellVoltages(rxBuffer, registerIndex, moduleData);
+		ADBMS_parseCellVoltages(rxBuffer, registerIndex, module);
 	}
 	ADBMS_unsnap();
 }
 
-void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData)
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
 
@@ -312,11 +311,11 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGIST
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].pecError = true;
+			module[moduleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[moduleIndex].pecError = false;
+			module[moduleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -328,7 +327,7 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGIST
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -338,7 +337,7 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGIST
 
 			if (rawVoltage == 0x8000u) // Default value
 			{
-				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -348,16 +347,16 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGIST
 			if ((diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN || diagnosticPhase == DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD) && milliVoltage <= OPEN_WIRE_CHECK_VOLTAGE_MV)
 			{
 				// TODO: Add open wire fault
-				moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].redundantCellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
 
-			moduleData[moduleIndex].redundantCellVoltage_mV[cellIndex] = milliVoltage;
+			module[moduleIndex].redundantCellVoltage_mV[cellIndex] = milliVoltage;
 		}
 	}
 }
 
-void ADBMS_checkDiagnostics(ModuleData *moduleData)
+void ADBMS_checkDiagnostics(ModuleData module[NUM_MODULES_TOTAL])
 {
 	static uint32_t lastOpenWireCheck_ms = 0;
 	uint32_t now_ms = HAL_GetTick();
@@ -370,7 +369,7 @@ void ADBMS_checkDiagnostics(ModuleData *moduleData)
 		break;
 
 	case DIAGNOSTIC_PHASE_REDUNDANT_RUNNING:
-		ADBMS_getRedundantFaultFlags(moduleData);
+		ADBMS_getRedundantFaultFlags(module);
 		if (now_ms - lastOpenWireCheck_ms >= 1000)
 		{
 			diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN;
@@ -380,13 +379,13 @@ void ADBMS_checkDiagnostics(ModuleData *moduleData)
 
 	case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN:
 		ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_EVEN_ON);
-		ADBMS_getRedundantCellVoltages(moduleData);
+		ADBMS_getRedundantCellVoltages(module);
 		diagnosticPhase = DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD;
 		break;
 
 	case DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD:
 		ADBMS_startRedundantCellVoltageConversions(CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, OPEN_WIRE_MODE_ODD_ON);
-		ADBMS_getRedundantCellVoltages(moduleData);
+		ADBMS_getRedundantCellVoltages(module);
 		diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
 		break;
 	}
@@ -408,7 +407,7 @@ void ADBMS_sendData(uint8_t data[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES])
 	HAL_SPI_Transmit(&hspi1, (uint8_t *)&txBuffer, (DATA_LENGTH_BYTES + PEC_LENGTH_BYTES) * NUM_MODULES_TOTAL, 100);
 }
 
-void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
+void ADBMS_writeConfigurationRegisterB(BalanceStatus balanceStatus[NUM_MODULES_TOTAL])
 {
 	uint8_t txBuffer[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES];
 	uint8_t CFGBR0 = (uint8_t)(VUV & 0xFF);                              // VUV[7:0]
@@ -424,11 +423,11 @@ void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
 		{
 			if (cellIndex < 8)
 			{
-				CFGBR4 |= (blst[moduleIndex].cellsToBalance[cellIndex] & 0x01) << cellIndex;
+				CFGBR4 |= (balanceStatus[moduleIndex].cellsToBalance[cellIndex] & 0x01) << cellIndex;
 			}
 			else
 			{
-				CFGBR5 |= (blst[moduleIndex].cellsToBalance[cellIndex] & 0x01) << (cellIndex - 8);
+				CFGBR5 |= (balanceStatus[moduleIndex].cellsToBalance[cellIndex] & 0x01) << (cellIndex - 8);
 			}
 		}
 		txBuffer[moduleIndex][0] = CFGBR0;
@@ -445,7 +444,7 @@ void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
 	ADBMS_csHigh();
 }
 
-void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB)
+void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB configB[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES + PEC_LENGTH_BYTES];
 
@@ -467,7 +466,7 @@ void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB)
 	}
 }
 
-void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], ConfigurationRegisterB *configB)
+void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], ConfigurationRegisterB configB[NUM_MODULES_TOTAL])
 {
 	// TODO: Convert VUV and VOV into voltage
 	configB->underVoltageThreshold_V = (uint16_t)data[0] | (uint16_t)((data[1] & 0x0Fu) << 8);
@@ -475,7 +474,7 @@ void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], Configur
 	configB->cellsDischargeStatus = (uint16_t)data[4] | (uint16_t)(data[5] << 8);
 }
 
-void ADBMS_getGpioVoltages(ModuleData *moduleData)
+void ADBMS_getGpioVoltages(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES];
 
@@ -488,11 +487,11 @@ void ADBMS_getGpioVoltages(ModuleData *moduleData)
 		ADBMS_receiveData(rxBuffer);
 		ADBMS_csHigh();
 
-		ADBMS_parseGpioVoltages(rxBuffer, registerIndex, moduleData);
+		ADBMS_parseGpioVoltages(rxBuffer, registerIndex, module);
 	}
 }
 
-void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData)
+void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t initialGpioIndex = registerIndex * GPIOS_PER_AUX_REGISTER;
 
@@ -510,7 +509,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+				module[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -522,20 +521,20 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 
 			if (rawVoltageUnsigned == 0x8000) // Default value
 			{
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+				module[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 			}
 			else
 			{
 				int32_t microVoltageSigned = 1500000 + (int32_t)rawVoltageSigned * 150;
 				int16_t milliVoltageSigned = (int16_t)(microVoltageSigned / 1000);
 
-				if (milliVoltageSigned < 0 || milliVoltageSigned >= moduleData[moduleIndex].vref2)
+				if (milliVoltageSigned < 0 || milliVoltageSigned >= module[moduleIndex].vref2)
 				{
-					moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+					module[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
 				}
 				else
 				{
-					moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
+					module[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
 				}
 				// printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
@@ -543,7 +542,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH
 	}
 }
 
-void ADBMS_getVref2(ModuleData *moduleData)
+void ADBMS_getVref2(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES];
 
@@ -552,10 +551,10 @@ void ADBMS_getVref2(ModuleData *moduleData)
 	ADBMS_sendCommand(RDSTATA);
 	ADBMS_receiveData(rxBuffer);
 	ADBMS_csHigh();
-	ADBMS_parseVref2Voltages(rxBuffer, moduleData);
+	ADBMS_parseVref2Voltages(rxBuffer, module);
 }
 
-void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], ModuleData *moduleData)
+void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], ModuleData module[NUM_MODULES_TOTAL])
 {
 	// Receive data from last module first
 	for (int moduleIndex = NUM_MODULES_TOTAL - 1; moduleIndex >= 0; moduleIndex--)
@@ -564,7 +563,7 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGT
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].vref2 = 0xFFFF;
+			module[moduleIndex].vref2 = 0xFFFF;
 			continue;
 		}
 
@@ -574,19 +573,19 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGT
 
 		if (rawVoltage == 0x8000u) // Default value
 		{
-			moduleData[moduleIndex].vref2 = 0xFFFF;
+			module[moduleIndex].vref2 = 0xFFFF;
 		}
 		else
 		{
 			uint32_t microVoltage = 1500000u + (uint32_t)rawVoltage * 150u;
 			uint16_t milliVoltage = (uint16_t)(microVoltage / 1000u);
-			moduleData[moduleIndex].vref2 = milliVoltage;
+			module[moduleIndex].vref2 = milliVoltage;
 			// printf("Module %d, vref: %d mv\n", moduleIndex, milliVoltage);
 		}
 	}
 }
 
-void ADBMS_getRedundantFaultFlags(ModuleData *moduleData)
+void ADBMS_getRedundantFaultFlags(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES];
 
@@ -595,10 +594,10 @@ void ADBMS_getRedundantFaultFlags(ModuleData *moduleData)
 	ADBMS_sendCommand(RDSTATC);
 	ADBMS_receiveData(rxBuffer);
 	ADBMS_csHigh();
-	ADBMS_parseRedundantFaultFlags(moduleData, rxBuffer);
+	ADBMS_parseRedundantFaultFlags(module, rxBuffer);
 }
 
-void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES])
+void ADBMS_parseRedundantFaultFlags(ModuleData module[NUM_MODULES_TOTAL], uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES])
 {
 	for (int moduleIndex = NUM_MODULES_TOTAL; moduleIndex >= 0; moduleIndex--)
 	{
@@ -617,7 +616,7 @@ void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM
 			if (faultBits & (1 << cellIndex))
 			{
 				// TODO: Set redundant fault flag
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
+				module[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 			}
 		}
 	}
@@ -636,7 +635,7 @@ void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM
  * @param[out] read_sid  [NUM_MOD][DATA_LEN] destination for per-module 6-byte SIDs.
  * @return LTC_SPI_StatusTypeDef with TX/RX error bits set on HAL failures (PEC errors are logged only).
  */
-void ADBMS_ReadSID(ModuleData *mod)
+void ADBMS_ReadSID(ModuleData module[NUM_MODULES_TOTAL])
 {
 	uint8_t rxBuffer[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES + PEC_LENGTH_BYTES]; // Concatenated receive buffer for the whole chain
 
