@@ -28,6 +28,7 @@ typedef struct ConfigurationRegisterB
 #define BALANCE_COMMAND_CAN_ID 0x604
 
 void Balance_init(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB);
+void Balance_handleBalanceCANMessage(uint8_t rxData[]);
 void Balance_handleBalancing(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus, ConfigurationRegisterB *configB);
 void Balance_setCellDischarge(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus);
 void Balance_stopCellDischarge(BalanceStatus *balanceStatus);

@@ -8,8 +8,6 @@
 #include "stm32f1xx_hal.h"
 #include <adbms6830b.h>
 
-CAN_RxHeaderTypeDef rxHeader;
-uint8_t rxData[8];
 bool isBalancingEnabled = false;
 bool isBalancingFinished = false;
 static uint32_t lastBalanceCommandTick = 0;
@@ -26,22 +24,30 @@ void Balance_init(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
 // TODO: Move to can.c
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
 {
+	static CAN_RxHeaderTypeDef rxHeader;
+	static uint8_t rxData[8];
+
 	if (HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
 	{
 		if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
 		{
-			uint8_t balanceCommand = rxData[0];
-			lastBalanceCommandTick = HAL_GetTick();
-			if (balanceCommand == 1)
-			{
-				isBalancingEnabled = true;
-			}
-			else if (balanceCommand == 0)
-			{
-				isBalancingEnabled = false;
-				isBalancingFinished = true;
-			}
+			Balance_handleBalanceCANMessage(rxData);
 		}
+	}
+}
+
+void Balance_handleBalanceCANMessage(uint8_t rxData[])
+{
+	uint8_t balanceCommand = rxData[0];
+	lastBalanceCommandTick = HAL_GetTick();
+	if (balanceCommand == 1)
+	{
+		isBalancingEnabled = true;
+	}
+	else if (balanceCommand == 0)
+	{
+		isBalancingEnabled = false;
+		isBalancingFinished = true;
 	}
 }
 
