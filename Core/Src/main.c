@@ -28,7 +28,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "accumulator.h"
+#include "pack.h"
 #include "balance.h"
 #include "hv_sense.h"
 #include "module.h"
@@ -80,13 +80,11 @@ void SystemClock_Config(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-	AccumulatorData accmData;
-	ModuleData modData[NUM_MOD];
-	BalanceStatus balanceStatus[NUM_MOD];
-	ConfigurationRegisterB configB[NUM_MOD];
+	PackData pack = {0};
+	ModuleData module[NUM_MODULES_TOTAL];
+	BalanceStatus balanceStatus[NUM_MODULES_TOTAL];
+	ConfigurationRegisterB configB[NUM_MODULES_TOTAL];
 	CANMessage msg;
-	uint8_t safetyWarnings = 0;
-	//	uint8_t moduleCounts = 0;
 
 	/* USER CODE END 1 */
 
@@ -117,8 +115,7 @@ int main(void)
 
 	/* USER CODE BEGIN 2 */
 	ADBMS_init();
-	Module_init(modData);
-	Accumulator_init(&accmData);
+	Module_init(module);
 	Balance_init(balanceStatus, configB);
 	CAN_settingsInit(&msg);
 
@@ -146,28 +143,28 @@ int main(void)
 		// ADBMS_ReadSID(modData);
 		// HAL_ADCEx_Calibration_Start(&hadc1);
 		// HAL_ADCEx_Calibration_Start(&hadc2);
-		Module_getCellVoltages(modData);
-		Module_getTemperatures(modData);
-		Module_getStats(modData);
+		Module_getCellVoltages(module);
+		Module_getTemperatures(module);
+		Module_getStats(module);
 
-		Accumulator_getMinVoltage(&accmData, modData);
-		Accumulator_getMaxVoltage(&accmData, modData);
+		Pack_getMinVoltage(&pack, module);
+		Pack_getMaxVoltage(&pack, module);
 
 		// ReadHVInput(&accmData);
 
 		// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 		// prev_soc_time = HAL_GetTick();
 
-		Safety_checkFaults(&accmData, modData);
+		Safety_checkFaults(&pack, module);
 
-		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
+		Balance_handleBalancing(module, &pack, balanceStatus, configB);
 
-		CAN_sendPackSummary(&msg, &accmData);
-		CAN_sendVoltageData(&msg, modData);
-		CAN_sendTemperatureData(&msg, modData);
-		CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
+		CAN_sendPackSummary(&msg, &pack);
+		CAN_sendVoltageData(&msg, module);
+		CAN_sendTemperatureData(&msg, module);
+		CAN_Send_SOC(&msg, &pack, MAX_PACK_CAPACITY);
 		CAN_sendBalanceStatus(&msg, balanceStatus);
-		CAN_sendModuleSummary(&msg, modData);
+		CAN_sendModuleSummary(&msg, module);
 		CAN_sendFaultStatus(&msg);
 
 		HAL_GPIO_TogglePin(MCU_HEARTBEAT_LED_GPIO_Port, MCU_HEARTBEAT_LED_Pin);

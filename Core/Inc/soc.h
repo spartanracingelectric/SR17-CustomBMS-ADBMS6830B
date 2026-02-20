@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "pack.h"
 
 /* ===== Shunt / Analog Front-End Parameters ===================================
  * MAX_SHUNT_AMPAGE:
@@ -54,7 +55,7 @@
  *  - Update the SoC accumulator by integrating measured current over time.
  *    The elapsed_time argument is in milliseconds unless otherwise documented.
  */
-void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
-void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
+void SOC_getInitialCharge(PackData *pack, ModuleData *mod);
+void SOC_updateCharge(PackData *pack, uint32_t elapsed_time);
 
 #endif

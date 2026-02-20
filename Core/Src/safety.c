@@ -26,7 +26,8 @@
  *  - NUM_CELLS / NUM_THERM_TOTAL and thresholds are defined in headers.
  */
 #include "safety.h"
-#include "accumulator.h"
+#include "module.h"
+#include "pack.h"
 #include "gpio.h"
 #include "main.h"
 #include "stdio.h"
@@ -50,21 +51,21 @@ static void Safety_checkUnderTemp(int m, int t, uint16_t temp, FaultFlags_t *fau
  * GlobalWarnings[][]: per-module/cell warning bitfields.
  * Timer_...[][]:      per-module/cell hysteresis counters for each fault type.
  */
-FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD]   = {0};
-WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD] = {0};
+FaultFlags_t   GlobalFaults[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE]   = {0};
+WarningFlags_t GlobalWarnings[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE] = {0};
 
-static uint32_t Timer_RedundancyVolt[NUM_MOD][NUM_CELL_PER_MOD] = {0};
-static uint32_t Timer_UnderVolt[NUM_MOD][NUM_CELL_PER_MOD]      = {0};
-static uint32_t Timer_OverVolt[NUM_MOD][NUM_CELL_PER_MOD]       = {0};
-static uint32_t Timer_UnderTemp[NUM_MOD][NUM_THERM_PER_MOD]     = {0};
-static uint32_t Timer_OverTemp[NUM_MOD][NUM_THERM_PER_MOD]      = {0};
-static uint32_t Timer_OpenWire[NUM_MOD][NUM_CELL_PER_MOD]       = {0};
-static uint32_t Timer_PEC[NUM_MOD]                              = {0};
+static uint32_t Timer_RedundancyVolt[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE] = {0};
+static uint32_t Timer_UnderVolt[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE]      = {0};
+static uint32_t Timer_OverVolt[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE]       = {0};
+static uint32_t Timer_UnderTemp[NUM_MODULES_TOTAL][NUM_THERMISTORS_PER_MODULE]     = {0};
+static uint32_t Timer_OverTemp[NUM_MODULES_TOTAL][NUM_THERMISTORS_PER_MODULE]      = {0};
+static uint32_t Timer_OpenWire[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE]       = {0};
+static uint32_t Timer_PEC[NUM_MODULES_TOTAL]                              = {0};
 
-void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod)
+void Safety_checkFaults(PackData *pack, ModuleData *mod)
 {
-	Safety_checkCellVoltageFault(batt, mod);
-	Safety_checkCellTemperatureFault(batt, mod);
+	Safety_checkCellVoltageFault(pack, mod);
+	Safety_checkCellTemperatureFault(pack, mod);
 }
 
 /* ===== Cell Voltage Evaluation ==============================================
@@ -76,23 +77,23 @@ void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod)
  *  - Clears/relaxes a latched fault only after the measurement crosses back by
  *    the configured margin (FAULT_LOCK_MARGIN_*), then calls ClearFaultSignal().
  */
-void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
+void Safety_checkCellVoltageFault(PackData *pack, ModuleData *mod)
 {
 	uint32_t current_time = HAL_GetTick();
-	Accumulator_getMaxVoltage(acc, mod);
-	Accumulator_getMinVoltage(acc, mod);
+	Pack_getMaxVoltage(pack, mod);
+	Pack_getMinVoltage(pack, mod);
 
-	for (int m = 0; m < NUM_MOD; m++)
+	for (int m = 0; m < NUM_MODULES_TOTAL; m++)
 	{
 		Safety_checkPEC(m, &GlobalFaults[m][0], mod, current_time);
 
-		if (!mod[m].pec_error)
+		if (!mod[m].pecError)
 		{
-			for (int c = 0; c < NUM_CELL_PER_MOD; c++)
+			for (int c = 0; c < NUM_CELLS_PER_MODULE; c++)
 			{
 				FaultFlags_t   *faults           = &GlobalFaults[m][c];
 				WarningFlags_t *warns            = &GlobalWarnings[m][c];
-				uint16_t        voltage          = mod[m].cell_volt[c];
+				uint16_t        voltage          = mod[m].cellVoltage_mV[c];
 				uint16_t        redundantVoltage = mod[m].redundantCellVoltage_mV[c];
 
 				// Safety_checkOpenWire(m, c, voltage, faults, current_time);
@@ -119,22 +120,22 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
  *    fault and SendFaultSignal(); clears once temperature falls below the
  *    threshold by FAULT_LOCK_MARGIN_HIGH_TEMP and calls ClearFaultSignal().
  */
-void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod)
+void Safety_checkCellTemperatureFault(PackData *pack, ModuleData *mod)
 {
 	uint32_t current_time   = HAL_GetTick();
-	batt->cell_temp_highest = mod[0].pointTemp_C[0];
-	batt->cell_temp_lowest  = mod[0].pointTemp_C[0];
+	pack->highestCellTemp_C = mod[0].pointTemp_C[0];
+	pack->lowestCellTemp_C = mod[0].pointTemp_C[0];
 
-	for (int m = 0; m < NUM_MOD; m++)
+	for (int m = 0; m < NUM_MODULES_TOTAL; m++)
 	{
-		for (int t = 0; t < NUM_THERM_PER_MOD; t++)
+		for (int t = 0; t < NUM_THERMISTORS_PER_MODULE; t++)
 		{
 			uint16_t temp = mod[m].pointTemp_C[t];
 
-			if (temp > batt->cell_temp_highest)
-				batt->cell_temp_highest = temp;
-			if (temp < batt->cell_temp_lowest)
-				batt->cell_temp_lowest = temp;
+			if (temp > pack->highestCellTemp_C)
+				pack->highestCellTemp_C = temp;
+			if (temp < pack->lowestCellTemp_C)
+				pack->lowestCellTemp_C = temp;
 
 			FaultFlags_t   *faults = &GlobalFaults[m][t];
 			WarningFlags_t *warns  = &GlobalWarnings[m][t];
@@ -149,13 +150,13 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 {
 	static int iterator = 0;
 
-	for (int i = 0; i < NUM_CELLS; i++)
+	for (int i = 0; i < NUM_CELLS_TOTAL; i++)
 	{
-		int m = iterator / NUM_CELL_PER_MOD;
-		int c = iterator % NUM_CELL_PER_MOD;
+		int m = iterator / NUM_CELLS_PER_MODULE;
+		int c = iterator % NUM_CELLS_PER_MODULE;
 
 		iterator++;
-		if (iterator >= NUM_CELLS)
+		if (iterator >= NUM_CELLS_TOTAL)
 			iterator = 0;
 
 		FaultFlags_t *f = &GlobalFaults[m][c];
@@ -191,9 +192,9 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 
 static void Safety_clearFaults(void)
 {
-	for (int m = 0; m < NUM_MOD; m++)
+	for (int m = 0; m < NUM_MODULES_TOTAL; m++)
 	{
-		for (int c = 0; c < NUM_CELL_PER_MOD; c++)
+		for (int c = 0; c < NUM_CELLS_PER_MODULE; c++)
 		{
 			FaultFlags_t *f = &GlobalFaults[m][c];
 
@@ -210,7 +211,7 @@ static void Safety_clearFaults(void)
 
 static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod, uint32_t current_time)
 {
-	if (mod[m].pec_error)
+	if (mod[m].pecError)
 	{
 		if (Timer_PEC[m] == 0)
 		{
@@ -218,7 +219,7 @@ static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod,
 		}
 		else if ((current_time - Timer_PEC[m]) > TIME_LIMIT_PEC && module_faults[0].PEC == 0)
 		{
-			for (int c = 0; c < NUM_CELL_PER_MOD; c++)
+			for (int c = 0; c < NUM_CELLS_PER_MODULE; c++)
 			{
 				FaultFlags_t *faults = &module_faults[c];
 				faults->PEC          = 1;
@@ -233,7 +234,7 @@ static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod,
 
 		if (module_faults[0].PEC == 1)
 		{
-			for (int c = 0; c < NUM_CELL_PER_MOD; c++)
+			for (int c = 0; c < NUM_CELLS_PER_MODULE; c++)
 			{
 				FaultFlags_t *faults = &module_faults[c];
 				faults->PEC          = 0;

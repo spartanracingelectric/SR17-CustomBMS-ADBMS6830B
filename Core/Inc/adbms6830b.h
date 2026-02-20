@@ -14,12 +14,13 @@
  *  - Device data blocks are typically 6 data bytes + 2-byte PEC10 per IC per read.
  *  - PEC15 protects outbound command bytes; PEC10 protects inbound data.
  */
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
+#include "balance.h"
 #include "main.h"
 #include "spi.h"
 #include "string.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 #ifndef ADBMS6830_H_
 #define ADBMS6830_H_
@@ -52,7 +53,6 @@
 
 #define RDSID 0x002C
 
-
 #define SNAP 0x002D
 #define UNSNAP 0x002F
 
@@ -63,19 +63,17 @@
 #define CLRSPIN 0x0716
 #define CLRFLAG 0x0717
 
+#define VUV_FROM_VOLTAGE(v) ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
+#define VOV_FROM_VOLTAGE(v) ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
 
-#define VUV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
-#define VOV_FROM_VOLTAGE(v)   ((uint16_t)(((v) - 1.5f) / (16.0f * 150e-6f)))
-
-#define VUV   VUV_FROM_VOLTAGE(2.50f)
-#define VOV   VOV_FROM_VOLTAGE(4.2f) 
+#define VUV VUV_FROM_VOLTAGE(2.50f)
+#define VOV VOV_FROM_VOLTAGE(4.2f)
 
 #define INITIAL_CRC_SEED 0x10
 #define COMMAND_CRC_POLYNOMIAL 0x4599
 #define DATA_CRC_POLYNOMIAL 0x08F
 
 #define DEFAULT_VOLTAGE_VALUE 0x8000
-
 
 /* ===== Auxiliary (GPIO/Ref) Register Read Command Codes =====================
  * Read auxiliary measurement pages (e.g., GPIO voltages, Vref, etc.).
@@ -96,7 +94,7 @@
 #define RDSTATD 0x0033
 #define RDSTATE 0x0034
 
-#define ADAX 0x0410 
+#define ADAX 0x0410
 #define ADAX2 0x0400
 
 /* ===== Frame Sizes and Packing ==============================================
@@ -107,22 +105,17 @@
  * LTC_SERIES_GROUPS_PER_RDAUX: aux channels per RDAUX page (3 here)
  * NUM_AUX_SERIES_GROUPS: total number of aux channels across pages (6 here)
  */
-#define REG_LEN 8
-#define PEC_LEN 2
-#define DATA_LEN 6
-#define COMMAND_LENGTH 2
-#define RX_BYTES_PER_IC (DATA_LEN + PEC_LEN)
-#define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
-// #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
+#define REGISTER_LENGTH_BYTES 8
+#define PEC_LENGTH_BYTES 2
+#define DATA_LENGTH_BYTES 6
+#define COMMAND_LENGTH_BYTES 2
 #define CELLS_PER_ADC_REGISTER 3
 #define GPIOS_PER_AUX_REGISTER 3
-#define NUMBER_OF_AUX_REGISTERS 4
+#define NUM_AUX_REGISTERS 4
 #define GPIOS_PER_IC 10
 #define REG_NUM_RDAUX 4
 #define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
-
-#define GPIO_VOLTAGE_OFFSET_MV 9830.0f
 
 #define WRCFGA 0x0001
 #define WRCFGB 0x0024
@@ -138,9 +131,10 @@
 //   0 = C-ADC only
 //   1 = Redundant measurement (C-ADC + S-ADC for safety comparison)
 //------------------------------------------------------------------------------
-typedef enum {
-    REDUNDANT_MODE_OFF = 0, // Redundancy disabled (C-ADC only)
-    REDUDANT_MODE_ON  = 1  // Redundancy enabled (C-ADC and S-ADC both measure)
+typedef enum
+{
+	REDUNDANT_MODE_OFF = 0, // Redundancy disabled (C-ADC only)
+	REDUDANT_MODE_ON = 1    // Redundancy enabled (C-ADC and S-ADC both measure)
 } AdcRedundantMode;
 
 //------------------------------------------------------------------------------
@@ -148,9 +142,10 @@ typedef enum {
 //   0 = One-shot conversion (triggered by each ADCV command)
 //   1 = Continuous conversion (C-ADC runs continuously after start)
 //------------------------------------------------------------------------------
-typedef enum {
-    CONTINUOUS_MODE_OFF = 0, // Single conversion only
-    CONTINUOUS_MODE_ON  = 1  // Continuous conversion mode
+typedef enum
+{
+	CONTINUOUS_MODE_OFF = 0, // Single conversion only
+	CONTINUOUS_MODE_ON = 1   // Continuous conversion mode
 } AdcContinuousMode;
 
 //------------------------------------------------------------------------------
@@ -159,9 +154,10 @@ typedef enum {
 //   1 = Permit cell discharge during measurement (keep balancing active)
 //   *Effective mainly in S-ADC related modes; has no effect in C-ADC continuous mode
 //------------------------------------------------------------------------------
-typedef enum {
-    DISCHARGE_MODE_OFF = 0, // Pause PWM discharge during conversion
-    DISCHARGE_MODE_ON = 1  // Allow PWM discharge during conversion
+typedef enum
+{
+	DISCHARGE_MODE_OFF = 0, // Pause PWM discharge during conversion
+	DISCHARGE_MODE_ON = 1   // Allow PWM discharge during conversion
 } AdcDischargeMode;
 
 //------------------------------------------------------------------------------
@@ -169,9 +165,10 @@ typedef enum {
 //   0 = Keep current IIR filter state
 //   1 = Reset IIR filter (normally set only on the first ADCV command)
 //------------------------------------------------------------------------------
-typedef enum {
-    FILTER_RESET_MODE_OFF = 0, // Do not reset the filter
-    FILTER_RESET_MODE_ON  = 1  // Reset the filter (first command only)
+typedef enum
+{
+	FILTER_RESET_MODE_OFF = 0, // Do not reset the filter
+	FILTER_RESET_MODE_ON = 1   // Reset the filter (first command only)
 } AdcFilterResetMode;
 
 //------------------------------------------------------------------------------
@@ -181,63 +178,58 @@ typedef enum {
 //   10 = Odd cells only
 //   11 = All cells
 //------------------------------------------------------------------------------
-typedef enum {
-    OPEN_WIRE_MODE_ALL_OFF = 0b00, // No open-wire detection
-    OPEN_WIRE_MODE_EVEN_ON = 0b01, // Check even-numbered cells
-    OPEN_WIRE_MODE_ODD_ON  = 0b10, // Check odd-numbered cells
-    OPEN_WIRE_MODE_ALL_ON  = 0b11  // Check all cells
+typedef enum
+{
+	OPEN_WIRE_MODE_ALL_OFF = 0b00, // No open-wire detection
+	OPEN_WIRE_MODE_EVEN_ON = 0b01, // Check even-numbered cells
+	OPEN_WIRE_MODE_ODD_ON = 0b10,  // Check odd-numbered cells
+	OPEN_WIRE_MODE_ALL_ON = 0b11   // Check all cells
 } AdcOpenWireMode;
 
-typedef enum {
-	OW_OFF = 0, 
-	OW_ON  = 1  
+typedef enum
+{
+	OW_OFF = 0,
+	OW_ON = 1
 } AuxOpenWireMode;
 
-typedef enum {
-	PUP_OFF = 0, 
-	PUP_ON  = 1  
+typedef enum
+{
+	PUP_OFF = 0,
+	PUP_ON = 1
 } AuxPullUpPinMode;
 
-typedef enum {
-    AUX_CHANNEL_ALL = 0x00,  // Measure all channels
-    AUX_CHANNEL_GPIO1 = 0x01,
-    AUX_CHANNEL_GPIO2 = 0x02,
-    AUX_CHANNEL_GPIO3 = 0x03,
-    AUX_CHANNEL_GPIO4 = 0x04,
-    AUX_CHANNEL_GPIO5 = 0x05,
-    AUX_CHANNEL_GPIO6 = 0x06,
-    AUX_CHANNEL_GPIO7 = 0x07,
-    AUX_CHANNEL_GPIO8 = 0x08,
-    AUX_CHANNEL_GPIO9 = 0x09,
-    AUX_CHANNEL_GPIO10 = 0x0A,
-    AUX_CHANNEL_VD = 0x0B,  // Supply voltage VD
-    AUX_CHANNEL_VA = 0x0C,  // Supply voltage VA
-    AUX_CHANNEL_VREF2 = 0x0D,  // Secondary reference voltage
-    AUX_CHANNEL_ITEMP = 0x0E,  // Internal temperature
-    AUX_CHANNEL_NONE = 0x1F   // Reserved / invalid
+typedef enum
+{
+	AUX_CHANNEL_ALL = 0x00, // Measure all channels
+	AUX_CHANNEL_GPIO1 = 0x01,
+	AUX_CHANNEL_GPIO2 = 0x02,
+	AUX_CHANNEL_GPIO3 = 0x03,
+	AUX_CHANNEL_GPIO4 = 0x04,
+	AUX_CHANNEL_GPIO5 = 0x05,
+	AUX_CHANNEL_GPIO6 = 0x06,
+	AUX_CHANNEL_GPIO7 = 0x07,
+	AUX_CHANNEL_GPIO8 = 0x08,
+	AUX_CHANNEL_GPIO9 = 0x09,
+	AUX_CHANNEL_GPIO10 = 0x0A,
+	AUX_CHANNEL_VD = 0x0B,    // Supply voltage VD
+	AUX_CHANNEL_VA = 0x0C,    // Supply voltage VA
+	AUX_CHANNEL_VREF2 = 0x0D, // Secondary reference voltage
+	AUX_CHANNEL_ITEMP = 0x0E, // Internal temperature
+	AUX_CHANNEL_NONE = 0x1F   // Reserved / invalid
 } AuxChannelSelect;
 
-typedef enum {
-    DIAGNOSTIC_PHASE_REDUNDANT_START,
-    DIAGNOSTIC_PHASE_REDUNDANT_RUNNING,
-    DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD,
-    DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN,
+typedef enum
+{
+	DIAGNOSTIC_PHASE_REDUNDANT_START,
+	DIAGNOSTIC_PHASE_REDUNDANT_RUNNING,
+	DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_ODD,
+	DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN,
 } DiagnosticPhase;
-
 
 /* ===== SPI Status Bitfield ===================================================
  * Compose these flags to reflect HAL TX/RX outcomes without throwing assertions.
  * Example: set (1U << (hal_ret + LTC_SPI_TX_BIT_OFFSET)) on TX failure.
  */
-
-
-/* ===== External TX Buffers ===================================================
- * Staging buffers for multi-IC write commands. Each frame = 4 cmd/PEC bytes +
- * (8 bytes per IC) payload. They are defined in a .c and referenced here.
- */
-extern uint8_t wrpwm_buffer[4 + (8 * NUM_MOD)];
-extern uint8_t wrcfg_buffer[4 + (8 * NUM_MOD)];
-extern uint8_t wrcomm_buffer[4 + (8 * NUM_MOD)];
 
 extern DiagnosticPhase diagnosticPhase;
 
@@ -258,9 +250,9 @@ void ADBMS_init();
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
 void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
 void ADBMS_checkDiagnostics(ModuleData *moduleData);
-void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
-void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES]);
 void ADBMS_snap();
 void ADBMS_unsnap();
 
@@ -270,17 +262,17 @@ void ADBMS_unsnap();
  */
 void ADBMS_getCellVoltages(ModuleData *moduleData);
 void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst);
-void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegisterB *configB);
+void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LENGTH_BYTES], ConfigurationRegisterB *configB);
 void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
 void ADBMS_ReadSID(ModuleData *mod);
 void ADBMS_sendCommand(uint16_t command);
-void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
-void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_receiveData(uint8_t rxBuffer[NUM_MODULES_TOTAL][DATA_LENGTH_BYTES + PEC_LENGTH_BYTES]);
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect);
 void ADBMS_getGpioVoltages(ModuleData *moduleData);
-void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], uint8_t registerIndex, ModuleData *moduleData);
 void ADBMS_getVref2(ModuleData *mod);
-void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *moduleData);
+void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MODULES_TOTAL][REGISTER_LENGTH_BYTES], ModuleData *moduleData);
 
 /* ===== Public API: PEC Helpers ==============================================
  * ADBMS_calcPec15(): compute CRC15 (PEC15) for command bytes (returns LSB=0).

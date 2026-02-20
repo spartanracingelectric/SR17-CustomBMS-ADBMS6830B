@@ -16,6 +16,7 @@
 #define INC_HV_SENSE_H_
 
 #include "main.h"
+#include "pack.h"
 
 /* ===== Analog Front-End Parameters ==========================================
  * GAIN_TLV9001:
@@ -45,6 +46,6 @@
  *  - Aggregates per-cell voltages from ModuleData into batt->sum_pack_voltage.
  *  - Does not perform HV-sense measurement; it purely sums cell readings.
  */
-void ReadHVInput(AccumulatorData *batt);
+void ReadHVInput(PackData *pack);
 
 #endif /* INC_HV_SENSE_H_ */

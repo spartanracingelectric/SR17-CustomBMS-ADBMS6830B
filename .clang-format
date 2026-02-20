@@ -5,7 +5,7 @@ ContinuationIndentWidth: 4
 TabWidth: 4
 BreakBeforeBraces: Allman
 AllowShortFunctionsOnASingleLine: None
-ColumnLimit: 120
+ColumnLimit: 0
 AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false
 SpaceAfterCStyleCast: false

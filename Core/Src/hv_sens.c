@@ -31,7 +31,7 @@
  *  - Unscales analog front-end (op-amp + divider) to reconstruct pack voltage.
  *  - Publishes centivolts into batt->hvsens_pack_voltage when > 10 V; else 0.
  */
-void ReadHVInput(AccumulatorData *batt) {
+void ReadHVInput(PackData *pack) {
 	uint32_t adcValue = 0;
 	float vRef = 0;
 
@@ -45,10 +45,10 @@ void ReadHVInput(AccumulatorData *batt) {
 	float amcOutput = adcVoltage / GAIN_TLV9001;
 	float hvInput = (amcOutput) * (DIVIDER_RATIO);
 	if(hvInput > 10){//if hvsens is greater than 10V(connected)
-		batt->hvsens_pack_voltage = hvInput * 100;
+		pack->hvSensePackVoltage_mV = hvInput * 100;
 	}
 	else{
-		batt->hvsens_pack_voltage = 0;
+		pack->hvSensePackVoltage_mV = 0;
 	}
 }
 

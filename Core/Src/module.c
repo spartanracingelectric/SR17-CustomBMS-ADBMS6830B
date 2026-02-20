@@ -4,36 +4,33 @@
  */
 
 #include "module.h"
-#include "main.h"
-#include "usart.h"
 #include <adbms6830b.h>
 #include <math.h>
-#include <stdio.h>
+#include <stdint.h>
 
-void Module_init(ModuleData *mod)
+void Module_init(ModuleData *module)
 {
-	for (int modIndex = 0; modIndex < NUM_MOD; modIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (int cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			mod[modIndex].cell_volt[cellIndex] = 0xFFFF;
+			module[moduleIndex].cellVoltage_mV[cellIndex] = INT16_MAX;
 		}
-		for (int thermIndex = 0; thermIndex < NUM_THERM_PER_MOD; thermIndex++)
+		for (int tempIndex = 0; tempIndex < NUM_THERMISTORS_PER_MODULE; tempIndex++)
 		{
-			mod[modIndex].pointTemp_C[thermIndex] = 0xFF;
+			module[moduleIndex].pointTemp_C[tempIndex] = INT16_MAX;
 		}
-		mod[modIndex].averageCellVoltage_mV = INT16_MAX;
-		mod[modIndex].average_temp = 0xFFFF;
-		mod[modIndex].totalCellVoltage_mV = INT32_MAX;
-		mod[modIndex].pressure = 0xFFFF;
-		mod[modIndex].humidity = 0xFFFF;
-		//		mod[modIndex].atmos_temp = 0xFFFF;
+		module[moduleIndex].averageCellVoltage_mV = INT16_MAX;
+		module[moduleIndex].averageTemp_C = INT16_MAX;
+		module[moduleIndex].totalCellVoltage_mV = INT32_MAX;
+		module[moduleIndex].pressure = INT16_MAX;
+		module[moduleIndex].humidity = INT16_MAX;
 	}
 }
 
-void Module_getCellVoltages(ModuleData *mod)
+void Module_getCellVoltages(ModuleData *module)
 {
-	ADBMS_getCellVoltages(mod);
+	ADBMS_getCellVoltages(module);
 }
 
 /* ===== Ambient Sensors: Linearizations ======================================
@@ -75,38 +72,34 @@ void Module_getCellVoltages(ModuleData *mod)
 // 	mod[dev_idx].humidity = (uint16_t)(humidity_value);
 // }
 
-void Module_convertGpioVoltageToTemp(ModuleData *modData)
+void Module_convertGpioVoltageToTemp(ModuleData *module)
 {
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (int tempIndex = 0; tempIndex < NUM_THERM_PER_MOD; tempIndex++)
+		for (int tempIndex = 0; tempIndex < NUM_THERMISTORS_PER_MODULE; tempIndex++)
 		{
-			float referenceVoltage = modData[moduleIndex].vref2;
-			float outputVoltage = modData[moduleIndex].gpio_volt[tempIndex];
+			float referenceVoltage = module[moduleIndex].vref2;
+			float outputVoltage = module[moduleIndex].gpio_volt[tempIndex];
 
 			// Guard against invalid values
 			if (outputVoltage <= 0 || outputVoltage >= (referenceVoltage - VREF2_MARGIN_MV))
 			{
-				// TODO: Set invalid temp fault
-				modData[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
+				module[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
 				continue;
 			}
 
 			// Compute thermistor resistance
-			float ntcResistance =
-				PULL_UP_RESISTANCE_OHMS * ((float)outputVoltage / (float)(referenceVoltage - outputVoltage));
+			float ntcResistance = PULL_UP_RESISTANCE_OHMS * ((float)outputVoltage / (float)(referenceVoltage - outputVoltage));
 
 			// Apply Steinhart-Hart equation based on Vishay NTC RT calculator
 			// T = 1/(A1 + B1 * LN(RT/R25) + C1 * LN(RT/R25)^2 + D1 * LN(RT/R25)^3) -273.15
 			float lnRR = logf(ntcResistance / NOMINAL_RESISTANCE_25C_OHMS);
-			float inverseTemperature_K = STEINHART_HART_COEFFICIENT_A + (STEINHART_HART_COEFFICIENT_B * lnRR) +
-										 (STEINHART_HART_COEFFICIENT_C * lnRR * lnRR) +
-										 (STEINHART_HART_COEFFICIENT_D * lnRR * lnRR * lnRR);
+			float inverseTemperature_K = STEINHART_HART_COEFFICIENT_A + (STEINHART_HART_COEFFICIENT_B * lnRR) + (STEINHART_HART_COEFFICIENT_C * lnRR * lnRR) + (STEINHART_HART_COEFFICIENT_D * lnRR * lnRR * lnRR);
 
 			// Convert to Celsius
 			float temperature_K = 1.0f / fmaxf(inverseTemperature_K, 1e-12f); // guard against division by 0
 			float temperature_C = temperature_K - KELVIN_OFFSET;
-			modData[moduleIndex].pointTemp_C[tempIndex] = temperature_C;
+			module[moduleIndex].pointTemp_C[tempIndex] = temperature_C;
 		}
 	}
 }
@@ -125,12 +118,12 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 // 	}
 // }
 
-void Module_getTemperatures(ModuleData *mod)
+void Module_getTemperatures(ModuleData *module)
 {
 	ADBMS_startAuxConversions(OW_OFF, PUP_OFF, AUX_CHANNEL_ALL);
-	ADBMS_getVref2(mod);
-	ADBMS_getGpioVoltages(mod);
-	Module_convertGpioVoltageToTemp(mod);
+	ADBMS_getVref2(module);
+	ADBMS_getGpioVoltages(module);
+	Module_convertGpioVoltageToTemp(module);
 }
 
 void Module_getMaxCellVoltage(ModuleData *module)
@@ -138,13 +131,13 @@ void Module_getMaxCellVoltage(ModuleData *module)
 	int16_t maxCellVoltage = INT16_MIN;
 	uint8_t maxCellIndex = 0;
 
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (int cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			if (module[moduleIndex].cell_volt[cellIndex] >= maxCellVoltage)
+			if (module[moduleIndex].cellVoltage_mV[cellIndex] >= maxCellVoltage)
 			{
-				maxCellVoltage = module[moduleIndex].cell_volt[cellIndex];
+				maxCellVoltage = module[moduleIndex].cellVoltage_mV[cellIndex];
 				maxCellIndex = cellIndex;
 			}
 		}
@@ -158,13 +151,13 @@ void Module_getMinCellVoltage(ModuleData *module)
 	int16_t minCellVoltage = INT16_MAX;
 	uint8_t minCellIndex = 0;
 
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (int cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			if (module[moduleIndex].cell_volt[cellIndex] <= minCellVoltage)
+			if (module[moduleIndex].cellVoltage_mV[cellIndex] <= minCellVoltage)
 			{
-				minCellVoltage = module[moduleIndex].cell_volt[cellIndex];
+				minCellVoltage = module[moduleIndex].cellVoltage_mV[cellIndex];
 				minCellIndex = cellIndex;
 			}
 		}
@@ -175,12 +168,12 @@ void Module_getMinCellVoltage(ModuleData *module)
 
 void Module_getTotalCellVoltage(ModuleData *module)
 {
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
 		int32_t totalCellVoltage_mV = 0;
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (int cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			totalCellVoltage_mV += module[moduleIndex].cell_volt[cellIndex];
+			totalCellVoltage_mV += module[moduleIndex].cellVoltage_mV[cellIndex];
 		}
 		module[moduleIndex].totalCellVoltage_mV = totalCellVoltage_mV;
 	}
@@ -188,9 +181,9 @@ void Module_getTotalCellVoltage(ModuleData *module)
 
 void Module_getAverageCellVoltage(ModuleData *module)
 {
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		module[moduleIndex].averageCellVoltage_mV = module[moduleIndex].totalCellVoltage_mV / NUM_CELL_PER_MOD;
+		module[moduleIndex].averageCellVoltage_mV = module[moduleIndex].totalCellVoltage_mV / NUM_CELLS_PER_MODULE;
 	}
 }
 

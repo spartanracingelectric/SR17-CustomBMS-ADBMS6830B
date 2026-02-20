@@ -49,7 +49,7 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    Core/Src/accumulator.c
+	Core/Src/pack.c
     Core/Src/adbms6830b.c
     Core/Src/balance.c
     Core/Src/hv_sens.c

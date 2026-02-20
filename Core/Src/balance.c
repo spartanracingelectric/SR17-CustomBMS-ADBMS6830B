@@ -4,11 +4,9 @@
  */
 
 #include "balance.h"
-#include "can.h"
+#include "module.h"
 #include "stm32f1xx_hal.h"
-#include "usart.h"
 #include <adbms6830b.h>
-#include <stdio.h>
 
 CAN_RxHeaderTypeDef rxHeader;
 uint8_t rxData[8];
@@ -16,13 +14,13 @@ bool isBalancingEnabled = false;
 bool isBalancingFinished = false;
 static uint32_t lastBalanceCommandTick = 0;
 
-void Balance_init(BalanceStatus *blst, ConfigurationRegisterB *configB)
+void Balance_init(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
 {
 	isBalancingEnabled = false;
 	isBalancingFinished = false;
 	lastBalanceCommandTick = HAL_GetTick();
-	Balance_stopCellDischarge(blst);
-	Balance_getDischargeStatus(blst, configB);
+	Balance_stopCellDischarge(balanceStatus);
+	Balance_getDischargeStatus(balanceStatus, configB);
 }
 
 // TODO: Move to can.c
@@ -47,8 +45,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
 	}
 }
 
-void Balance_handleBalancing(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst,
-							 ConfigurationRegisterB *configB)
+void Balance_handleBalancing(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
 {
 	// Stop balancing if balance command is not received every BALANCE_COMMAND_TIMEOUT_MS
 	uint32_t currentTick = HAL_GetTick();
@@ -60,14 +57,14 @@ void Balance_handleBalancing(ModuleData *mod, AccumulatorData *accm, BalanceStat
 
 	if (isBalancingEnabled)
 	{
-		Balance_setCellDischarge(mod, accm, blst);
-		Balance_getDischargeStatus(blst, configB);
+		Balance_setCellDischarge(module, pack, balanceStatus);
+		Balance_getDischargeStatus(balanceStatus, configB);
 	}
 	else if (isBalancingFinished)
 	{
 		// Runs once when balancing stops
-		Balance_stopCellDischarge(blst);
-		Balance_getDischargeStatus(blst, configB);
+		Balance_stopCellDischarge(balanceStatus);
+		Balance_getDischargeStatus(balanceStatus, configB);
 		isBalancingFinished = false;
 	}
 }
@@ -77,42 +74,42 @@ void Balance_handleBalancing(ModuleData *mod, AccumulatorData *accm, BalanceStat
  *  If the difference is greater than BALANCE_THRESHOLD_MV, enable discharge for that cell (DCC = 1)
  *  Discharging will only occur if Enable Balance CAN message is receieved every BALANCE_COMMAND_TIMEOUT_MS
  */
-void Balance_setCellDischarge(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst)
+void Balance_setCellDischarge(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus)
 {
-	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (uint8_t cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (uint8_t cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			if (mod[moduleIndex].cell_volt[cellIndex] - accm->cell_volt_lowest > BALANCE_THRESHOLD_MV)
+			if (module[moduleIndex].cellVoltage_mV[cellIndex] - pack->lowestCellVoltage_mV > BALANCE_THRESHOLD_MV)
 			{
-				blst[moduleIndex].cellsToBalance[cellIndex] = 1;
+				balanceStatus[moduleIndex].cellsToBalance[cellIndex] = 1;
 			}
 			else
 			{
-				blst[moduleIndex].cellsToBalance[cellIndex] = 0;
+				balanceStatus[moduleIndex].cellsToBalance[cellIndex] = 0;
 			}
 		}
 	}
-	ADBMS_writeConfigurationRegisterB(blst);
+	ADBMS_writeConfigurationRegisterB(balanceStatus);
 }
 
-void Balance_stopCellDischarge(BalanceStatus *blst)
+void Balance_stopCellDischarge(BalanceStatus *balanceStatus)
 {
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		for (int cellIndex = 0; cellIndex < NUM_CELLS_PER_MODULE; cellIndex++)
 		{
-			blst[moduleIndex].cellsToBalance[cellIndex] = 0;
+			balanceStatus[moduleIndex].cellsToBalance[cellIndex] = 0;
 		}
 	}
-	ADBMS_writeConfigurationRegisterB(blst);
+	ADBMS_writeConfigurationRegisterB(balanceStatus);
 }
 
-void Balance_getDischargeStatus(BalanceStatus *blst, ConfigurationRegisterB *configB)
+void Balance_getDischargeStatus(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
 {
 	ADBMS_readConfigurationRegisterB(configB);
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
-		blst[moduleIndex].cellsBalancing = configB[moduleIndex].cellsDischargeStatus;
+		balanceStatus[moduleIndex].cellsBalancing = configB[moduleIndex].cellsDischargeStatus;
 	}
 }

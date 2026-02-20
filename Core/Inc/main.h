@@ -51,113 +51,11 @@ extern "C" {
  *  - BALANCE is a feature toggle (0 = disabled at compile time).
  *  - MAX_*_CAPACITY are nominal capacities (mAh) used for SoC/estimation.
  */
-#define NUM_MOD					1	//1 slave board
-#define NUM_CELL_PER_MOD	 	14	//1 slave board
-#define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
-#define NUM_THERM_PER_MOD		10
-#define NUM_THERM_TOTAL			(NUM_MOD*NUM_THERM_PER_MOD)
-#define NUM_AUX_GROUP			6
-#define NUM_AUXES				(NUM_MOD*NUM_AUX_GROUP)
-#define CYCLETIME_CAP			10  //60ms update delay
-#define CAN_RECONNECTION_CHECK	500 //check can connection every 500ms
-#define LED_HEARTBEAT_DELAY_MS	50  //50ms update delay
-#define BALANCE 				0 	//FALSE
-#define MAX_CELL_CAPACITY 		3000
-#define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
 /* USER CODE END Private defines */
 
-/**
- * @brief Per-pack aggregate values and summary status.
- *
- * Units:
- *  - cell_volt_*: millivolts (mV)
- *  - cell_temp_*: typically 0.1°C or raw ADC-derived units (project-defined)
- *  - sum_pack_voltage / hvsens_pack_voltage: millivolts (mV)
- *  - balance_status: bitfield per module (bit i = cell i discharging)
- *  - soc: microamp-seconds or project-defined scaled SoC accumulator
- *  - current: microamps or project-defined current units
- */
-typedef struct AccumulatorData {
-	uint16_t cell_volt_lowest;
-	uint16_t cell_volt_highest;
-	uint16_t cell_difference;
-	uint16_t cell_temp_lowest;
-	uint16_t cell_temp_highest;
-	uint16_t sum_pack_voltage;
-	uint16_t hvsens_pack_voltage;
-	uint16_t balance_status[NUM_MOD];
-    uint32_t soc; // microamps!!!!!
-    uint32_t current;
-    uint16_t atmos_temp;
-    uint16_t hv_sens;
-    uint16_t total_pack_voltage;
-} AccumulatorData;
 
-/**
- * @brief Per-module measurement container.
- *
- * Notes:
- *  - cell_volt:     per-cell voltages for this module [mV]
- *  - cell_temp:     global thermistor vector (sized to NUM_THERM_TOTAL)
- *                   (Indexing scheme must be consistent across modules.)
- *  - average_*:     per-module averages (units follow source arrays)
- *  - read_auxreg:   raw AUX/GPIO reads (RDAUX pages) sized to NUM_AUXES
- *  - sid:           6-byte silicon ID (if supported/read)
- */
-typedef struct ModuleData {
-	int16_t cell_volt[NUM_CELL_PER_MOD];
-    uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
-	int16_t gpio_volt[NUM_THERM_PER_MOD];
-	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
-	int16_t vref2;
-	int16_t averageCellVoltage_mV;
-	uint16_t average_temp;
-	int32_t totalCellVoltage_mV;
-	uint16_t pressure;
-	uint16_t humidity;
-    uint16_t dew_point;
-    int16_t maxCellVoltage_mV;
-    int16_t minCellVoltage_mV;
-    uint8_t sid[6];
-	bool pec_error;
-    uint8_t maxCellIndex;
-    uint8_t minCellIndex;
-} ModuleData;
 
-typedef struct BalanceStatus {
-	uint8_t cellsToBalance[NUM_CELL_PER_MOD];
-	uint16_t cellsBalancing;
-} BalanceStatus;
 
-typedef struct ConfigurationRegisterB {
-	uint16_t underVoltageThreshold_V;
-	uint16_t overVoltageThreshold_V;
-	uint16_t cellsDischargeStatus;
-	//TODO: Add other fields in register
-} ConfigurationRegisterB;
-
-/**
- * @brief CAN transmission staging buffers.
- *
- * Layout:
- *  - TxHeader / TxMailbox: HAL CAN metadata for the next transmit.
- *  - *Buffer: 8-byte payload slices for voltage/thermistor/safety/summary/SoC/balance.
- *
- * Usage:
- *  - Populate the relevant buffer and header, then queue with HAL CAN APIs.
- *  - ID and DLC are configured in the associated source file before sending.
- */
-//moved to can.h already
-//typedef struct CANMessage{
-//    CAN_TxHeaderTypeDef TxHeader;
-//    uint32_t TxMailbox;
-//    uint8_t voltageBuffer[8];
-//    uint8_t thermistorBuffer[8];
-//    uint8_t summaryBuffer[8];
-//    uint8_t safetyBuffer[8];
-//    uint8_t socBuffer[8];
-//    uint8_t balanceStatus[8];
-//} CANMessage;
 
 /* USER CODE END ET */
 

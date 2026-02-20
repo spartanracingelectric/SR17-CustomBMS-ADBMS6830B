@@ -25,6 +25,7 @@
 
 
 /* USER CODE BEGIN 0 */
+#include "module.h"
 #include "usart.h"
 #include "stdio.h"
 #include "balance.h"
@@ -231,20 +232,20 @@ void CAN_setId(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
 void CAN_sendVoltageData(CANMessage *buffer, ModuleData *mod)
 {
 	uint32_t canId = (uint32_t)CAN_ID_VOLTAGE;
-    for (int i = 0; i < NUM_MOD; i++) {  //pack every 4 cell group in 1 CAN message
-    	for (int j = 0; j < NUM_CELL_PER_MOD; j += 4)
+    for (int i = 0; i < NUM_MODULES_TOTAL; i++) {  //pack every 4 cell group in 1 CAN message
+    	for (int j = 0; j < NUM_CELLS_PER_MODULE; j += 4)
     	{
     		int byteNumber = 0;
-    		if(j + 3 < NUM_CELL_PER_MOD)
+    		if(j + 3 < NUM_CELLS_PER_MODULE)
     		{
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[  j  ];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[  j  ] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[j + 1];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[j + 1] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[j + 2];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[j + 2] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[j + 3];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[j + 3] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[  j  ];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[  j  ] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 1];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 1] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 2];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 2] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 3];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 3] >> 8);
 		//        printf("can id for voltage: %d\n", CAN_ID);
 
 				CAN_setId(buffer, canId);
@@ -254,10 +255,10 @@ void CAN_sendVoltageData(CANMessage *buffer, ModuleData *mod)
 
 			else
 			{
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[  j  ];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[  j  ] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cell_volt[j + 1];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cell_volt[j + 1] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[  j  ];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[  j  ] >> 8);
+				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 1];
+				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 1] >> 8);
 				buffer->buffer[byteNumber++] = (uint8_t)mod[i].totalCellVoltage_mV;
 				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].totalCellVoltage_mV >> 8);
 
@@ -285,13 +286,13 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
 {
     uint32_t canId = (uint32_t)CAN_ID_THERMISTOR;
 
-    for (int i = 0; i < NUM_MOD; i++)
+    for (int i = 0; i < NUM_MODULES_TOTAL; i++)
     {
-    	for(int j = 0; j < NUM_THERM_TOTAL; j+= NUM_THERM_PER_MESSAGE)
+    	for(int j = 0; j < NUM_THERMISTORS_TOTAL; j+= NUM_THERM_PER_MESSAGE)
     	{
     		int byteNumber = 0;
 
-    		if(j + 3 < NUM_THERM_TOTAL)
+    		if(j + 3 < NUM_THERMISTORS_TOTAL)
     		{
     			CAN_setId(buffer, canId);
     			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
@@ -332,17 +333,17 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
  *      [5]    = lowest  cell temperature (8-bit)
  *      [6..7] = (unused)
  */
-void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt) {
+void CAN_sendPackSummary(CANMessage *buffer, PackData *batt) {
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SUMMARY;
 	CAN_setId(buffer, canId);
-	buffer->buffer[byteNumber++] =  (uint8_t)batt->cell_volt_highest;
-	buffer->buffer[byteNumber++] = (uint8_t)(batt->cell_volt_highest >> 8);
-	buffer->buffer[byteNumber++] =  (uint8_t)batt->cell_volt_lowest;
-	buffer->buffer[byteNumber++] = (uint8_t)(batt->cell_volt_lowest >> 8);
-	buffer->buffer[byteNumber++] = (uint8_t)batt->cell_temp_highest;
-	buffer->buffer[byteNumber++] = (uint8_t)batt->cell_temp_lowest;
-	buffer->buffer[byteNumber++] = (uint8_t)batt->total_pack_voltage;
+	buffer->buffer[byteNumber++] =  (uint8_t)batt->highestCellVoltage_mV;
+	buffer->buffer[byteNumber++] = (uint8_t)(batt->highestCellVoltage_mV >> 8);
+	buffer->buffer[byteNumber++] =  (uint8_t)batt->lowestCellVoltage_mV;
+	buffer->buffer[byteNumber++] = (uint8_t)(batt->lowestCellVoltage_mV>> 8);
+	buffer->buffer[byteNumber++] = (uint8_t)batt->highestCellTemp_C;
+	buffer->buffer[byteNumber++] = (uint8_t)batt->lowestCellTemp_C;
+	buffer->buffer[byteNumber++] = (uint8_t)batt->totalPackVoltage_mV; //TODO: int32_t shouldn't be cast to uint8_t
 //	printf("can id for summary: %d\n", CAN_ID);
 //	ptr->data[6] =
 //	ptr->data[7] =
@@ -353,7 +354,7 @@ void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt) {
 void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
 	uint32_t canId = (uint32_t)CAN_ID_MODULE_SUMMARY_BASE;
 	int byteNumber = 0;
-	for (int i = 0; i < NUM_MOD; i++) {
+	for (int i = 0; i < NUM_MODULES_TOTAL; i++) {
 		CAN_setId(buffer, canId);
 		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].maxCellVoltage_mV;
 		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].maxCellVoltage_mV		>> 8);
@@ -379,19 +380,19 @@ void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
  *      [4..5] = hvsens_pack_voltage (mV)
  *      [6..7] = sum_pack_voltage (mV)
  */
-void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t *faults, uint8_t *warnings) {
+void CAN_Send_Safety_Checker(CANMessage *buffer, PackData *pack, uint8_t *faults, uint8_t *warnings) {
 	int byteNumber = 0;
-	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
+	pack->cellImbalance_mV = pack->highestCellVoltage_mV - pack->lowestCellVoltage_mV;
 	uint32_t canId = (uint32_t)CAN_ID_SAFETY;
 	CAN_setId(buffer, canId);
 	buffer->buffer[byteNumber++] = *warnings;
 	buffer->buffer[byteNumber++] = *faults;
-	buffer->buffer[byteNumber++] =  batt->cell_difference           & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->cell_difference     >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->hvsens_pack_voltage       & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->hvsens_pack_voltage >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->sum_pack_voltage          & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->sum_pack_voltage    >> 8) & 0xFF;
+	buffer->buffer[byteNumber++] =  pack->cellImbalance_mV           & 0xFF;
+	buffer->buffer[byteNumber++] = (pack->cellImbalance_mV     >> 8) & 0xFF;
+	buffer->buffer[byteNumber++] =  pack->hvSensePackVoltage_mV      & 0xFF;
+	buffer->buffer[byteNumber++] = (pack->hvSensePackVoltage_mV >> 8) & 0xFF;
+	buffer->buffer[byteNumber++] =  pack->totalPackVoltage_mV         & 0xFF;
+	buffer->buffer[byteNumber++] = (pack->totalPackVoltage_mV  >> 8) & 0xFF;
 //	printf("can id for safety: %d\n", CAN_ID);
 	CAN_send(buffer, byteNumber);
 //	printf("Faults\n");
@@ -407,19 +408,19 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t 
  *      [3..6] = current (uint32_t, LSB..MSB)
  *      [7]    = (unused)
  */
-void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capacity) {
+void CAN_Send_SOC(CANMessage *buffer, PackData *pack, uint16_t max_capacity) {
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
-    uint8_t percent = (uint8_t)((float) (batt->soc / 1000) * 100 / (float) max_capacity);  // 1000 for micro->milli
-    uint16_t soc = (uint16_t) (batt->soc / 1000);
+    uint8_t percent = (uint8_t)((float) (pack->stateOfCharge / 1000) * 100 / (float) max_capacity);  // 1000 for micro->milli
+    uint16_t soc = (uint16_t) (pack->stateOfCharge / 1000);
     CAN_setId(buffer, canId);
 	buffer->buffer[byteNumber++] = soc & 0xFF;
 	buffer->buffer[byteNumber++] = (soc >> 8) & 0xFF;
     buffer->buffer[byteNumber++] = percent;
-    buffer->buffer[byteNumber++] = batt->current & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 8) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 16) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 24)& 0xFF;
+    buffer->buffer[byteNumber++] = pack->current & 0xFF;
+    buffer->buffer[byteNumber++] = (pack->current >> 8) & 0xFF;
+    buffer->buffer[byteNumber++] = (pack->current >> 16) & 0xFF;
+    buffer->buffer[byteNumber++] = (pack->current >> 24)& 0xFF;
 //    printf("can id for soc: %d\n", CAN_ID);
     CAN_send(buffer, byteNumber);
 }
@@ -433,7 +434,7 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capaci
 void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst) {
 	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATUS;
 	int byteNumber = 0;
-	for(int modIndex = 0; modIndex < NUM_MOD; modIndex+=4)
+	for(int modIndex = 0; modIndex < NUM_MODULES_TOTAL; modIndex+=4)
 	{
 		CAN_setId(buffer, canId);
 		if(modIndex >= 8)
@@ -470,14 +471,14 @@ void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst) {
 void CAN_sendFaultStatus(CANMessage *message)
 {
 	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
-	uint16_t faultBitStorage[NUM_MOD];
+	uint16_t faultBitStorage[NUM_MODULES_TOTAL];
 
 	
-		for (uint8_t i = 0; i < NUM_MOD; i++)
+		for (uint8_t i = 0; i < NUM_MODULES_TOTAL; i++)
 		{
 			uint16_t faultBits = 0;
 
-			for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
+			for (uint8_t j = 0; j < NUM_CELLS_PER_MODULE; j++)
 			{
 				FaultFlags_t f = GlobalFaults[i][j];
 				if (f.UnderVoltage || f.OpenWire || f.PEC || f.OverTemp ||
@@ -488,14 +489,14 @@ void CAN_sendFaultStatus(CANMessage *message)
 			}
 			faultBitStorage[i] = faultBits;
 		}
-	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
+	for (uint8_t start = 0; start < NUM_MODULES_TOTAL; start += 4 )
 	{
 		for (uint8_t j = 0; j < 8; j++)
 		{
 			message-> buffer[j] = 0; // make sure the whole can message starts at 00000000
 		}
 			int byteNumber = 0;
-			for (uint8_t i = start; i < (start + 4) && (i < NUM_MOD); i++)
+			for (uint8_t i = start; i < (start + 4) && (i < NUM_MODULES_TOTAL); i++)
 			{
 				uint16_t faultBits = faultBitStorage[i];
 

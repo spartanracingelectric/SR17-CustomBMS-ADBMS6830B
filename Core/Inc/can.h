@@ -20,12 +20,14 @@
 #ifndef __CAN_H__
 #define __CAN_H__
 
+#include "balance.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "pack.h"
 
 
 typedef struct CANMessage{
@@ -71,8 +73,6 @@ extern CAN_HandleTypeDef hcan1;
 #define NUM_THERM_PER_MESSAGE		4
 #define CAN_ID_Fault_Status			0x6AE
 
-extern ModuleData modData[NUM_MOD];
-
 extern uint8_t can_skip_flag;
 /* USER CODE END Private defines */
 
@@ -110,10 +110,11 @@ void CAN_setId(CANMessage *ptr, uint32_t id);
  */
 void CAN_sendVoltageData(CANMessage *ptr, ModuleData *mod);
 void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod);
-void CAN_sendCellSummary(CANMessage *ptr, struct AccumulatorData *batt);
+void CAN_sendCellSummary(CANMessage *ptr, PackData *pack);
 void CAN_sendModuleSummary(CANMessage *ptr, ModuleData *mod);
-void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
-void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
+void CAN_sendPackSummary(CANMessage *buffer, PackData *batt);
+void CAN_Send_Safety_Checker(CANMessage *ptr, PackData *pack, uint8_t* faults, uint8_t* warnings); // change to camel case
+void CAN_Send_SOC(CANMessage *ptr, PackData *pack, uint16_t max_capacity);
 void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *buffer);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);

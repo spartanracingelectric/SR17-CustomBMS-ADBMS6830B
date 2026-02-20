@@ -35,13 +35,14 @@
 
 #include "adc.h"
 #include "main.h"
+#include "module.h"
 #include "usart.h"
 
 /* ===== Internal Prototypes ===================================================
  * SOC_updateCurrent(): acquire/scale shunt reading → batt->current (mA).
  * OCV helpers: mapping ADC/OCV to capacities via piecewise tables and search.
  */
-void SOC_updateCurrent(AccumulatorData *batt);
+void SOC_updateCurrent(PackData *pack);
 
 uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX,
                           uint16_t lowerY, uint16_t upperY);
@@ -57,19 +58,19 @@ uint16_t SOC_getChargeData40C(uint16_t voltage);
  *  - Average module thermistors to choose the nearest OCV curve (0/25/40 °C).
  *  - Look up per-cell capacity (mAh) and scale to pack and µAh storage.
  */
-void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
+void SOC_getInitialCharge(PackData *pack, ModuleData *mod) {
     uint32_t voltage = 0;
-    uint32_t pack_voltage = batt->sum_pack_voltage;
-    voltage = pack_voltage * 10 / NUM_CELLS;
+    uint32_t pack_voltage = pack->totalPackVoltage_mV;
+    voltage = pack_voltage * 10 / NUM_CELLS_TOTAL;
 //    printf("initial avg Voltage: %d\n", voltage);
 //    printf("initial pack Voltage: %d\n", pack_voltage);
 
 
     uint16_t temperature = 0;
-    for (int i = 0; i < NUM_THERM_TOTAL; ++i) {
+    for (int i = 0; i < NUM_THERMISTORS_TOTAL; ++i) {
         temperature += mod->gpio_volt[i];
     }
-    temperature /= NUM_THERM_TOTAL;
+    temperature /= NUM_THERMISTORS_TOTAL;
 //    printf("temp:%d", temperature);
 
     int tempCharts[] = {0, 25, 40};
@@ -85,13 +86,13 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
 
     switch (selectTemp) {
         case 0:
-            batt->soc = SOC_getChargeData0C((uint16_t) voltage) * NUM_MOD * 1000;
+            pack->stateOfCharge = SOC_getChargeData0C((uint16_t) voltage) * NUM_MODULES_TOTAL * 1000;
             break;
         case 25:
-            batt->soc = SOC_getChargeData25C((uint16_t) voltage) * NUM_MOD * 1000;
+            pack->stateOfCharge = SOC_getChargeData25C((uint16_t) voltage) * NUM_MODULES_TOTAL * 1000;
             break;
         default:
-            batt->soc = SOC_getChargeData40C((uint16_t) voltage) * NUM_MOD * 1000;
+            pack->stateOfCharge = SOC_getChargeData40C((uint16_t) voltage) * NUM_MODULES_TOTAL * 1000;
             break;
     }
 //    printf("this is running");
@@ -104,7 +105,7 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
  *  - Scales by MAX_SHUNT_VOLTAGE and SHUNT_OPAMP_RATIO to compute current (mA).
  *  - Applies SHUNT_OFFSET bias compensation (project convention).
  */
-void SOC_updateCurrent(AccumulatorData *batt) {
+void SOC_updateCurrent(PackData *batt) {
     uint32_t adcValue = 0;
 	float vRef = getVref();
 
@@ -121,14 +122,14 @@ void SOC_updateCurrent(AccumulatorData *batt) {
  *      ΔQ[µAh] = 1000 * I[mA] * (Δt[ms] / 3600000)
  *      soc_new = soc_old - ΔQ
  */
-void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
-	if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
+void SOC_updateCharge(PackData *batt, uint32_t elapsed_time) {
+	if (batt->hvSensePackVoltage_mV <= 10000) { // 100.00 V
 		batt->current = 0;
 	} else {
 		SOC_updateCurrent(batt);
 	}
 
-	batt->soc -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
+	batt->stateOfCharge -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
 }
 
 /* ===== OCV Table Binary Search ==============================================

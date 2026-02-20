@@ -20,6 +20,8 @@
 #define INC_SAFETY_H_
 
 #include "main.h"
+#include "module.h"
+#include "pack.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -124,8 +126,8 @@ typedef struct FaultMessage_t {
     FaultType_e FaultType; 
 } FaultMessage_t;
 
-extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
-extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
+extern FaultFlags_t   GlobalFaults[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE];
+extern WarningFlags_t GlobalWarnings[NUM_MODULES_TOTAL][NUM_CELLS_PER_MODULE];
 
 /* ===== Public API: Safety Evaluators & Aggregates ============================
  * Cell_Voltage_Fault():
@@ -146,13 +148,13 @@ extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
  * Module_Temperature_Averages():
  *  - Compute per-module average temperatures.
  */
-void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod);
-void Safety_checkCellVoltageFault(AccumulatorData *batt, ModuleData *mod);
-void Cell_Balance_Fault(AccumulatorData *batt, ModuleData *mod); 
-void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod);
-void High_Voltage_Fault(AccumulatorData *batt, ModuleData *mod); 
-void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod); 
-void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod); 
+void Safety_checkFaults(PackData *pack, ModuleData *mod);
+void Safety_checkCellVoltageFault(PackData *pack, ModuleData *mod);
+void Cell_Balance_Fault(PackData *pack, ModuleData *mod); 
+void Safety_checkCellTemperatureFault(PackData *pack, ModuleData *mod);
+void High_Voltage_Fault(PackData *pack, ModuleData *mod); 
+void Module_Voltage_Averages(PackData *pack, ModuleData *mod); 
+void Module_Temperature_Averages(PackData *pack, ModuleData *mod); 
 bool Safety_getNextFault(FaultMessage_t *faultMsg);
 
 #endif /* INC_SAFETY_H_ */
