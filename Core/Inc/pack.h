@@ -20,8 +20,8 @@ typedef struct PackData
 #define MAX_PACK_CAPACITY (NUM_MODULES_TOTAL * MAX_CELL_CAPACITY)
 
 void Pack_init(PackData *pack);
-void Pack_getMinVoltage(PackData *pack, ModuleData *module);
-void Pack_getMaxVoltage(PackData *pack, ModuleData *module);
-void Pack_getTotalVoltage(PackData *pack, ModuleData *module);
+void Pack_getMinVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL]);
+void Pack_getMaxVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL]);
+void Pack_getTotalVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL]);
 
 #endif /* INC_PACK_H_ */

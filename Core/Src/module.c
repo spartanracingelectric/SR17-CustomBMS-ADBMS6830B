@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdint.h>
 
-void Module_init(ModuleData *module)
+void Module_init(ModuleData module[NUM_MODULES_TOTAL])
 {
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -28,7 +28,7 @@ void Module_init(ModuleData *module)
 	}
 }
 
-void Module_getCellVoltages(ModuleData *module)
+void Module_getCellVoltages(ModuleData module[NUM_MODULES_TOTAL])
 {
 	ADBMS_getCellVoltages(module);
 }
@@ -72,7 +72,7 @@ void Module_getCellVoltages(ModuleData *module)
 // 	mod[dev_idx].humidity = (uint16_t)(humidity_value);
 // }
 
-void Module_convertGpioVoltageToTemp(ModuleData *module)
+void Module_convertGpioVoltageToTemp(ModuleData module[NUM_MODULES_TOTAL])
 {
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -118,7 +118,7 @@ void Module_convertGpioVoltageToTemp(ModuleData *module)
 // 	}
 // }
 
-void Module_getTemperatures(ModuleData *module)
+void Module_getTemperatures(ModuleData module[NUM_MODULES_TOTAL])
 {
 	ADBMS_startAuxConversions(OW_OFF, PUP_OFF, AUX_CHANNEL_ALL);
 	ADBMS_getVref2(module);
@@ -126,7 +126,7 @@ void Module_getTemperatures(ModuleData *module)
 	Module_convertGpioVoltageToTemp(module);
 }
 
-void Module_getMaxCellVoltage(ModuleData *module)
+void Module_getMaxCellVoltage(ModuleData module[NUM_MODULES_TOTAL])
 {
 	int16_t maxCellVoltage = INT16_MIN;
 	uint8_t maxCellIndex = 0;
@@ -146,7 +146,7 @@ void Module_getMaxCellVoltage(ModuleData *module)
 	}
 }
 
-void Module_getMinCellVoltage(ModuleData *module)
+void Module_getMinCellVoltage(ModuleData module[NUM_MODULES_TOTAL])
 {
 	int16_t minCellVoltage = INT16_MAX;
 	uint8_t minCellIndex = 0;
@@ -166,7 +166,7 @@ void Module_getMinCellVoltage(ModuleData *module)
 	}
 }
 
-void Module_getTotalCellVoltage(ModuleData *module)
+void Module_getTotalCellVoltage(ModuleData module[NUM_MODULES_TOTAL])
 {
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -179,7 +179,7 @@ void Module_getTotalCellVoltage(ModuleData *module)
 	}
 }
 
-void Module_getAverageCellVoltage(ModuleData *module)
+void Module_getAverageCellVoltage(ModuleData module[NUM_MODULES_TOTAL])
 {
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -187,7 +187,7 @@ void Module_getAverageCellVoltage(ModuleData *module)
 	}
 }
 
-void Module_getStats(ModuleData *module)
+void Module_getStats(ModuleData module[NUM_MODULES_TOTAL])
 {
 	Module_getMaxCellVoltage(module);
 	Module_getMinCellVoltage(module);

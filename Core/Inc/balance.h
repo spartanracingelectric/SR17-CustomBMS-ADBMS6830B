@@ -27,11 +27,11 @@ typedef struct ConfigurationRegisterB
 #define BALANCE_COMMAND_TIMEOUT_MS 5000
 #define BALANCE_COMMAND_CAN_ID 0x604
 
-void Balance_init(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB);
-void Balance_handleBalanceCANMessage(uint8_t rxData[]);
-void Balance_handleBalancing(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus, ConfigurationRegisterB *configB);
-void Balance_setCellDischarge(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus);
-void Balance_stopCellDischarge(BalanceStatus *balanceStatus);
-void Balance_getDischargeStatus(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB);
+void Balance_init(BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL]);
+void Balance_handleBalanceCANMessage(uint8_t rxData[8]);
+void Balance_handleBalancing(ModuleData module[NUM_MODULES_TOTAL], PackData *pack, BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL]);
+void Balance_setCellDischarge(ModuleData module[NUM_MODULES_TOTAL], PackData *pack, BalanceStatus balanceStatus[NUM_MODULES_TOTAL]);
+void Balance_stopCellDischarge(BalanceStatus balanceStatus[NUM_MODULES_TOTAL]);
+void Balance_getDischargeStatus(BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL]);
 
 #endif

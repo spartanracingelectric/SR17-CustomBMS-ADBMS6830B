@@ -43,16 +43,16 @@ typedef struct ModuleData
 	uint8_t minCellIndex;
 } ModuleData;
 
-void Module_init(ModuleData *module);
-void Module_getCellVoltages(ModuleData *module);
-void Module_getMaxCellVoltage(ModuleData *module);
-void Module_getMinCellVoltage(ModuleData *module);
-void Module_getTotalCellVoltage(ModuleData *module);
-void Module_getAverageCellVoltage(ModuleData *module);
-void Module_getStats(ModuleData *module);
-void Convert_GPIOVoltageToTemp(ModuleData *module);
-void Module_convertGpioVoltageToTemp(ModuleData *module);
-void Module_getTemperatures(ModuleData *module);
+void Module_init(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getCellVoltages(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getMaxCellVoltage(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getMinCellVoltage(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getTotalCellVoltage(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getAverageCellVoltage(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getStats(ModuleData module[NUM_MODULES_TOTAL]);
+void Convert_GPIOVoltageToTemp(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_convertGpioVoltageToTemp(ModuleData module[NUM_MODULES_TOTAL]);
+void Module_getTemperatures(ModuleData module[NUM_MODULES_TOTAL]);
 
 /* ===== Public API: Ambient Sensors (Pressure / Air Temp / Humidity) =========
  * Atmos_Temp_To_Celsius():

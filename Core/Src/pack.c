@@ -1,6 +1,7 @@
 #include "pack.h"
+#include "module.h"
 
-void Pack_getMinVoltage(PackData *pack, ModuleData *module)
+void Pack_getMinVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL])
 {
 	pack->lowestCellVoltage_mV = module[0].cellVoltage_mV[0];
 
@@ -16,7 +17,7 @@ void Pack_getMinVoltage(PackData *pack, ModuleData *module)
 	}
 }
 
-void Pack_getMaxVoltage(PackData *pack, ModuleData *module)
+void Pack_getMaxVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL])
 {
 	pack->highestCellVoltage_mV = module[0].cellVoltage_mV[0];
 
@@ -32,7 +33,7 @@ void Pack_getMaxVoltage(PackData *pack, ModuleData *module)
 	}
 }
 
-void Pack_getTotalVoltage(PackData *pack, ModuleData *module)
+void Pack_getTotalVoltage(PackData *pack, ModuleData module[NUM_MODULES_TOTAL])
 {
 	int32_t totalPackVoltage = 0;
 

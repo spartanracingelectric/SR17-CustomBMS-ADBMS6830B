@@ -12,7 +12,7 @@ bool isBalancingEnabled = false;
 bool isBalancingFinished = false;
 static uint32_t lastBalanceCommandTick = 0;
 
-void Balance_init(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
+void Balance_init(BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL])
 {
 	isBalancingEnabled = false;
 	isBalancingFinished = false;
@@ -36,7 +36,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
 	}
 }
 
-void Balance_handleBalanceCANMessage(uint8_t rxData[])
+void Balance_handleBalanceCANMessage(uint8_t rxData[8])
 {
 	uint8_t balanceCommand = rxData[0];
 	lastBalanceCommandTick = HAL_GetTick();
@@ -51,7 +51,7 @@ void Balance_handleBalanceCANMessage(uint8_t rxData[])
 	}
 }
 
-void Balance_handleBalancing(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
+void Balance_handleBalancing(ModuleData module[NUM_MODULES_TOTAL], PackData *pack, BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL])
 {
 	// Stop balancing if balance command is not received every BALANCE_COMMAND_TIMEOUT_MS
 	uint32_t currentTick = HAL_GetTick();
@@ -80,7 +80,7 @@ void Balance_handleBalancing(ModuleData *module, PackData *pack, BalanceStatus *
  *  If the difference is greater than BALANCE_THRESHOLD_MV, enable discharge for that cell (DCC = 1)
  *  Discharging will only occur if Enable Balance CAN message is receieved every BALANCE_COMMAND_TIMEOUT_MS
  */
-void Balance_setCellDischarge(ModuleData *module, PackData *pack, BalanceStatus *balanceStatus)
+void Balance_setCellDischarge(ModuleData module[NUM_MODULES_TOTAL], PackData *pack, BalanceStatus balanceStatus[NUM_MODULES_TOTAL])
 {
 	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -99,7 +99,7 @@ void Balance_setCellDischarge(ModuleData *module, PackData *pack, BalanceStatus 
 	ADBMS_writeConfigurationRegisterB(balanceStatus);
 }
 
-void Balance_stopCellDischarge(BalanceStatus *balanceStatus)
+void Balance_stopCellDischarge(BalanceStatus balanceStatus[NUM_MODULES_TOTAL])
 {
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
 	{
@@ -111,7 +111,7 @@ void Balance_stopCellDischarge(BalanceStatus *balanceStatus)
 	ADBMS_writeConfigurationRegisterB(balanceStatus);
 }
 
-void Balance_getDischargeStatus(BalanceStatus *balanceStatus, ConfigurationRegisterB *configB)
+void Balance_getDischargeStatus(BalanceStatus balanceStatus[NUM_MODULES_TOTAL], ConfigurationRegisterB configB[NUM_MODULES_TOTAL])
 {
 	ADBMS_readConfigurationRegisterB(configB);
 	for (int moduleIndex = 0; moduleIndex < NUM_MODULES_TOTAL; moduleIndex++)
