@@ -103,7 +103,7 @@ int main(void)
 	TimerPacket canReconnection;
 	AccumulatorData accmData;
 	ModuleData modData[NUM_MOD];
-	BalanceStatus balanceStatus[NUM_MOD];
+	BalanceStatus balanceStatus[NUM_MOD] = {0};
 	ConfigurationRegisterB configB[NUM_MOD];
 	CANMessage msg;
 	uint8_t safetyFaults = 0;

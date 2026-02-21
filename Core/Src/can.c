@@ -29,6 +29,7 @@
 #include "stdio.h"
 #include "balance.h"
 #include "safety.h"
+#include <string.h>
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -431,37 +432,21 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capaci
  *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
  *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
  */
-void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst) {
+void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst) {
 	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATUS;
-	int byteNumber = 0;
-	for(int modIndex = 0; modIndex < NUM_MOD; modIndex+=4)
+	for(int moduleIndex = 0; moduleIndex < NUM_MOD;)
 	{
-		CAN_setId(buffer, canId);
-		if(modIndex >= 8)
+		memset(message->buffer, 0, sizeof(message->buffer));
+		int byteNumber = 0;
+		for (int currentFrameIndex = 0; currentFrameIndex < 4; currentFrameIndex++)
 		{
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex    ] .cellsBalancing;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex    ] .cellsBalancing >> 8);
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex + 1] .cellsBalancing ;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex + 1] .cellsBalancing >> 8);
-			buffer->balanceStatus[byteNumber++] =   0;
-			buffer->balanceStatus[byteNumber++] =   0;
-			buffer->balanceStatus[byteNumber++] =   0;
-			buffer->balanceStatus[byteNumber++] =   0;
+			uint16_t data = (moduleIndex < NUM_MOD) ? blst[moduleIndex].cellsBalancing : 0;	
+			message->buffer[byteNumber++] = (uint8_t)data;
+			message->buffer[byteNumber++] = (uint8_t)(data >> 8);
+			moduleIndex++;
 		}
-		else
-		{
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex    ] .cellsBalancing;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex    ] .cellsBalancing >> 8);
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex + 1] .cellsBalancing;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex + 1] .cellsBalancing >> 8);
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex + 2] .cellsBalancing;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex + 2] .cellsBalancing >> 8);
-			buffer->balanceStatus[byteNumber++] =   (uint8_t)blst[modIndex + 3] .cellsBalancing;
-			buffer->balanceStatus[byteNumber++] =  (uint8_t)(blst[modIndex + 3] .cellsBalancing >> 8);
-		}
-//		printf("M1 balancing status %X\n", blst[0].balancing_cells);
-
-		CAN_send(buffer, byteNumber);
+		CAN_setId(message, canId);
+		CAN_send(message, byteNumber);
 		canId++;
 	}
 	return;
