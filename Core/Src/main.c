@@ -179,7 +179,8 @@ int main(void)
 			// ADBMS_ReadSID(modData);
 			// HAL_ADCEx_Calibration_Start(&hadc1);
 			// HAL_ADCEx_Calibration_Start(&hadc2);
-			Module_getAverageCellVoltages(modData);
+			// Module_getAverageCellVoltages(modData);
+			Module_getCellVoltages(modData);
 			Module_getStats(modData);
 
 			Accumulator_getMinVoltage(&accmData, modData);

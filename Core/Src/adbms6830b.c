@@ -1,17 +1,5 @@
-/** @file adbms.c
- *  @brief Host-side helpers for ADBMS68xx/LTC6811 battery monitor chains over isoSPI/SPI.
- *
- *  @details
- *  - Powers/wakes the daisy chain and issues commands (ADCV/ADSV/SNAP/UNSNAP/etc.).
- *  - Reads cell averages (RDACx), GPIO/AUX pages, and 6-byte Serial IDs (SID).
- *  - Writes PWM/CFG/COMM register groups to all devices in a chain.
- *  - Verifies link and payload integrity using command PEC15 and data PEC10.
- *
- *  @note Requires:
- *    - HAL SPI handle `hspi1`
- *    - Chip select helpers `ADBMS_nCS_Low()` / `ADBMS_nCS_High()`
- *    - Topology macros: `NUM_MOD`, `NUM_CELL_PER_MOD`
- *  @warning All functions are blocking and not thread-safe.
+/** 
+ * @file adbms.c
  */
 #include "main.h"
 #include "module.h"
@@ -38,25 +26,19 @@ static uint16_t crc10Table6Bit[256];
 DiagnosticPhase diagnosticPhase = DIAGNOSTIC_PHASE_REDUNDANT_START;
 
 /**
- * @brief Wake the ADBMS/LTC isoSPI interface from IDLE to READY by clocking 0xFF.
- *
- * Some ADBMS/LTC parts require a short SPI activity (while nCS is low) to exit IDLE.
- * Sending 0xFF with nCS asserted is a safe way to provide clocks without issuing a command.
+ * @brief Wake the ADBMS isoSPI interface from IDLE to READY by clocking 0xFF.
  */
 void isoSPI_Idle_to_Ready()
 {
 	uint8_t hex_ff = 0xFF;
-	ADBMS_csLow();                             // Assert CS to address the chain
-	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100); // Send a dummy byte to toggle SCK and wake isoSPI
-	ADBMS_csHigh();                            // Deassert CS
-	HAL_Delay(1);                              // Small guard delay to ensure READY state
+	ADBMS_csLow();                             
+	HAL_SPI_Transmit(&hspi1, &hex_ff, 1, 100); 
+	ADBMS_csHigh();                            
+	HAL_Delay(1);                              
 }
 
 /**
  * @brief Wake devices from SLEEP by toggling nCS (no clocks required in sleep wake).
- *
- * Many LTC/ADBMS devices detect wake on nCS edges while asleep.
- * Two low-high toggles with small delays are commonly recommended.
  */
 void ADBMS_wakeUp()
 {
@@ -184,7 +166,8 @@ void ADBMS_getCellVoltages(ModuleData *moduleData)
 
 	ADBMS_snap();
 	// Do not need to read register F because we only have 14 cells
-	for (uint8_t registerIndex = 0; registerIndex < NUM_CELL_PER_MOD - 1; registerIndex++)
+	int numberOfRegisters = (NUM_CELL_PER_MOD + (CELLS_PER_ADC_REGISTER - 1)) / CELLS_PER_ADC_REGISTER;
+	for (uint8_t registerIndex = 0; registerIndex < numberOfRegisters; registerIndex++)
 	{
 		isoSPI_Idle_to_Ready();
 		ADBMS_csLow();
@@ -227,11 +210,11 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].pec_error = true;
+			moduleData[moduleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[moduleIndex].pec_error = false;
+			moduleData[moduleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -243,7 +226,7 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -253,13 +236,13 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE)
 			{
-				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 			}
 			else
 			{
 				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
 				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
-				moduleData[moduleIndex].cell_volt[cellIndex] = milliVoltage;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
 				printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
@@ -296,11 +279,11 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].pec_error = true;
+			moduleData[moduleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[moduleIndex].pec_error = false;
+			moduleData[moduleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -495,7 +478,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
 				continue;
 			}
 
@@ -507,7 +490,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (rawVoltageUnsigned == 0x8000) // Default value
 			{
-				moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
 			}
 			else
 			{
@@ -516,11 +499,11 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 				if (milliVoltageSigned < 0 || milliVoltageSigned >= moduleData[moduleIndex].vref2)
 				{
-					moduleData[moduleIndex].gpio_volt[gpioIndex] = 0xFFFF;
+					moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
 				}
 				else
 				{
-					moduleData[moduleIndex].gpio_volt[gpioIndex] = milliVoltageSigned;
+					moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = milliVoltageSigned;
 				}
 				// printf("Module %d, GPIO %d, volt: %d\n", moduleIndex, gpioIndex + 1, milliVoltageSigned);
 			}
@@ -602,7 +585,7 @@ void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM
 			if (faultBits & (1 << cellIndex))
 			{
 				// TODO: Set redundant fault flag
-				moduleData[moduleIndex].cell_volt[cellIndex] = 0xFFFF;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
 			}
 		}
 	}

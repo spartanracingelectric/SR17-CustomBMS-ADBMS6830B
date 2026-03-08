@@ -14,7 +14,7 @@ void Module_init(ModuleData *mod)
 	{
 		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
 		{
-			mod[modIndex].cell_volt[cellIndex] = 0xFFFF;
+			mod[modIndex].cellVoltage_mV[cellIndex] = INT16_MAX;
 		}
 		for (int thermIndex = 0; thermIndex < NUM_THERM_PER_MOD; thermIndex++)
 		{
@@ -23,8 +23,6 @@ void Module_init(ModuleData *mod)
 		mod[modIndex].averageCellVoltage_mV = INT16_MAX;
 		mod[modIndex].average_temp = 0xFFFF;
 		mod[modIndex].totalCellVoltage_mV = INT32_MAX;
-		mod[modIndex].pressure = 0xFFFF;
-		mod[modIndex].humidity = 0xFFFF;
 	}
 }
 
@@ -53,7 +51,7 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 		for (int tempIndex = 0; tempIndex < NUM_THERM_PER_MOD; tempIndex++)
 		{
 			float referenceVoltage = modData[moduleIndex].vref2;
-			float outputVoltage = modData[moduleIndex].gpio_volt[tempIndex];
+			float outputVoltage = modData[moduleIndex].gpioVoltage_mV[tempIndex];
 
 			// Guard against invalid values
 			if (outputVoltage <= 0 || outputVoltage >= (referenceVoltage - VREF2_MARGIN_MV))
@@ -97,9 +95,9 @@ void Module_getMaxCellVoltage(ModuleData *module)
 	{
 		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
 		{
-			if (module[moduleIndex].cell_volt[cellIndex] >= maxCellVoltage)
+			if (module[moduleIndex].cellVoltage_mV[cellIndex] >= maxCellVoltage)
 			{
-				maxCellVoltage = module[moduleIndex].cell_volt[cellIndex];
+				maxCellVoltage = module[moduleIndex].cellVoltage_mV[cellIndex];
 				maxCellIndex = cellIndex;
 			}
 		}
@@ -118,9 +116,9 @@ void Module_getMinCellVoltage(ModuleData *module)
 	{
 		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
 		{
-			if (module[moduleIndex].cell_volt[cellIndex] <= minCellVoltage)
+			if (module[moduleIndex].cellVoltage_mV[cellIndex] <= minCellVoltage)
 			{
-				minCellVoltage = module[moduleIndex].cell_volt[cellIndex];
+				minCellVoltage = module[moduleIndex].cellVoltage_mV[cellIndex];
 				minCellIndex = cellIndex;
 			}
 		}
@@ -137,7 +135,7 @@ void Module_getTotalCellVoltage(ModuleData *module)
 		int32_t totalCellVoltage_mV = 0;
 		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
 		{
-			totalCellVoltage_mV += module[moduleIndex].cell_volt[cellIndex];
+			totalCellVoltage_mV += module[moduleIndex].cellVoltage_mV[cellIndex];
 		}
 		module[moduleIndex].totalCellVoltage_mV = totalCellVoltage_mV;
 		// printf("Module %d total cell voltage: %d\n", moduleIndex + 1, module[moduleIndex].totalCellVoltage_mV);
