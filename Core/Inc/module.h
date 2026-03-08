@@ -74,7 +74,8 @@ void Module_init(ModuleData *mod);
  *  - Triggers and collects cell voltage measurements for all modules.
  *  - Populates ModuleData cell_volt[] (and may update per-module aggregates).
  */
-void Module_getVoltages(ModuleData *mod);
+void Module_getAverageCellVoltages(ModuleData *mod);
+void Module_getCellVoltages(ModuleData module[]);
 void Module_getMaxCellVoltage(ModuleData *module);
 void Module_getMinCellVoltage(ModuleData *module);
 void Module_getTotalCellVoltage(ModuleData *module);

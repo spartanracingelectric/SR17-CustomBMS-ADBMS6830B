@@ -66,9 +66,22 @@ void Module_init(ModuleData *mod)
 	}
 }
 
-void Module_getVoltages(ModuleData *mod)
+void Module_getAverageCellVoltages(ModuleData *mod)
 {
-	ADBMS_getCellVoltages(mod);
+	// Only need to start conversions once in continuous mode 
+	static bool hasStartedAverageConversions = false;
+	if (!hasStartedAverageConversions)
+	{
+		ADBMS_startCellVoltageConversions(REDUNDANT_MODE_OFF, CONTINUOUS_MODE_ON, DISCHARGE_MODE_OFF, FILTER_RESET_MODE_ON, OPEN_WIRE_MODE_ALL_OFF);
+		hasStartedAverageConversions = true;
+	}
+	ADBMS_getAverageCellVoltages(mod);
+}
+
+void Module_getCellVoltages(ModuleData module[])
+{
+	ADBMS_startCellVoltageConversions(REDUNDANT_MODE_OFF, CONTINUOUS_MODE_OFF, DISCHARGE_MODE_OFF, FILTER_RESET_MODE_ON, OPEN_WIRE_MODE_ALL_OFF);
+	ADBMS_getCellVoltages(module);
 }
 
 /* ===== Ambient Sensors: Linearizations ======================================
