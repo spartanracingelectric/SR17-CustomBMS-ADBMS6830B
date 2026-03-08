@@ -20,7 +20,7 @@
 #define ADAX2 0x0400
 
 // Read cell voltage registers A-F commands
-#define RDCVA 0x0002
+#define RDCVA 0x0004
 #define RDCVB 0x0006
 #define RDCVC 0x0008
 #define RDCVD 0x000A
