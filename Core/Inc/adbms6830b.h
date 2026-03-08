@@ -84,6 +84,14 @@
 #define SNAP 0x002D
 #define UNSNAP 0x002F
 
+// Write to configuration reigster commands
+#define WRCFGA 0x0001
+#define WRCFGB 0x0024
+
+// Read from configuration register commands
+#define RDCFGA 0x0002
+#define RDCFGB 0x0026
+
 // PEC calculation macros
 #define INITIAL_CRC_SEED 0x10
 #define COMMAND_CRC_POLYNOMIAL 0x4599
@@ -100,19 +108,13 @@
 #define VUV VUV_FROM_VOLTAGE(2.50f)
 #define VOV VOV_FROM_VOLTAGE(4.2f)
 
-/* ===== Frame Sizes and Packing ==============================================
- * REG_LEN: 8 bytes per IC response frame: 6 data + 2-byte PEC10
- * PEC_LEN: number of PEC bytes in an IC data frame (2 bytes carry [CC|CRC10])
- * DATA_LEN: number of data bytes per IC per page (typically 6)
- * ADBMS_SERIES_GROUPS_PER_RDCV: cells per RDCV page (device-specific; 3 is common)
- * NUM_AUX_SERIES_GROUPS: total number of aux channels across pages (6 here)
- */
 #define REG_LEN 8
 #define PEC_LEN 2
 #define DATA_LEN 6
 #define COMMAND_LENGTH 2
 #define RX_BYTES_PER_IC (DATA_LEN + PEC_LEN)
 #define RX_LEN (RX_BYTES_PER_IC * NUM_MOD)
+
 // #define FRAME_LENGTH (COMMAND_LENGTH + PEC_LEN + (NUM_MOD * (DATA_LEN + PEC_LEN)))
 #define CELLS_PER_ADC_REGISTER 3
 #define GPIOS_PER_AUX_REGISTER 3
@@ -121,16 +123,6 @@
 #define REG_NUM_RDAUX 4
 #define REG_NUM_RDSTAT 5
 #define NUM_AUX_SERIES_GROUPS 6
-
-#define GPIO_VOLTAGE_OFFSET_MV 9830.0f
-
-// Write to configuration reigster commands
-#define WRCFGA 0x0001
-#define WRCFGB 0x0024
-
-// Read from configuration register commands
-#define RDCFGA 0x0002
-#define RDCFGB 0x0026
 
 /* ===== ADC Control Field Enums ==============================================
  * These map directly to bitfields inside the ADCV (start conversion) command.
@@ -237,7 +229,6 @@ typedef enum
 	DIAGNOSTIC_PHASE_CELL_OPEN_WIRE_EVEN,
 } DiagnosticPhase;
 
-
 extern DiagnosticPhase diagnosticPhase;
 
 void isoSPI_Idle_to_Ready();
@@ -245,24 +236,31 @@ void ADBMS_wakeUp();
 void ADBMS_clearRegisters();
 
 void ADBMS_init();
+
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode);
 void ADBMS_startRedundantCellVoltageConversions(AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcOpenWireMode openWireMode);
-void ADBMS_checkDiagnostics(ModuleData *moduleData);
-void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
-void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
-void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
-void ADBMS_snap();
-void ADBMS_unsnap();
 
 void ADBMS_getAverageCellVoltages(ModuleData *moduleData);
 void ADBMS_getCellVoltages(ModuleData *moduleData);
+void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+
+void ADBMS_checkDiagnostics(ModuleData *moduleData);
+void ADBMS_getRedundantFaultFlags(ModuleData *moduleData);
+void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM_MOD][REG_LEN]);
+
+void ADBMS_snap();
+void ADBMS_unsnap();
+
 void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst);
 void ADBMS_parseConfigurationRegisterB(uint8_t data[DATA_LEN], ConfigurationRegisterB *configB);
 void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB);
-void ADBMS_ReadSID(ModuleData *mod);
+
+void ADBMS_readSID(ModuleData *mod);
+
 void ADBMS_sendCommand(uint16_t command);
 void ADBMS_receiveData(uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]);
-void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);
+
 void ADBMS_startAuxConversions(AuxOpenWireMode openWireMode, AuxPullUpPinMode pullUpPinMode, AuxChannelSelect channelSelect);
 void ADBMS_getGpioVoltages(ModuleData *moduleData);
 void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registerIndex, ModuleData *moduleData);

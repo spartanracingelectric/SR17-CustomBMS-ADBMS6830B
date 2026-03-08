@@ -80,14 +80,6 @@ void ADBMS_clearRegisters()
 	}
 }
 
-/**
- * @brief Basic init sequence: wake from sleep, exit SNAP mode, and start cell ADC.
- *
- * Order:
- *  1) Ensure devices are awake.
- *  2) UNSNAP so that live registers are accessible.
- *  3) Start voltage conversions (continuous or as configured by your fields).
- */
 void ADBMS_init()
 {
 	ADBMS_wakeUp();
@@ -95,23 +87,6 @@ void ADBMS_init()
 	ADBMS_clearRegisters();
 }
 
-/**
- * @brief Start cell-voltage conversion by emitting the packed ADCV command.
- *
- * The command is built bit-by-bit into a 11-bit (here packed into 16-bit) command word:
- *  bit10: 0 (fixed)
- *  bit9 : 1 (fixed)
- *  bit8 : RD   (redundant samples / data rate select; enum AdcRD)
- *  bit7 : CONT (continuous conversion enable; enum AdcCONT)
- *  bit6 : 1 (fixed)
- *  bit5 : 1 (fixed)
- *  bit4 : DCP  (discharge-permit during conversion; enum AdcDCP)
- *  bit3 : 0 (fixed)
- *  bit2 : RSTF (reset filter/averager; enum AdcRSTF)
- *  bit1:0: OW[1:0] (open-wire test mode; enum AdcOW)
- *
- * After packing, compute PEC15 over the 2 command bytes and transmit 4 bytes total.
- */
 void ADBMS_startCellVoltageConversions(AdcRedundantMode redundantMode, AdcContinuousMode continuousMode, AdcDischargeMode dischargeMode, AdcFilterResetMode filterResetMode, AdcOpenWireMode openWireMode)
 {
 	uint16_t command = ADCV | (redundantMode << 8) | (continuousMode << 7) | (dischargeMode << 4) | (filterResetMode << 2) | (openWireMode & 0x03);
@@ -191,26 +166,17 @@ void ADBMS_sendCommand(uint16_t command)
 }
 
 /**
- * @brief Read averaged cell voltages for all modules in the daisy chain.
+ * @brief Read cell voltages for all modules in the daisy chain.
  *
  * Flow:
  *  1) SNAP to latch a coherent set of voltage registers across modules.
- *  2) For each RDAC page (RDCV group), send RDAC command and receive data.
+ *  2) For each register, send RDCVx command and receive data.
  *  3) For each device (“module”) in the chain:
- *     - Verify RX PEC10.
- *     - Unpack 12-bit/16-bit raw words (device-specific width) from the 6-byte data block.
- *     - Convert raw counts to millivolts (here: 1.5 V offset + 0.150 mV/LSB).
+ *     - Verify PEC
+ *     - Unpack 16-bit raw words from the 6-byte data block
+ *     - Convert raw words to millivolts 
  *     - Store into mod[devIndex].cell_volt[cellInMod].
  *  4) UNSNAP to resume live updates.
- *
- * Notes:
- *  - RX_BYTES_PER_IC = DATA_LEN + PEC_LEN (6 + 2 = 8 bytes per device per read).
- *  - The loop over regIndex covers however many cell groups are mapped per RDAC page.
- *  - A raw value of 0x8000 indicates “invalid/reset” per the device convention; we store 0xFFFF.
- *  - PEC failures are logged and that device’s data for the page is skipped.
- *
- * @param[out] mod  Array of ModuleData; each entry receives cell voltages in mV.
- * @return LTC_SPI_StatusTypeDef  Bitfield with TX/RX error flags set on HAL failures.
  */
 void ADBMS_getCellVoltages(ModuleData *moduleData)
 {
@@ -375,6 +341,7 @@ void ADBMS_parseRedundantCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_
 	}
 }
 
+// TODO: Fix 
 void ADBMS_checkDiagnostics(ModuleData *moduleData)
 {
 	static uint32_t lastOpenWireCheck_ms = 0;
@@ -641,46 +608,17 @@ void ADBMS_parseRedundantFaultFlags(ModuleData *moduleData, uint8_t rxBuffer[NUM
 	}
 }
 
-/**
- * @brief Read 6-byte Serial IDs (SID) from each module in the daisy chain.
- *
- * Protocol:
- *  1) Build RDSID command and append PEC15 (cmd bytes only).
- *  2) Transmit command once; then receive (6 data + 2 PEC10) bytes per module.
- *  3) For each module:
- *     - Verify RX PEC10.
- *     - If OK, copy 6-byte SID to read_sid[devIndex][] and print it.
- *
- * @param[out] read_sid  [NUM_MOD][DATA_LEN] destination for per-module 6-byte SIDs.
- * @return LTC_SPI_StatusTypeDef with TX/RX error bits set on HAL failures (PEC errors are logged only).
- */
-void ADBMS_ReadSID(ModuleData *mod)
+// TODO: Finish
+void ADBMS_readSID(ModuleData *mod)
 {
-	uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]; // Concatenated receive buffer for the whole chain
+	uint8_t rxBuffer[NUM_MOD][DATA_LEN + PEC_LEN]; 
 
-	// TODO: Finish
 	isoSPI_Idle_to_Ready();
 
 	ADBMS_csLow();
 	ADBMS_sendCommand(RDSID);
 	ADBMS_receiveData(rxBuffer);
 	ADBMS_csHigh();
-
-	//     // 3) Validate and unpack each module's payload
-	//     for (uint8_t Index = 0; devIndex < NUM_MOD; devIndex++) {
-	//         uint16_t offset = (uint16_t)(devIndex * RX_BYTES_PER_IC);
-
-	//         uint8_t *sid    = &rx_buffer[offset];            // 6-byte SID
-	//         uint8_t *sidpec = &rx_buffer[offset + DATA_LEN]; // 2-byte PEC10 (packed with CC)
-
-	//         // Verify 10-bit PEC computed over the 6 SID bytes (+ command counter if present)
-	//         bool pec10Check = ADBMS_checkRxPec(sid, DATA_LEN, sidpec);
-	//         if (!pec10Check) {
-	// //        	printf("M%d failed\n", devIndex + 1);
-	//             continue; // Skip copying this module’s SID if PEC fails
-	//         }
-	//         memcpy(mod[devIndex].sid, sid, DATA_LEN);
-	//     }
 }
 
 uint16_t ADBMS_calculateDataPec(uint8_t *data, int length, uint8_t commandCounter)
