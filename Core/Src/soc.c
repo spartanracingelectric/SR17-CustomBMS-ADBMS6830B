@@ -59,7 +59,7 @@ uint16_t SOC_getChargeData40C(uint16_t voltage);
  */
 void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
     uint32_t voltage = 0;
-    uint32_t pack_voltage = batt->sum_pack_voltage;
+    uint32_t pack_voltage = batt->sumPackVoltage_cV;
     voltage = pack_voltage * 10 / NUM_CELLS;
 //    printf("initial avg Voltage: %d\n", voltage);
 //    printf("initial pack Voltage: %d\n", pack_voltage);
@@ -67,7 +67,7 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
 
     uint16_t temperature = 0;
     for (int i = 0; i < NUM_THERM_TOTAL; ++i) {
-        temperature += mod->gpio_volt[i];
+        temperature += mod->pointTemp_C[i];
     }
     temperature /= NUM_THERM_TOTAL;
 //    printf("temp:%d", temperature);
