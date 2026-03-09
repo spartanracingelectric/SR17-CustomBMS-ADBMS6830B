@@ -111,7 +111,11 @@ typedef struct ModuleData {
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
 	int16_t vref2;
 	int16_t averageCellVoltage_mV;
-	uint16_t average_temp;
+	uint16_t averagePointTemperature_C;
+	uint16_t maxPointTemperature_C;
+	uint16_t minPointTemperature_C;
+	uint8_t maxPointTemperatureIndex;
+	uint8_t minPointTemperatureIndex;
 	int32_t totalCellVoltage_mV;
 	uint16_t pressure;
 	uint16_t humidity;

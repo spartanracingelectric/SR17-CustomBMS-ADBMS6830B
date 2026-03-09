@@ -89,6 +89,10 @@ void Module_getStats(ModuleData *module);
 void Convert_GPIOVoltageToTemp(ModuleData *mod);
 void Module_convertGpioVoltageToTemp(ModuleData *modData);
 void Module_getTemperatures(ModuleData *mod);
+void Module_getAveragePointTemperature(ModuleData *mod);
+void Module_getMaxPointTemperature(ModuleData *mod);
+void Module_getMinPointTemperature(ModuleData *mod);
+void Module_getTemperatureStats(ModuleData * mod);
 
 /* ===== Public API: Ambient Sensors (Pressure / Air Temp / Humidity) =========
  * Atmos_Temp_To_Celsius():
