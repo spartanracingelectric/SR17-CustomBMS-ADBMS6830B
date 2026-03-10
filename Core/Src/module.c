@@ -151,6 +151,32 @@ void Module_getAverageCellVoltage(ModuleData *module)
 	}
 }
 
+void Module_getVoltageStats(ModuleData *mod){
+	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData *module = &mod[moduleIndex];
+		int16_t maxVoltageIndex = 0;
+		int16_t minVoltageIndex = 0;
+		int16_t *voltageList = module->cellVoltage_mV;
+		int32_t totalVoltage = voltageList[0];
+		for(uint8_t cellIndex = 1; cellIndex < NUM_CELL_PER_MOD; cellIndex++){
+			if(voltageList[cellIndex] > voltageList[maxVoltageIndex]){
+				maxVoltageIndex = cellIndex;
+			}
+			if(voltageList[cellIndex] < voltageList[minVoltageIndex]){
+				minVoltageIndex = cellIndex;
+			}
+			totalVoltage += voltageList[cellIndex];
+		}
+		module->maxCellIndex = maxVoltageIndex;
+		module->maxCellVoltage_mV = voltageList[maxVoltageIndex];
+		module->minCellIndex = minVoltageIndex;
+		module->minCellVoltage_mV = voltageList[minVoltageIndex];
+		module->totalCellVoltage_mV = totalVoltage;
+		module->averageCellVoltage_mV = totalVoltage / NUM_CELL_PER_MOD;
+		printf("Module %d avg cell voltage: %d max: %d min: %d total %ld\n", moduleIndex + 1, module->averageCellVoltage_mV, voltageList[maxVoltageIndex], voltageList[minVoltageIndex], totalVoltage);
+	}
+}
+
 void Module_getStats(ModuleData *module)
 {
 	Module_getMaxCellVoltage(module);

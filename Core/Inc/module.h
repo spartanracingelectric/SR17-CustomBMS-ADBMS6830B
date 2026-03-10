@@ -26,6 +26,7 @@ void Module_getMaxCellVoltage(ModuleData *module);
 void Module_getMinCellVoltage(ModuleData *module);
 void Module_getTotalCellVoltage(ModuleData *module);
 void Module_getAverageCellVoltage(ModuleData *module);
+void Module_getVoltageStats(ModuleData *mod);
 void Module_getStats(ModuleData *module);
 void Module_convertGpioVoltageToTemp(ModuleData *modData);
 void Module_getTemperatures(ModuleData *mod);
