@@ -69,6 +69,7 @@ extern "C" {
 typedef struct AccumulatorData {
 	int16_t maxCellVoltage_mV;
 	int16_t minCellVoltage_mV;
+	int16_t averageCellVoltage_mV;
 	int16_t cellImbalance_mV;
 	int16_t minCellTemp_C;
 	int16_t maxCellTemp_C;

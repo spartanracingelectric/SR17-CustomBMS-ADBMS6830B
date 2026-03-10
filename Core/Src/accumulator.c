@@ -17,36 +17,44 @@ void Accumulator_init(AccumulatorData *acc)
 
 void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod)
 {
-	// TODO: Only look at module min cell voltage instead of every voltage in module
-	acc->minCellVoltage_mV = mod[0].cellVoltage_mV[0];
-
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
-	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			if (mod[moduleIndex].cellVoltage_mV[cellIndex] < acc->minCellVoltage_mV)
-			{
-				acc->minCellVoltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
-			}
+	int16_t minVoltage = mod[0].minCellVoltage_mV;
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		if(mod[moduleIndex].minCellVoltage_mV < minVoltage){
+			minVoltage = mod[moduleIndex].minCellVoltage_mV;
 		}
 	}
+	acc->minCellVoltage_mV = minVoltage;
 }
 
 void Accumulator_getMaxVoltage(AccumulatorData *acc, ModuleData *mod)
 {
-	// TODO: Only look at module max cell voltage instead of every voltage in module
-	acc->maxCellVoltage_mV = mod[0].cellVoltage_mV[0];
-
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
-	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			if (mod[moduleIndex].cellVoltage_mV[cellIndex] > acc->maxCellVoltage_mV)
-			{
-				acc->maxCellVoltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
-			}
+	int16_t maxVoltage = mod[0].maxCellVoltage_mV;
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		if(mod[moduleIndex].maxCellVoltage_mV > maxVoltage){
+			maxVoltage = mod[moduleIndex].maxCellVoltage_mV;
 		}
 	}
+	acc->maxCellVoltage_mV = maxVoltage;
+}
+
+void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
+	int32_t averageVoltageSum = mod[0].averageCellVoltage_mV;
+	int16_t maxVoltage = mod[0].maxCellVoltage_mV;
+	int16_t minVoltage = mod[0].minCellVoltage_mV;
+
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData	*module = &mod[moduleIndex];
+		averageVoltageSum += module->averageCellVoltage_mV;
+		if(module->maxCellVoltage_mV > maxVoltage){
+			maxVoltage = module->maxCellVoltage_mV;
+		}
+		if(module->minCellVoltage_mV < minVoltage){
+			minVoltage = module->minCellVoltage_mV;
+		}
+	}
+	acc->averageCellVoltage_mV = averageVoltageSum / NUM_MOD;
+	acc->maxCellVoltage_mV = maxVoltage;
+	acc->minCellVoltage_mV = minVoltage;
 }
 
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
