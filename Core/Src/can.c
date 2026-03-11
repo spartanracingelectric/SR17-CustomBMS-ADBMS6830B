@@ -454,7 +454,7 @@ void CAN_sendFaultStatus(CANMessage *message)
 	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
 	uint16_t faultBitStorage[NUM_MOD];
 
-	Safety_getAllModuleFaultBits(faultBitStorage);
+	Safety_getModuleFaultBits(faultBitStorage);
 	
 	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
 	{

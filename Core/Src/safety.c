@@ -230,21 +230,22 @@ bool Safety_getNextWarning(WarningMessage_t *msg)
 
 void Safety_getModuleFaultBits(uint16_t *faultBuffer)
 {
-	for (uint8_t i = 0; i < NUM_MOD; i++)
+	for (uint8_t m = 0; m < NUM_MOD; m++)
     {
         uint16_t faultBits = 0;
         
-        for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
+        for (uint8_t c = 0; c < NUM_CELL_PER_MOD; c++)
         {
-            FaultFlags_t f = GlobalFaults[i][j];
-            if (f.UnderVolt || f.OpenWire || f.PEC || f.OverTemp ||
-                f.UnderTemp || f.OverVolt || f.RedundancyVolt || f.RedundancyTemp)
+            FaultFlags_t *f = &GlobalFaults[m][c];
+
+            if (f->UnderVolt || f->OpenWire || f->PEC || f->OverTemp ||
+                f->UnderTemp || f->OverVolt || f->RedundancyVolt || f->RedundancyTemp)
             {
-                faultBits |= (uint16_t)(1u << j);
+                faultBits |= (uint16_t)(1u << c);
             }
         }
         
-        faultBuffer[i] = faultBits;
+        faultBuffer[m] = faultBits;
     }
 }
 
