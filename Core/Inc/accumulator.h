@@ -11,8 +11,8 @@
 #include "main.h"
 
 void Accumulator_init(AccumulatorData *acc);
-void Accumulator_getMinVolatage(AccumulatorData *acc, ModuleData *mod);
-void Accumulator_getMaxVolatage(AccumulatorData *acc, ModuleData *mod);
+void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod);
+void Accumulator_getMaxVoltage(AccumulatorData *acc, ModuleData *mod);
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod);
 
 #endif /* INC_ACCUMULATOR_H_ */

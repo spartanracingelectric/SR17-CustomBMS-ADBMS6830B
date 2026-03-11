@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: ForContinuationAndIndentation
+ContinuationIndentWidth: 4
+TabWidth: 4
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: None
+ColumnLimit: 0
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
+SpaceAfterCStyleCast: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+SortIncludes: CaseInsensitive
+

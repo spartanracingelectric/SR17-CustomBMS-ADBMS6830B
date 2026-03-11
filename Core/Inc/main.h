@@ -30,7 +30,7 @@ extern "C" {
 #include "stm32f1xx_hal.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -66,56 +66,37 @@ extern "C" {
 #define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
 /* USER CODE END Private defines */
 
-/**
- * @brief Per-pack aggregate values and summary status.
- *
- * Units:
- *  - cell_volt_*: millivolts (mV)
- *  - cell_temp_*: typically 0.1°C or raw ADC-derived units (project-defined)
- *  - sum_pack_voltage / hvsens_pack_voltage: millivolts (mV)
- *  - balance_status: bitfield per module (bit i = cell i discharging)
- *  - soc: microamp-seconds or project-defined scaled SoC accumulator
- *  - current: microamps or project-defined current units
- */
 typedef struct AccumulatorData {
-	uint16_t cell_volt_lowest;
-	uint16_t cell_volt_highest;
-	uint16_t cell_difference;
-	uint16_t cell_temp_lowest;
-	uint16_t cell_temp_highest;
-	uint16_t sum_pack_voltage;
+	int16_t maxCellVoltage_mV;
+	int16_t minCellVoltage_mV;
+	int16_t cellImbalance_mV;
+	int16_t minCellTemp_C;
+	int16_t maxCellTemp_C;
+	int16_t sumPackVoltage_cV;
 	uint16_t hvsens_pack_voltage;
-	uint16_t balance_status[NUM_MOD];
-    uint32_t soc; // microamps!!!!!
+    uint32_t soc; 
     uint32_t current;
     uint8_t contactorState;
+    uint16_t atmos_temp;
+	uint16_t pressure;
+    uint16_t hv_sens;
 } AccumulatorData;
 
-/**
- * @brief Per-module measurement container.
- *
- * Notes:
- *  - cell_volt:     per-cell voltages for this module [mV]
- *  - cell_temp:     global thermistor vector (sized to NUM_THERM_TOTAL)
- *                   (Indexing scheme must be consistent across modules.)
- *  - average_*:     per-module averages (units follow source arrays)
- *  - read_auxreg:   raw AUX/GPIO reads (RDAUX pages) sized to NUM_AUXES
- *  - sid:           6-byte silicon ID (if supported/read)
- */
 typedef struct ModuleData {
-	uint16_t cell_volt[NUM_CELL_PER_MOD];
+	int16_t cellVoltage_mV[NUM_CELL_PER_MOD];
     uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
-	int16_t gpio_volt[NUM_THERM_PER_MOD];
+	int16_t gpioVoltage_mV[NUM_THERM_PER_MOD];
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
 	int16_t vref2;
-	uint16_t average_volt;
+	int16_t averageCellVoltage_mV;
 	uint16_t average_temp;
-	uint16_t sum_volt_module;
-	uint16_t pressure;
-	uint16_t humidity;
-	uint16_t atmos_temp;
-    uint16_t dew_point;
+	int32_t totalCellVoltage_mV;
+    int16_t maxCellVoltage_mV;
+    int16_t minCellVoltage_mV;
     uint8_t sid[6];
+	bool pecError;
+    uint8_t maxCellIndex;
+    uint8_t minCellIndex;
 } ModuleData;
 
 typedef struct BalanceStatus {
@@ -141,16 +122,17 @@ typedef struct ConfigurationRegisterB {
  *  - Populate the relevant buffer and header, then queue with HAL CAN APIs.
  *  - ID and DLC are configured in the associated source file before sending.
  */
-typedef struct CANMessage{
-    CAN_TxHeaderTypeDef TxHeader;
-    uint32_t TxMailbox;
-    uint8_t voltageBuffer[8];
-    uint8_t thermistorBuffer[8];
-    uint8_t summaryBuffer[8];
-    uint8_t safetyBuffer[8];
-    uint8_t socBuffer[8];
-    uint8_t balanceStatus[8];
-} CANMessage;
+//moved to can.h already
+//typedef struct CANMessage{
+//    CAN_TxHeaderTypeDef TxHeader;
+//    uint32_t TxMailbox;
+//    uint8_t voltageBuffer[8];
+//    uint8_t thermistorBuffer[8];
+//    uint8_t summaryBuffer[8];
+//    uint8_t safetyBuffer[8];
+//    uint8_t socBuffer[8];
+//    uint8_t balanceStatus[8];
+//} CANMessage;
 
 /* USER CODE END ET */
 
