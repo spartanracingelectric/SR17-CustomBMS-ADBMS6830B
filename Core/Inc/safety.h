@@ -169,5 +169,7 @@ void High_Voltage_Fault(AccumulatorData *batt, ModuleData *mod);
 void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod); 
 void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod); 
 bool Safety_getNextFault(FaultMessage_t *faultMsg);
+bool Safety_getNextWarning(WarningMessage_t *warningMsg);
+uint16_t Safety_getModuleFaultBits(uint8_t moduleIndex);
 
 #endif /* INC_SAFETY_H_ */

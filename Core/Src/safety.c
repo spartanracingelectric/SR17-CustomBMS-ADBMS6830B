@@ -228,6 +228,23 @@ bool Safety_getNextWarning(WarningMessage_t *msg)
 	return false;
 }
 
+uint16_t Safety_getModuleFaultBits(uint8_t moduleIndex)
+{
+	uint16_t faultBits = 0;
+
+	for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
+	{
+		FaultFlags_t f = GlobalFaults[moduleIndex][j];
+		if (f.UnderVoltage || f.OpenWire || f.PEC || f.OverTemp ||
+			f.UnderTemp || f.OverVoltage || f.RedundancyVolt || f.RedundancyTemp)
+		{
+			faultBits |= (uint16_t)(1u << j);
+		}
+	}
+
+	return faultBits;
+}
+
 static void Safety_clearFaults(void)
 {
 	for (int m = 0; m < NUM_MOD; m++)
