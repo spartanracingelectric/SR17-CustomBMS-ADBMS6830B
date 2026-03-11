@@ -105,12 +105,12 @@ typedef enum WarningType_e {
 
 // Fault byte
 typedef struct FaultFlags_t {  
-    uint8_t UnderVoltage     : 1;  
+    uint8_t UnderVolt        : 1;  
     uint8_t OpenWire         : 1;  
     uint8_t PEC              : 1;  
     uint8_t OverTemp         : 1;  
     uint8_t UnderTemp        : 1;
-    uint8_t OverVoltage      : 1;
+    uint8_t OverVolt         : 1;
     uint8_t RedundancyVolt   : 1;  
     uint8_t RedundancyTemp   : 1;
 } FaultFlags_t;
@@ -170,6 +170,6 @@ void Module_Voltage_Averages(AccumulatorData *batt, ModuleData *mod);
 void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod); 
 bool Safety_getNextFault(FaultMessage_t *faultMsg);
 bool Safety_getNextWarning(WarningMessage_t *warningMsg);
-uint16_t Safety_getModuleFaultBits(uint8_t moduleIndex);
+void Safety_getModuleFaultBits(uint16_t *faultBuffer);
 
 #endif /* INC_SAFETY_H_ */
