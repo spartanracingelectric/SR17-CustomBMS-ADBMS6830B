@@ -219,6 +219,8 @@ bool Safety_getNextWarning(WarningMessage_t *msg)
 
 		if (msg->WarningType != WARNING_NONE)
 		{
+			msg->ModuleID = m;
+			msg->CellID   = c;
 			return true;
 		}
 	}

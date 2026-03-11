@@ -95,12 +95,12 @@ typedef struct WarningFlags_t {
 } WarningFlags_t;
 
 typedef enum WarningType_e {
-    WARNING_NONE = 0,
-    WARNING_OVER_VOLT,
-    WARNING_UNDER_VOLT,
-    WARNING_OVER_TEMP,
-    WARNING_UNDER_TEMP,
-    WARNING_IMBALANCE
+    WARNING_NONE            = 0x00,
+    WARNING_OVER_VOLT       = 0x80,  // 0b10000000
+    WARNING_UNDER_VOLT      = 0x40,  // 0b01000000
+    WARNING_OVER_TEMP       = 0x20,  // 0b00100000
+    WARNING_UNDER_TEMP      = 0x10,  // 0b00010000
+    WARNING_IMBALANCE       = 0x08   // 0b00001000
 } WarningType_e;
 
 // Fault byte
@@ -116,25 +116,27 @@ typedef struct FaultFlags_t {
 } FaultFlags_t;
 
 typedef enum FaultType_e {
-    FAULT_NONE = 0,
-    FAULT_OVER_VOLT,
-    FAULT_UNDER_VOLT,
-    FAULT_OPEN_WIRE,
-    FAULT_PEC,
-    FAULT_OVER_TEMP,
-    FAULT_UNDER_TEMP,
-    FAULT_REDUNDANT_VOLT,
-    FAULT_REDUNDANT_TEMP
+    FAULT_NONE             = 0x00,
+    FAULT_OVER_VOLT        = 0x80,  // 0b10000000
+    FAULT_UNDER_VOLT       = 0x40,  // 0b01000000
+    FAULT_OPEN_WIRE        = 0x20,  // 0b00100000 
+    FAULT_PEC              = 0x10,  // 0b00010000
+    FAULT_OVER_TEMP        = 0x08,  // 0b00001000
+    FAULT_UNDER_TEMP       = 0x04,  // 0b00000100
+    FAULT_REDUNDANT_VOLT   = 0x02,  // 0b00000010
+    FAULT_REDUNDANT_TEMP   = 0x01   // 0b00000001
 } FaultType_e;
 
 typedef struct FaultMessage_t {
     uint8_t ModuleID;      // 0 to 9
     uint8_t CellID;        // 0 to 13
-    FaultType_e FaultType; 
+    uint8_t FaultType; 
 } FaultMessage_t;
 
 typedef struct WarningMessage_t {
-    WarningType_e WarningType; 
+    uint8_t ModuleID;     
+    uint8_t CellID;
+    uint8_t WarningType; 
 } WarningMessage_t;
 
 extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
