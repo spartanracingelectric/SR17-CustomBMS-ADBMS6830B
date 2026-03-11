@@ -34,17 +34,23 @@
 void HVSense_getPackVoltage(AccumulatorData *batt)
 {
 	uint32_t adcValue = readADCChannel(ADC_CHANNEL_15);
-    float vRef = getVref();
+	float vRef = getVref();
 	printf("hvsense adcValue:%ld\n", adcValue);
     printf("hvsense vref: %f\n", vRef);
-
-	// Calculate voltage based on resolution and gain on opamp, voltage divider ratio
+	
 	float adcVoltage = ((float)adcValue / ADC_RESOLUTION) * vRef;
     printf("hvsense adcVoltage: %f\n", adcVoltage);
 
 	float dividerVoltage = adcVoltage / GAIN_TLV9001;
 	float hvPackVoltage = (dividerVoltage) * (DIVIDER_RATIO);
     printf("hvsense pack voltage: %f\n", hvPackVoltage);
+
+
+	float hvSenseRawVoltage_mV = ADC_getHvSenseRawVoltage();
+	float dividerVoltage_mV = hvSenseRawVoltage_mV / GAIN_TLV9001;
+	float hvPackVoltage_mV = dividerVoltage_mV * DIVIDER_RATIO;
+	printf("NEW HVSENSE PACK VOLTAGE: %f\n", hvPackVoltage_mV);
+	// Calculate voltage based on resolution and gain on opamp, voltage divider ratio
 	if(hvPackVoltage > 10) //if hvsens is greater than 10V(connected)
     {
 		batt->hvsens_pack_voltage = hvPackVoltage * 100;
