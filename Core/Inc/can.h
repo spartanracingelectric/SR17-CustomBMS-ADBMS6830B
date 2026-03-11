@@ -27,13 +27,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-
-typedef struct CANMessage{
-    CAN_TxHeaderTypeDef TxHeader;
-    uint32_t TxMailbox;
-    uint8_t buffer[8];
-} CANMessage;
-
+/* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
@@ -69,6 +63,12 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_TIME_OUT_THRESHOLD_MS	10
 #define NUM_THERM_PER_MESSAGE		4
 #define CAN_ID_Fault_Status			0x6AE
+
+typedef struct CANMessage{
+    CAN_TxHeaderTypeDef TxHeader;
+    uint32_t TxMailbox;
+    uint8_t buffer[8];
+} CANMessage;
 
 extern ModuleData modData[NUM_MOD];
 
@@ -117,9 +117,6 @@ void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *buffer);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
-
-//moved can message from main.h to can.h
-
 
 #ifdef __cplusplus
 }
