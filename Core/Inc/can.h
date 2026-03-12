@@ -70,6 +70,7 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_TIME_OUT_THRESHOLD_MS	10
 #define NUM_THERM_PER_MESSAGE		4
 #define CAN_ID_Fault_Status			0x6AE
+#define CAN_ID_HeartBeat_Message	0x6B1
 
 extern ModuleData modData[NUM_MOD];
 
@@ -108,14 +109,15 @@ void CAN_setId(CANMessage *ptr, uint32_t id);
  *  - All helpers serialize multi-byte fields little-endian into 8-byte payloads.
  *  - Caller should set or rely on contiguous IDs starting at the defined bases.
  */
-void CAN_sendVoltageData(CANMessage *ptr, ModuleData *mod);
-void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod);
-void CAN_sendCellSummary(CANMessage *ptr, struct AccumulatorData *batt);
-void CAN_sendModuleSummary(CANMessage *ptr, ModuleData *mod);
-void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
-void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
-void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);
-void CAN_sendFaultStatus(CANMessage *buffer);
+void CAN_sendVoltageData(CANMessage *message, ModuleData *mod);
+void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod);
+void CAN_sendPackSummary(CANMessage *message, struct AccumulatorData *batt);
+void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod);
+void CAN_Send_Safety_Checker(CANMessage *message, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
+void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capacity);
+void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst);
+void CAN_sendFaultStatus(CANMessage *message);
+void CAN_sendCanHeartBeat(CANMessage *message);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 
