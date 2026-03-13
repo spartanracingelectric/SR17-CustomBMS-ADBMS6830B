@@ -21,7 +21,7 @@ void Module_init(ModuleData *mod)
 			mod[modIndex].pointTemp_C[thermIndex] = 0xFF;
 		}
 		mod[modIndex].averageCellVoltage_mV = INT16_MAX;
-		mod[modIndex].average_temp = 0xFFFF;
+		mod[modIndex].averagePointTemperature_C = 0xFFFF;
 		mod[modIndex].totalCellVoltage_mV = INT32_MAX;
 	}
 }
@@ -84,6 +84,77 @@ void Module_getTemperatures(ModuleData *mod)
 	ADBMS_getVref2(mod);
 	ADBMS_getGpioVoltages(mod);
 	Module_convertGpioVoltageToTemp(mod);
+}
+
+void Module_getAveragePointTemperature(ModuleData *mod){
+	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData* module = &mod[moduleIndex];
+		uint16_t* pointTempList = module->pointTemp_C;
+		uint32_t pointTempSum_C = 0;
+		for(uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
+			pointTempSum_C += pointTempList[pointIndex];
+		}
+		module->averagePointTemperature_C = pointTempSum_C / NUM_THERM_PER_MOD;
+		printf("module %u avg temperature: %uC", moduleIndex + 1, module->averagePointTemperature_C);
+	}
+}
+
+void Module_getMaxPointTemperature(ModuleData *mod){
+	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData* module = &mod[moduleIndex];
+		uint16_t* pointTempList = module->pointTemp_C;
+		uint8_t maxPointIndex = 0;
+		for(uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
+			if(pointTempList[pointIndex] > pointTempList[maxPointIndex]){
+				maxPointIndex = pointIndex;
+			}
+		}
+		module->maxPointTemperature_C = pointTempList[maxPointIndex];
+		module->maxPointTemperatureIndex = maxPointIndex;
+		printf("module %u max point temperature: %uC point: %u", moduleIndex + 1, module->maxPointTemperature_C, maxPointIndex + 1);
+	}
+}
+
+void Module_getMinPointTemperature(ModuleData *mod){
+	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData* module = &mod[moduleIndex];
+		uint16_t* pointTempList = module->pointTemp_C;
+		uint8_t minPointIndex = 0;
+		for(uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
+			if(pointTempList[pointIndex] < pointTempList[minPointIndex]){
+				minPointIndex = pointIndex;
+			}
+		}
+		module->minPointTemperature_C = pointTempList[minPointIndex];
+		module->minPointTemperatureIndex = minPointIndex;
+		printf("module %u min point temperature: %uC point: %u", moduleIndex + 1, module->minPointTemperature_C, minPointIndex + 1);
+	}
+}
+
+void Module_getTemperatureStats(ModuleData * mod){
+	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData* module = &mod[moduleIndex];
+		uint16_t* pointTempList = module->pointTemp_C;
+		uint32_t pointTempSum_C = 0;
+		uint8_t maxPointIndex = 0;
+		uint8_t minPointIndex = 0;
+		for(uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
+			if(pointTempList[pointIndex] > pointTempList[maxPointIndex]){
+				maxPointIndex = pointIndex;
+			}
+			if(pointTempList[pointIndex] < pointTempList[minPointIndex]){
+				minPointIndex = pointIndex;
+			}
+			pointTempSum_C += pointTempList[pointIndex];
+		}
+		module->averagePointTemperature_C = pointTempSum_C / NUM_THERM_PER_MOD;
+		module->maxPointTemperature_C = pointTempList[maxPointIndex];
+		module->maxPointTemperatureIndex = maxPointIndex;
+		module->minPointTemperature_C = pointTempList[minPointIndex];
+		module->minPointTemperatureIndex = minPointIndex;
+		printf("module %u avg point temperature: %uC max point temperature: %uC min point temperature: %uC", moduleIndex + 1,
+				module->averagePointTemperature_C, module->maxPointTemperature_C, module->minPointTemperature_C);
+	}
 }
 
 void Module_getMaxCellVoltage(ModuleData *module)

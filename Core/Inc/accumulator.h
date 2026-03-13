@@ -15,5 +15,6 @@ void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod);
 void Accumulator_getMaxVoltage(AccumulatorData *acc, ModuleData *mod);
 void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod);
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod);
+void Accumulator_getTemperatureStats(AccumulatorData *acc, ModuleData *mod);
 
 #endif /* INC_ACCUMULATOR_H_ */

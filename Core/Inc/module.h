@@ -30,5 +30,9 @@ void Module_getVoltageStats(ModuleData *mod);
 void Module_getStats(ModuleData *module);
 void Module_convertGpioVoltageToTemp(ModuleData *modData);
 void Module_getTemperatures(ModuleData *mod);
+void Module_getAveragePointTemperature(ModuleData *mod);
+void Module_getMaxPointTemperature(ModuleData *mod);
+void Module_getMinPointTemperature(ModuleData *mod);
+void Module_getTemperatureStats(ModuleData * mod);
 
 #endif /* INC_MODULE_H_ */

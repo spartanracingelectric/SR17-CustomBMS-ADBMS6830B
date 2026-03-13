@@ -71,6 +71,7 @@ typedef struct AccumulatorData {
 	int16_t minCellVoltage_mV;
 	int16_t averageCellVoltage_mV;
 	int16_t cellImbalance_mV;
+	int16_t averagePointTemp_C;
 	int16_t minCellTemp_C;
 	int16_t maxCellTemp_C;
 	int16_t sumPackVoltage_cV;
@@ -89,7 +90,11 @@ typedef struct ModuleData {
 	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
 	int16_t vref2;
 	int16_t averageCellVoltage_mV;
-	uint16_t average_temp;
+	uint16_t averagePointTemperature_C;
+	uint16_t maxPointTemperature_C;
+	uint16_t minPointTemperature_C;
+	uint8_t maxPointTemperatureIndex;
+	uint8_t minPointTemperatureIndex;
 	int32_t totalCellVoltage_mV;
     int16_t maxCellVoltage_mV;
     int16_t minCellVoltage_mV;
