@@ -63,10 +63,7 @@ void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
 
 	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			totalVoltage_mV += mod[moduleIndex].cellVoltage_mV[cellIndex];
-		}
+		totalVoltage_mV += mod[moduleIndex].totalCellVoltage_mV;
 	}
 
 	batt->sumPackVoltage_cV = (int16_t)(totalVoltage_mV / 100);
