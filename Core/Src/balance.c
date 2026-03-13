@@ -83,7 +83,7 @@ void Balance_setCellDischarge(ModuleData *mod, AccumulatorData *accm, BalanceSta
 	{
 		for (uint8_t cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++) 
 		{
-			if (mod[moduleIndex].cell_volt[cellIndex] - accm->cell_volt_lowest > BALANCE_THRESHOLD_MV) 
+			if (mod[moduleIndex].cellVoltage_mV[cellIndex] - accm->minCellVoltage_mV > BALANCE_THRESHOLD_MV) 
 			{
 				blst[moduleIndex].cellsToBalance[cellIndex] = 1;
 			} 

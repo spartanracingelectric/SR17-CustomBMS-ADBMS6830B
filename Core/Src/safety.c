@@ -86,13 +86,13 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 	{
 		Safety_checkPEC(m, &GlobalFaults[m][0], mod, current_time);
 
-		if (!mod[m].pec_error)
+		if (!mod[m].pecError)
 		{
 			for (int c = 0; c < NUM_CELL_PER_MOD; c++)
 			{
 				FaultFlags_t   *faults           = &GlobalFaults[m][c];
 				WarningFlags_t *warns            = &GlobalWarnings[m][c];
-				uint16_t        voltage          = mod[m].cell_volt[c];
+				uint16_t        voltage          = mod[m].cellVoltage_mV[c];
 				uint16_t        redundantVoltage = mod[m].redundantCellVoltage_mV[c];
 
 				// Safety_checkOpenWire(m, c, voltage, faults, current_time);
@@ -122,8 +122,9 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod)
 {
 	uint32_t current_time   = HAL_GetTick();
-	batt->cell_temp_highest = mod[0].pointTemp_C[0];
-	batt->cell_temp_lowest  = mod[0].pointTemp_C[0];
+	//TODO : Move to accumulator.c
+	batt->maxCellTemp_C = mod[0].pointTemp_C[0];
+	batt->minCellTemp_C = mod[0].pointTemp_C[0];
 
 	for (int m = 0; m < NUM_MOD; m++)
 	{
@@ -131,10 +132,10 @@ void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod)
 		{
 			uint16_t temp = mod[m].pointTemp_C[t];
 
-			if (temp > batt->cell_temp_highest)
-				batt->cell_temp_highest = temp;
-			if (temp < batt->cell_temp_lowest)
-				batt->cell_temp_lowest = temp;
+			if (temp > batt->maxCellTemp_C)
+				batt->maxCellTemp_C = temp;
+			if (temp < batt->minCellTemp_C)
+				batt->minCellTemp_C = temp;
 
 			FaultFlags_t   *faults = &GlobalFaults[m][t];
 			WarningFlags_t *warns  = &GlobalWarnings[m][t];
@@ -161,9 +162,9 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 		FaultFlags_t *f = &GlobalFaults[m][c];
 		msg->FaultType  = FAULT_NONE;
 
-		if (f->OverVoltage)
+		if (f->OverVolt)
 			msg->FaultType = FAULT_OVER_VOLT;
-		else if (f->UnderVoltage)
+		else if (f->UnderVolt)
 			msg->FaultType = FAULT_UNDER_VOLT;
 		else if (f->OverTemp)
 			msg->FaultType = FAULT_OVER_TEMP;
@@ -189,6 +190,65 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 	return false;
 }
 
+bool Safety_getNextWarning(WarningMessage_t *msg)
+{
+	static int iterator = 0;
+
+	for (int i = 0; i < NUM_CELLS; i++)
+	{
+		int m = iterator / NUM_CELL_PER_MOD;
+		int c = iterator % NUM_CELL_PER_MOD;
+
+		iterator++;
+		if (iterator >= NUM_CELLS)
+			iterator = 0;
+
+		WarningFlags_t *w = &GlobalWarnings[m][c];
+		msg->WarningType = WARNING_NONE;
+
+		if (w->OverVoltWarn)
+			msg->WarningType = WARNING_OVER_VOLT;
+		else if (w->UnderVoltWarn)
+			msg->WarningType = WARNING_UNDER_VOLT;
+		else if (w->OverTempWarn)
+			msg->WarningType = WARNING_OVER_TEMP;
+		else if (w->UnderTempWarn)
+			msg->WarningType = WARNING_UNDER_TEMP;
+		else if (w->ImbalanceWarn)
+			msg->WarningType = WARNING_IMBALANCE;
+
+		if (msg->WarningType != WARNING_NONE)
+		{
+			msg->ModuleID = m;
+			msg->CellID   = c;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void Safety_getModuleFaultBits(uint16_t *faultBuffer)
+{
+	for (uint8_t m = 0; m < NUM_MOD; m++)
+    {
+        uint16_t faultBits = 0;
+        
+        for (uint8_t c = 0; c < NUM_CELL_PER_MOD; c++)
+        {
+            FaultFlags_t *f = &GlobalFaults[m][c];
+
+            if (f->UnderVolt || f->OpenWire || f->PEC || f->OverTemp ||
+                f->UnderTemp || f->OverVolt || f->RedundancyVolt || f->RedundancyTemp)
+            {
+                faultBits |= (uint16_t)(1u << c);
+            }
+        }
+        
+        faultBuffer[m] = faultBits;
+    }
+}
+
 static void Safety_clearFaults(void)
 {
 	for (int m = 0; m < NUM_MOD; m++)
@@ -197,7 +257,7 @@ static void Safety_clearFaults(void)
 		{
 			FaultFlags_t *f = &GlobalFaults[m][c];
 
-			if (f->OverVoltage || f->UnderVoltage || f->OverTemp || f->UnderTemp || f->OpenWire || f->PEC ||
+			if (f->OverVolt || f->UnderVolt || f->OverTemp || f->UnderTemp || f->OpenWire || f->PEC ||
 				f->RedundancyVolt || f->RedundancyTemp)
 			{
 				return;
@@ -210,7 +270,7 @@ static void Safety_clearFaults(void)
 
 static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod, uint32_t current_time)
 {
-	if (mod[m].pec_error)
+	if (mod[m].pecError)
 	{
 		if (Timer_PEC[m] == 0)
 		{
@@ -332,9 +392,9 @@ static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t
 			Timer_OverVolt[m][c] = current_time;
 		}
 
-		else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT && faults->OverVoltage == 0)
+		else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT && faults->OverVolt == 0)
 		{
-			faults->OverVoltage = 1;
+			faults->OverVolt = 1;
 			SendFaultSignal();
 		}
 	}
@@ -342,9 +402,9 @@ static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t
 	{
 		Timer_OverVolt[m][c] = 0;
 
-		if (voltage < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT) && faults->OverVoltage == 1)
+		if (voltage < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT) && faults->OverVolt == 1)
 		{
-			faults->OverVoltage = 0;
+			faults->OverVolt = 0;
 			Safety_clearFaults();
 		}
 	}
@@ -368,9 +428,9 @@ static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_
 		{
 			Timer_UnderVolt[m][c] = current_time;
 		}
-		else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT && faults->UnderVoltage == 0)
+		else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT && faults->UnderVolt == 0)
 		{
-			faults->UnderVoltage = 1;
+			faults->UnderVolt = 1;
 			SendFaultSignal();
 		}
 	}
@@ -378,9 +438,9 @@ static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_
 	{
 		Timer_UnderVolt[m][c] = 0;
 
-		if (voltage > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT) && faults->UnderVoltage == 1)
+		if (voltage > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT) && faults->UnderVolt == 1)
 		{
-			faults->UnderVoltage = 0;
+			faults->UnderVolt = 0;
 			Safety_clearFaults();
 		}
 	}

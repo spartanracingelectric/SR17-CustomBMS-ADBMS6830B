@@ -32,7 +32,6 @@ typedef struct CANMessage{
     CAN_TxHeaderTypeDef TxHeader;
     uint32_t TxMailbox;
     uint8_t buffer[8];
-    uint8_t balanceStatus[8];
 } CANMessage;
 
 
