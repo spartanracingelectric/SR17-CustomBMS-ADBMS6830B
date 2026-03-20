@@ -815,3 +815,6 @@ SG_ BMS_M10_Cell_14_Fault   : 29|1@1+ (1,0) [0|1] "" Custom_BMS
 
 BO_ 1713 BMS_Heartbeat_Message  : 1 Custom_BMS
 SG_ BMS_HeartBeat 	: 0|8@1+ (1,0) [0|1] "" Custom_BMS
+
+BO_ 1714 BMS_Fault_Summary  : 1 Custom_BMS
+SG_ BMS_Fault_1	: 0|8@1+ (1,0) [0|1] "" Custom_BMS

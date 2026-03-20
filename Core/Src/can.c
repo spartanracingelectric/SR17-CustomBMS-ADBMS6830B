@@ -501,6 +501,12 @@ void CAN_sendCanHeartBeat(CANMessage *message)
 	    CAN_send(message, (uint8_t)byteNumber);
 
 }
+
+void CAN_sendFaultSummary(CANMessage *message)
+{
+
+
+}
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
 //    uint16_t CAN_ID = 0x602;
 //	Set_CAN_Id(ptr, CAN_ID);
