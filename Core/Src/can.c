@@ -178,9 +178,7 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
-    	printf("waiting\n");
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
-			printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
@@ -372,8 +370,8 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t 
 	buffer->buffer[byteNumber++] = *faults;
 	buffer->buffer[byteNumber++] =  batt->cellImbalance_mV           & 0xFF;
 	buffer->buffer[byteNumber++] = (batt->cellImbalance_mV     >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->hvsens_pack_voltage       & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->hvsens_pack_voltage >> 8) & 0xFF;
+	buffer->buffer[byteNumber++] =  batt->hvSensePackVoltage_cV       & 0xFF;
+	buffer->buffer[byteNumber++] = (batt->hvSensePackVoltage_cV >> 8) & 0xFF;
 	buffer->buffer[byteNumber++] =  batt->sumPackVoltage_cV & 0xFF;
 	buffer->buffer[byteNumber++] = (batt->sumPackVoltage_cV   >> 8) & 0xFF;
 	CAN_send(buffer, byteNumber);

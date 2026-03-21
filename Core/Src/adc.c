@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
+#include "stdio.h"
+#include "stm32f1xx_hal_dma.h"
 
 /* USER CODE BEGIN 0 */
 uint16_t adc1Buffer[NUM_ADC1_CHANNEL] = {0};
@@ -226,30 +228,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-uint32_t readADCChannel(uint32_t channel)
-{
-	ADC_ChannelConfTypeDef sConfig = {0};
-
-	sConfig.Channel = channel;
-	sConfig.Rank = ADC_REGULAR_RANK_1;
-	sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
-
-	HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-	HAL_ADC_Start(&hadc1);
-	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	uint32_t value = HAL_ADC_GetValue(&hadc1);
-	HAL_ADC_Stop(&hadc1);
-
-	return value;
-}
-
-float getVref(void)
-{
-	uint32_t adcValueVref = readADCChannel(ADC_CHANNEL_VREFINT);
-	float vRef = (VREFINT_CAL * ADC_RESOLUTION) / (float)adcValueVref;
-	return vRef;
-}
-
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 	if (hadc->Instance == ADC1)
@@ -264,7 +242,7 @@ void ADC1_startConversion(void)
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1Buffer, NUM_ADC1_CHANNEL);
 }
 
-uint16_t ADC_getHvSenseRawVoltage(void)
+float ADC_getHvSenseRawVoltage_mV(void)
 {
 	uint32_t startTick = HAL_GetTick();
 
@@ -280,15 +258,15 @@ uint16_t ADC_getHvSenseRawVoltage(void)
 	uint16_t hvSenseAdcValue = adc1Buffer[HV_SENSE_ADC_RANK - 1];
 	uint16_t vRefRaw = adc1Buffer[VREFINT_ADC_RANK - 1];
 
-	uint16_t vRef_mV = ADC_calculateVref(vRefRaw);
+	float vRef_mV = ADC_calculateVref_mV(vRefRaw);
 
-	float hvSenseRawVoltage_mV = ADC_convertAdcValueToVoltage(hvSenseAdcValue, vRef_mV);
+	float hvSenseRawVoltage_mV = ADC_convertAdcCountToVoltage_mV(hvSenseAdcValue, vRef_mV);
 
 	ADC1_startConversion();
 	return hvSenseRawVoltage_mV;
 }
 
-uint16_t ADC_getVref(void)
+float ADC_getVref_mV(void)
 {
 	uint32_t startTick = HAL_GetTick();
 
@@ -301,22 +279,22 @@ uint16_t ADC_getVref(void)
 		}
 	}
 
-	uint16_t vRefRawAdcValue = adc1Buffer[VREFINT_ADC_RANK - 1];
-	uint16_t vRef_mV = ADC_calculateVref(vRefRawAdcValue);
+	uint16_t vRefAdcCount = adc1Buffer[VREFINT_ADC_RANK - 1];
+	float vRef_mV = ADC_calculateVref_mV(vRefAdcCount);
 
 	ADC1_startConversion();
 	return vRef_mV;
 }
 
-uint16_t ADC_calculateVref(uint16_t vRefRaw)
+float ADC_calculateVref_mV(uint16_t vRefAdcCount)
 {
-	uint16_t vRef_mV = VREFINT_CALIBRATION_SUPPLY_POWER_MV * VREFINT_CALIBRATION_ADC_RAW_COUNT / vRefRaw;
+	float vRef_mV = VREFINT_CALIBRATION_SUPPLY_POWER_MV * VREFINT_CALIBRATION_ADC_RAW_COUNT / (float)vRefAdcCount;
 	return vRef_mV;
 }
 
-float ADC_convertAdcValueToVoltage(uint16_t adcValue, uint16_t vRef_mV)
+float ADC_convertAdcCountToVoltage_mV(uint16_t adcCount, float vRef_mV)
 {
-	float voltage_mv = ((float)adcValue / ADC_RESOLUTION) * vRef_mV;
+	float voltage_mv = ((float)adcCount / ADC_RESOLUTION) * vRef_mV;
 	return voltage_mv;
 }
 

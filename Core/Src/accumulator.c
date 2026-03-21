@@ -10,7 +10,7 @@ void Accumulator_init(AccumulatorData *acc)
 	acc->minCellTemp_C = 0x0000;
 	acc->maxCellTemp_C = 0x0000;
 	acc->sumPackVoltage_cV = 0x0000;
-	acc->hvsens_pack_voltage = 0x0000;
+	acc->hvSensePackVoltage_cV = 0x0000;
 	acc->soc = 0x00000000; // microamps!!!!!
 	acc->current = 0x00000000;
 }

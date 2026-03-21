@@ -159,8 +159,10 @@ int main(void)
 	HAL_Delay(1000);
 	ClearFaultSignal(); // those are for debug the charger and mobo
 
-
 	HAL_ADCEx_Calibration_Start(&hadc1);
+	ADC1_startConversion();
+
+	// HAL_ADCEx_Calibration_Start(&hadc2);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -173,52 +175,28 @@ int main(void)
 		GpioFixedToggle(&tp_led_heartbeat, LED_HEARTBEAT_DELAY_MS);
 		if (TimerPacket_FixedPulse(&cycleTimeCap))
 		{
-			// ADBMS_ReadSID(modData);
-			// HAL_ADCEx_Calibration_Start(&hadc2);
-			// Module_getAverageCellVoltages(modData);
 			Module_getCellVoltages(modData);
 			Module_getStats(modData);
-
 			Accumulator_getMinVoltage(&accmData, modData);
 			Accumulator_getMaxVoltage(&accmData, modData);
 
+			HVSense_getPackVoltage(&accmData);
+
 			Module_getTemperatures(modData);
 
-			HVSense_getPackVoltage(&accmData);
-			ContactorSense_getContactorState(&accmData);
-			// getSumPackVoltage(&accmData, modData);
+			// ContactorSense_getContactorState(&accmData);
 
 			// SOC_updateCharge(&accmData,(HAL_GetTick() - prev_soc_time));
 			// prev_soc_time = HAL_GetTick();
-			/*static uint32_t lastToggle = 0;
-			static uint16_t testRedundantVolt = 3700;
-			uint32_t current_time = HAL_GetTick();
-		  if (current_time - lastToggle > 1500) {
-			  if (testRedundantVolt == 3700) {
-				  testRedundantVolt = 3706;
-			  } else {
-				  testRedundantVolt = 3700;
-			  }
-
-			  lastToggle = current_time;
-		  }
-
-
-		  modData[0].cell_volt[0] = 3700;
-		  modData[0].redundantCellVoltage_mV[0] = testRedundantVolt;
-		  */
 
 			Safety_checkFaults(&accmData, modData);
-
 			// Passive balancing is called unless a fault has occurred
 			Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
-
 			if (TimerPacket_FixedPulse(&canReconnection))
 			{
 				can_skip_flag = 0;
 			}
 			CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
-
 			CAN_sendPackSummary(&msg, &accmData);
 			CAN_sendVoltageData(&msg, modData);
 			CAN_sendTemperatureData(&msg, modData);
