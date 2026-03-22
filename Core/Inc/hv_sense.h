@@ -20,12 +20,11 @@
  *  - Effective reconstruction of pack voltage typically uses: Vin ≈ Vmeas * DIVIDER_RATIO / GAIN_TLV9001.
  */
 
-// TODO: Figure out these values
-#define GAIN_TLV9001 1.564f 		
+#define GAIN_TLV9001 1.58f
 
 // Resistor values for the voltage divider
-#define R1 586650.0f  			
-#define R2 33200.0f	//6863kΩ is the spec, but it might be parallel to other components. measured value was 6660kΩ, but it was too low, so I took average of them and it works well.
+#define R1 1400000.0f
+#define R2 4669.0f
 #define DIVIDER_RATIO (R1 + R2) / R2
 #define MULTIPLIER 317.460317
 

@@ -10,12 +10,10 @@
 void HVSense_getPackVoltage(AccumulatorData *batt)
 {
 	float hvSenseRawVoltage_mV = ADC_getHvSenseRawVoltage_mV();
-	printf("hv sense raw voltage mv: %f\n", hvSenseRawVoltage_mV);
 	float dividerVoltage_mV = hvSenseRawVoltage_mV / GAIN_TLV9001;
 	float hvPackVoltage_mV = dividerVoltage_mV * DIVIDER_RATIO;
-	printf("NEW HVSENSE PACK VOLTAGE: %f\n", hvPackVoltage_mV);
 
-	if (hvPackVoltage_mV > 10000) // If HV sense is greater than 10V (connected)
+	if (hvPackVoltage_mV > 5000) // If HV sense is greater than 5V (connected)
 	{
 		batt->hvSensePackVoltage_cV = hvPackVoltage_mV / 10;
 	}
