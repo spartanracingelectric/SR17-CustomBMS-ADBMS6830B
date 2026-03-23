@@ -54,7 +54,7 @@
  *  - Update the SoC accumulator by integrating measured current over time.
  *    The elapsed_time argument is in milliseconds unless otherwise documented.
  */
-void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
+void SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod);
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
 
 #endif

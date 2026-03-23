@@ -36,6 +36,7 @@
 #include "adc.h"
 #include "main.h"
 #include "usart.h"
+#include "eeprom.h"
 
 /* ===== Internal Prototypes ===================================================
  * SOC_updateCurrent(): acquire/scale shunt reading → batt->current (mA).
@@ -52,12 +53,12 @@ uint16_t SOC_getChargeData25C(uint16_t voltage);
 uint16_t SOC_getChargeData40C(uint16_t voltage);
 
 /* ===== Initial SoC from OCV & Temperature ===================================
- * SOC_getInitialCharge():
+ * SOC_CalculateFromOCV():
  *  - Compute average per-cell voltage from pack centivolts and NUM_CELLS.
  *  - Average module thermistors to choose the nearest OCV curve (0/25/40 °C).
  *  - Look up per-cell capacity (mAh) and scale to pack and µAh storage.
  */
-void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
+void SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod) {
     uint32_t voltage = 0;
     uint32_t pack_voltage = batt->sumPackVoltage_cV;
     voltage = pack_voltage * 10 / NUM_CELLS;
@@ -95,6 +96,19 @@ void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod) {
             break;
     }
 //    printf("this is running");
+}
+
+void SOC_Init(AccumulatorData *batt, ModuleData *mod) {
+    uint32_t saved_soc = EEPROM_ReadSOC();
+
+    if (saved_soc != 0xFFFFFFFF && saved_soc != 0) 
+    {
+        batt->soc = saved_soc;
+    } else 
+    {
+        SOC_CalculateFromOCV(batt, mod);
+        EEPROM_writeSOC(batt->soc); 
+    }
 }
 
 
@@ -168,6 +182,10 @@ uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t target, uint16_t size) 
     }
 
     return data[right][1];
+}
+
+void SOC_SaveState(AccumulatorData *batt) {
+    EEPROM_WriteSOC(batt->soc);
 }
 
 /* ===== OCV Table Binary Search ==============================================
