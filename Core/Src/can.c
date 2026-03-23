@@ -165,13 +165,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-/* ===== Runtime State & Thin HAL Wrappers ====================================
- * can_skip_flag: exit condition for a blocked TX wait loop on timeout.
- * CAN_Start():   starts CAN peripheral.
- * CAN_Activate(): enables RX FIFO0 message pending interrupt.
- */
-uint8_t can_skip_flag = 0;
-
 HAL_StatusTypeDef CAN_start() { return HAL_CAN_Start(&hcan1); }
 
 HAL_StatusTypeDef CAN_activate() {
