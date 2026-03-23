@@ -816,5 +816,23 @@ SG_ BMS_M10_Cell_14_Fault   : 29|1@1+ (1,0) [0|1] "" Custom_BMS
 BO_ 1713 BMS_Heartbeat_Message  : 1 Custom_BMS
 SG_ BMS_HeartBeat 	: 0|8@1+ (1,0) [0|1] "" Custom_BMS
 
-BO_ 1714 BMS_Fault_Summary  : 1 Custom_BMS
-SG_ BMS_Fault_1	: 0|8@1+ (1,0) [0|1] "" Custom_BMS
+BO_ 1714 BMS_Fault_And_Warning_Summary  : 8 Custom_BMS
+SG_ BMS_Fault_Module_Id		: 0|8@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Cell_Id		: 8|8@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Over_Volt		: 16|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Under_Volt	: 17|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Open_Wire		: 18|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_PEC			: 19|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Over_Temp		: 20|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Under_Temp	: 21|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Redundant_Volt: 22|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Fault_Redundant_Temp: 23|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Module_Id	: 24|8@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Cell_Id		: 32|8@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Over_Volt	: 40|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Under_Volt	: 41|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Over_Temp	: 42|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Under_Temp	: 43|1@1+ (1,0) [0|255] "" Custom_BMS
+SG_ BMS_Warning_Imbalance	: 44|1@1+ (1,0) [0|255] "" Custom_BMS
+
+

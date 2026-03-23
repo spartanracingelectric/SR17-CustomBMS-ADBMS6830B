@@ -70,7 +70,7 @@ extern CAN_HandleTypeDef hcan1;
 #define NUM_THERM_PER_MESSAGE		4
 #define CAN_ID_Fault_Status			0x6AE
 #define CAN_ID_HeartBeat_Message	0x6B1
-#define CAN_ID_Fault_Summary		0x6B2
+#define CAN_ID_Fault_And_Warning_Summary		0x6B2
 
 extern ModuleData modData[NUM_MOD];
 
@@ -118,7 +118,7 @@ void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capac
 void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *message);
 void CAN_sendCanHeartBeat(CANMessage *message);
-void CAN_sendFaultSummary(CANMessage *message);
+void CAN_sendFaultAndWarningSummary(CANMessage *message);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 

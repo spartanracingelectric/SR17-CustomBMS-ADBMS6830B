@@ -502,9 +502,52 @@ void CAN_sendCanHeartBeat(CANMessage *message)
 
 }
 
-void CAN_sendFaultSummary(CANMessage *message)
+void CAN_sendFaultAndWarningSummary(CANMessage *message)
 {
+	uint32_t canId = (uint32_t) CAN_ID_Fault_And_Warning_Summary;
+	FaultMessage_t faultMsg;
+	WarningMessage_t warningMsg;
+	    uint8_t byteNumber = 0;
+	    bool hasFault;
+	    bool hasWarning;
 
+	    hasFault = Safety_getNextFault(&faultMsg);
+	    hasWarning = Safety_getNextWarning(&warningMsg);
+
+	    if (!hasFault && !hasWarning)
+	    {
+	        return;
+	    }
+
+	    CAN_setId(message, canId);
+
+	    if (hasFault)
+	    {
+	        message->buffer[byteNumber++] = faultMsg.ModuleID;
+	        message->buffer[byteNumber++] = faultMsg.CellID;
+	        message->buffer[byteNumber++] = faultMsg.FaultType;
+	    }
+	    else
+	    {
+	        message->buffer[byteNumber++] = 0;
+	        message->buffer[byteNumber++] = 0;
+	        message->buffer[byteNumber++] = 0;
+	    }
+
+	    if (hasWarning)
+	    {
+	        message->buffer[byteNumber++] = warningMsg.ModuleID;
+	        message->buffer[byteNumber++] = warningMsg.CellID;
+	        message->buffer[byteNumber++] = warningMsg.WarningType;
+	    }
+	    else
+	    {
+	        message->buffer[byteNumber++] = 0;
+	        message->buffer[byteNumber++] = 0;
+	        message->buffer[byteNumber++] = 0;
+	    }
+
+	    CAN_send(message, byteNumber);
 
 }
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
