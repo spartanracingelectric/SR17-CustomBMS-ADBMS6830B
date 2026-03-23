@@ -75,7 +75,7 @@ typedef struct AccumulatorData {
 	int16_t averagePointTemp_C;
 	int16_t minCellTemp_C;
 	int16_t maxCellTemp_C;
-	int16_t sumPackVoltage_cV;
+	uint16_t sumPackVoltage_cV;
 	uint16_t hvSensePackVoltage_cV;
     uint32_t soc; 
     uint32_t current;

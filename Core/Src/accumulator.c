@@ -42,10 +42,12 @@ void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
 	int32_t averageVoltageSum = mod[0].averageCellVoltage_mV;
 	int16_t maxVoltage = mod[0].maxCellVoltage_mV;
 	int16_t minVoltage = mod[0].minCellVoltage_mV;
+	uint32_t totalPackVoltage_mV = mod[0].totalCellVoltage_mV;
 
 	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
 		ModuleData	*module = &mod[moduleIndex];
 		averageVoltageSum += module->averageCellVoltage_mV;
+		totalPackVoltage_mV += module->totalCellVoltage_mV;
 		if(module->maxCellVoltage_mV > maxVoltage){
 			maxVoltage = module->maxCellVoltage_mV;
 		}
@@ -56,6 +58,7 @@ void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
 	acc->averageCellVoltage_mV = averageVoltageSum / NUM_MOD;
 	acc->maxCellVoltage_mV = maxVoltage;
 	acc->minCellVoltage_mV = minVoltage;
+	acc->sumPackVoltage_cV = totalPackVoltage_mV;
 }
 
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
