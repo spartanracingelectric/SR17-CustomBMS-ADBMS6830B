@@ -20,6 +20,7 @@
 #define VREF2_MARGIN_MV 10.0f
 
 void Module_init(ModuleData *mod);
+
 void Module_getAverageCellVoltages(ModuleData *mod);
 void Module_getCellVoltages(ModuleData module[]);
 void Module_getMaxCellVoltage(ModuleData *module);
@@ -27,12 +28,12 @@ void Module_getMinCellVoltage(ModuleData *module);
 void Module_getTotalCellVoltage(ModuleData *module);
 void Module_getAverageCellVoltage(ModuleData *module);
 void Module_getVoltageStats(ModuleData *mod);
-void Module_getStats(ModuleData *module);
+
 void Module_convertGpioVoltageToTemp(ModuleData *modData);
 void Module_getTemperatures(ModuleData *mod);
 void Module_getAveragePointTemperature(ModuleData *mod);
 void Module_getMaxPointTemperature(ModuleData *mod);
 void Module_getMinPointTemperature(ModuleData *mod);
-void Module_getTemperatureStats(ModuleData * mod);
+void Module_getTemperatureStats(ModuleData *mod);
 
 #endif /* INC_MODULE_H_ */

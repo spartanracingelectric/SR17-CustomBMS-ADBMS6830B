@@ -146,13 +146,14 @@ int main(void)
 	while (1)
 	{
 		Module_getCellVoltages(modData);
-		Module_getStats(modData);
-		Accumulator_getMinVoltage(&accmData, modData);
-		Accumulator_getMaxVoltage(&accmData, modData);
+		Module_getVoltageStats(modData);
+		Accumulator_getVoltageStats(&accmData, modData);
 
 		HVSense_getPackVoltage(&accmData);
 
 		Module_getTemperatures(modData);
+		Module_getTemperatureStats(modData);
+		Accumulator_getTemperatureStats(&accmData, modData);
 
 		// ContactorSense_getContactorState(&accmData);
 

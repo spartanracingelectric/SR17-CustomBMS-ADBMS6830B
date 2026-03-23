@@ -247,11 +247,3 @@ void Module_getVoltageStats(ModuleData *mod){
 		printf("Module %d avg cell voltage: %d max: %d min: %d total %ld\n", moduleIndex + 1, module->averageCellVoltage_mV, voltageList[maxVoltageIndex], voltageList[minVoltageIndex], totalVoltage);
 	}
 }
-
-void Module_getStats(ModuleData *module)
-{
-	Module_getMaxCellVoltage(module);
-	Module_getMinCellVoltage(module);
-	Module_getTotalCellVoltage(module);
-	Module_getAverageCellVoltage(module);
-}
