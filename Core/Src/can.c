@@ -143,7 +143,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
   if(canHandle->Instance==CAN1)
   {
   /* USER CODE BEGIN CAN1_MspDeInit 0 */
-	  can_skip_flag = 0;
   /* USER CODE END CAN1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_CAN1_CLK_DISABLE();
@@ -165,13 +164,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-/* ===== Runtime State & Thin HAL Wrappers ====================================
- * can_skip_flag: exit condition for a blocked TX wait loop on timeout.
- * CAN_Start():   starts CAN peripheral.
- * CAN_Activate(): enables RX FIFO0 message pending interrupt.
- */
-uint8_t can_skip_flag = 0;
-
 HAL_StatusTypeDef CAN_start() { return HAL_CAN_Start(&hcan1); }
 
 HAL_StatusTypeDef CAN_activate() {
@@ -388,8 +380,8 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t 
 	buffer->buffer[byteNumber++] = *faults;
 	buffer->buffer[byteNumber++] =  batt->cellImbalance_mV           & 0xFF;
 	buffer->buffer[byteNumber++] = (batt->cellImbalance_mV     >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->hvsens_pack_voltage       & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->hvsens_pack_voltage >> 8) & 0xFF;
+	buffer->buffer[byteNumber++] =  batt->hvSensePackVoltage_cV       & 0xFF;
+	buffer->buffer[byteNumber++] = (batt->hvSensePackVoltage_cV >> 8) & 0xFF;
 	buffer->buffer[byteNumber++] =  batt->sumPackVoltage_cV & 0xFF;
 	buffer->buffer[byteNumber++] = (batt->sumPackVoltage_cV   >> 8) & 0xFF;
 	CAN_send(buffer, byteNumber);
@@ -454,22 +446,8 @@ void CAN_sendFaultStatus(CANMessage *message)
 	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
 	uint16_t faultBitStorage[NUM_MOD];
 
+	Safety_getModuleFaultBits(faultBitStorage);
 	
-		for (uint8_t i = 0; i < NUM_MOD; i++)
-		{
-			uint16_t faultBits = 0;
-
-			for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
-			{
-				FaultFlags_t f = GlobalFaults[i][j];
-				if (f.UnderVoltage || f.OpenWire || f.PEC || f.OverTemp ||
-    			f.UnderTemp || f.OverVoltage || f.RedundancyVolt || f.RedundancyTemp)
-				{
-    				faultBits |= (uint16_t)(1u << j);
-				}
-			}
-			faultBitStorage[i] = faultBits;
-		}
 	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
 	{
 		for (uint8_t j = 0; j < 8; j++)

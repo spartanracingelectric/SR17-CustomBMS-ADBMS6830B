@@ -27,13 +27,7 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-
-typedef struct CANMessage{
-    CAN_TxHeaderTypeDef TxHeader;
-    uint32_t TxMailbox;
-    uint8_t buffer[8];
-} CANMessage;
-
+/* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
@@ -70,9 +64,14 @@ extern CAN_HandleTypeDef hcan1;
 #define NUM_THERM_PER_MESSAGE		4
 #define CAN_ID_Fault_Status			0x6AE
 
+typedef struct CANMessage{
+    CAN_TxHeaderTypeDef TxHeader;
+    uint32_t TxMailbox;
+    uint8_t buffer[8];
+} CANMessage;
+
 extern ModuleData modData[NUM_MOD];
 
-extern uint8_t can_skip_flag;
 /* USER CODE END Private defines */
 
 void MX_CAN1_Init(void);
@@ -111,15 +110,13 @@ void CAN_sendVoltageData(CANMessage *ptr, ModuleData *mod);
 void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod);
 void CAN_sendCellSummary(CANMessage *ptr, struct AccumulatorData *batt);
 void CAN_sendModuleSummary(CANMessage *ptr, ModuleData *mod);
+void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *buffer);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
-
-//moved can message from main.h to can.h
-
 
 #ifdef __cplusplus
 }

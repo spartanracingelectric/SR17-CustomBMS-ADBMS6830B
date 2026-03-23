@@ -162,9 +162,9 @@ bool Safety_getNextFault(FaultMessage_t *msg)
 		FaultFlags_t *f = &GlobalFaults[m][c];
 		msg->FaultType  = FAULT_NONE;
 
-		if (f->OverVoltage)
+		if (f->OverVolt)
 			msg->FaultType = FAULT_OVER_VOLT;
-		else if (f->UnderVoltage)
+		else if (f->UnderVolt)
 			msg->FaultType = FAULT_UNDER_VOLT;
 		else if (f->OverTemp)
 			msg->FaultType = FAULT_OVER_TEMP;
@@ -219,11 +219,34 @@ bool Safety_getNextWarning(WarningMessage_t *msg)
 
 		if (msg->WarningType != WARNING_NONE)
 		{
+			msg->ModuleID = m;
+			msg->CellID   = c;
 			return true;
 		}
 	}
 
 	return false;
+}
+
+void Safety_getModuleFaultBits(uint16_t *faultBuffer)
+{
+	for (uint8_t m = 0; m < NUM_MOD; m++)
+    {
+        uint16_t faultBits = 0;
+        
+        for (uint8_t c = 0; c < NUM_CELL_PER_MOD; c++)
+        {
+            FaultFlags_t *f = &GlobalFaults[m][c];
+
+            if (f->UnderVolt || f->OpenWire || f->PEC || f->OverTemp ||
+                f->UnderTemp || f->OverVolt || f->RedundancyVolt || f->RedundancyTemp)
+            {
+                faultBits |= (uint16_t)(1u << c);
+            }
+        }
+        
+        faultBuffer[m] = faultBits;
+    }
 }
 
 static void Safety_clearFaults(void)
@@ -234,7 +257,7 @@ static void Safety_clearFaults(void)
 		{
 			FaultFlags_t *f = &GlobalFaults[m][c];
 
-			if (f->OverVoltage || f->UnderVoltage || f->OverTemp || f->UnderTemp || f->OpenWire || f->PEC ||
+			if (f->OverVolt || f->UnderVolt || f->OverTemp || f->UnderTemp || f->OpenWire || f->PEC ||
 				f->RedundancyVolt || f->RedundancyTemp)
 			{
 				return;
@@ -369,9 +392,9 @@ static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t
 			Timer_OverVolt[m][c] = current_time;
 		}
 
-		else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT && faults->OverVoltage == 0)
+		else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT && faults->OverVolt == 0)
 		{
-			faults->OverVoltage = 1;
+			faults->OverVolt = 1;
 			SendFaultSignal();
 		}
 	}
@@ -379,9 +402,9 @@ static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t
 	{
 		Timer_OverVolt[m][c] = 0;
 
-		if (voltage < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT) && faults->OverVoltage == 1)
+		if (voltage < (CELL_HIGH_VOLT_FAULT - FAULT_LOCK_MARGIN_HIGH_VOLT) && faults->OverVolt == 1)
 		{
-			faults->OverVoltage = 0;
+			faults->OverVolt = 0;
 			Safety_clearFaults();
 		}
 	}
@@ -405,9 +428,9 @@ static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_
 		{
 			Timer_UnderVolt[m][c] = current_time;
 		}
-		else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT && faults->UnderVoltage == 0)
+		else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT && faults->UnderVolt == 0)
 		{
-			faults->UnderVoltage = 1;
+			faults->UnderVolt = 1;
 			SendFaultSignal();
 		}
 	}
@@ -415,9 +438,9 @@ static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_
 	{
 		Timer_UnderVolt[m][c] = 0;
 
-		if (voltage > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT) && faults->UnderVoltage == 1)
+		if (voltage > (CELL_LOW_VOLT_FAULT + FAULT_LOCK_MARGIN_LOW_VOLT) && faults->UnderVolt == 1)
 		{
-			faults->UnderVoltage = 0;
+			faults->UnderVolt = 0;
 			Safety_clearFaults();
 		}
 	}
