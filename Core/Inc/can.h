@@ -72,7 +72,6 @@ typedef struct CANMessage{
 
 extern ModuleData modData[NUM_MOD];
 
-extern uint8_t can_skip_flag;
 /* USER CODE END Private defines */
 
 void MX_CAN1_Init(void);
@@ -111,6 +110,7 @@ void CAN_sendVoltageData(CANMessage *ptr, ModuleData *mod);
 void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod);
 void CAN_sendCellSummary(CANMessage *ptr, struct AccumulatorData *batt);
 void CAN_sendModuleSummary(CANMessage *ptr, ModuleData *mod);
+void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt);
 void CAN_Send_Safety_Checker(CANMessage *ptr, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
 void CAN_Send_SOC(CANMessage *ptr, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_sendBalanceStatus(CANMessage *buffer, BalanceStatus *blst);

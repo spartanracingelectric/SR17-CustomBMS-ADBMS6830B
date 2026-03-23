@@ -143,7 +143,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
   if(canHandle->Instance==CAN1)
   {
   /* USER CODE BEGIN CAN1_MspDeInit 0 */
-	  can_skip_flag = 0;
   /* USER CODE END CAN1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_CAN1_CLK_DISABLE();
