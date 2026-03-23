@@ -23,6 +23,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
+
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
@@ -34,6 +35,19 @@
 CAN_HandleTypeDef hcan1;
 
 /* CAN1 init function */
+/* CAN1 init function */
+/* ===== CubeMX: CAN1 init ====================================================
+ * Bit timing:
+ *  - Prescaler=9, BS1=3TQ, BS2=4TQ, SJW=1TQ → 1 + 3 + 4 = 8 TQ per bit
+ *  - Effective bitrate depends on APB clock; adjust in .ioc as needed.
+ *
+ * Filter:
+ *  - Bank 0, 32-bit mask, FIFO0
+ *  - Accept only StdID 0x604 (exact match) used by the charger command path.
+ *
+ * Auto features:
+ *  - AutoBusOff=ENABLE, AutoWakeUp=DISABLE, AutoRetransmission=ENABLE
+ */
 void MX_CAN1_Init(void)
 {
 
@@ -77,6 +91,7 @@ void MX_CAN1_Init(void)
 
 }
 
+/* ===== CubeMX: MSP (GPIO/IRQ/Clock) ======================================== */
 void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 {
 
@@ -121,6 +136,7 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
   }
 }
 
+/* ===== CubeMX: MSP DeInit =================================================== */
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 {
 
@@ -178,7 +194,9 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
+    	printf("waiting\n");
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
+			printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
@@ -436,22 +454,8 @@ void CAN_sendFaultStatus(CANMessage *message)
 	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
 	uint16_t faultBitStorage[NUM_MOD];
 
+	Safety_getModuleFaultBits(faultBitStorage);
 	
-		for (uint8_t i = 0; i < NUM_MOD; i++)
-		{
-			uint16_t faultBits = 0;
-
-			for (uint8_t j = 0; j < NUM_CELL_PER_MOD; j++)
-			{
-				FaultFlags_t f = GlobalFaults[i][j];
-				if (f.UnderVoltage || f.OpenWire || f.PEC || f.OverTemp ||
-    			f.UnderTemp || f.OverVoltage || f.RedundancyVolt || f.RedundancyTemp)
-				{
-    				faultBits |= (uint16_t)(1u << j);
-				}
-			}
-			faultBitStorage[i] = faultBits;
-		}
 	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
 	{
 		for (uint8_t j = 0; j < 8; j++)
