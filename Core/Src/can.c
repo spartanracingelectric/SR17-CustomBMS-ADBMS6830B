@@ -170,6 +170,19 @@ HAL_StatusTypeDef CAN_activate() {
     return HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
+{
+	static CAN_RxHeaderTypeDef rxHeader;
+	static uint8_t rxData[8];
+	if (HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+	{
+		if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
+		{
+			Balance_handleBalanceCANMessage(&rxHeader, rxData);
+		}
+	}
+}
+
 /* ===== TX Path: Queueing a Frame ============================================
  * CAN_Send():
  *  - Waits for a free TX mailbox (or times out after ~10 ms).
