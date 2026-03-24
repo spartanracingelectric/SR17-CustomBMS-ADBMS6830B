@@ -99,7 +99,7 @@ void SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod) {
 }
 
 void SOC_Init(AccumulatorData *batt, ModuleData *mod) {
-    uint32_t saved_soc = EEPROM_ReadSOC();
+    uint32_t saved_soc = EEPROM_readSOC();
 
     if (saved_soc != 0xFFFFFFFF && saved_soc != 0) 
     {
@@ -185,7 +185,7 @@ uint16_t SOC_searchCapacity(uint16_t data[][2], uint16_t target, uint16_t size) 
 }
 
 void SOC_SaveState(AccumulatorData *batt) {
-    EEPROM_WriteSOC(batt->soc);
+    EEPROM_writeSOC(batt->soc);
 }
 
 /* ===== OCV Table Binary Search ==============================================
