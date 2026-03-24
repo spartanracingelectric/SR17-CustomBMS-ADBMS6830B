@@ -20,6 +20,8 @@
 #define INC_SAFETY_H_
 
 #include "main.h"
+#include "accumulator.h"
+#include "module.h"
 #include <stdint.h>
 #include <stdbool.h>
 

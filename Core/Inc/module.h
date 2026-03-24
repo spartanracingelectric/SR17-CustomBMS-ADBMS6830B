@@ -7,7 +7,28 @@
 #define INC_MODULE_H_
 
 #include "main.h"
-#include <stdint.h>
+
+typedef struct ModuleData
+{
+	int16_t cellVoltage_mV[NUM_CELL_PER_MOD];
+	uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
+	int16_t gpioVoltage_mV[NUM_THERM_PER_MOD];
+	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
+	int16_t vref2;
+	int16_t averageCellVoltage_mV;
+	uint16_t averagePointTemperature_C;
+	uint16_t maxPointTemperature_C;
+	uint16_t minPointTemperature_C;
+	uint8_t maxPointTemperatureIndex;
+	uint8_t minPointTemperatureIndex;
+	int32_t totalCellVoltage_mV;
+	int16_t maxCellVoltage_mV;
+	int16_t minCellVoltage_mV;
+	uint8_t sid[6];
+	bool pecError;
+	uint8_t maxCellIndex;
+	uint8_t minCellIndex;
+} ModuleData;
 
 #define STEINHART_HART_COEFFICIENT_A 3.3540164e-03f
 #define STEINHART_HART_COEFFICIENT_B 3.0740376e-04f

@@ -67,55 +67,7 @@ extern "C" {
 #define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
 /* USER CODE END Private defines */
 
-typedef struct AccumulatorData {
-	int16_t maxCellVoltage_mV;
-	int16_t minCellVoltage_mV;
-	int16_t averageCellVoltage_mV;
-	int16_t cellImbalance_mV;
-	int16_t averagePointTemp_C;
-	int16_t minCellTemp_C;
-	int16_t maxCellTemp_C;
-	uint16_t sumPackVoltage_cV;
-	uint16_t hvSensePackVoltage_cV;
-    uint32_t soc; 
-    int32_t current_mA;
-    uint8_t contactorState;
-    uint16_t atmos_temp;
-	uint16_t pressure;
-} AccumulatorData;
 
-typedef struct ModuleData {
-	int16_t cellVoltage_mV[NUM_CELL_PER_MOD];
-    uint16_t redundantCellVoltage_mV[NUM_CELL_PER_MOD];
-	int16_t gpioVoltage_mV[NUM_THERM_PER_MOD];
-	uint16_t pointTemp_C[NUM_THERM_PER_MOD];
-	int16_t vref2;
-	int16_t averageCellVoltage_mV;
-	uint16_t averagePointTemperature_C;
-	uint16_t maxPointTemperature_C;
-	uint16_t minPointTemperature_C;
-	uint8_t maxPointTemperatureIndex;
-	uint8_t minPointTemperatureIndex;
-	int32_t totalCellVoltage_mV;
-    int16_t maxCellVoltage_mV;
-    int16_t minCellVoltage_mV;
-    uint8_t sid[6];
-	bool pecError;
-    uint8_t maxCellIndex;
-    uint8_t minCellIndex;
-} ModuleData;
-
-typedef struct BalanceStatus {
-	uint8_t cellsToBalance[NUM_CELL_PER_MOD];
-	uint16_t cellsBalancing;
-} BalanceStatus;
-
-typedef struct ConfigurationRegisterB {
-	uint16_t underVoltageThreshold_V;
-	uint16_t overVoltageThreshold_V;
-	uint16_t cellsDischargeStatus;
-	//TODO: Add other fields in register
-} ConfigurationRegisterB;
 
 
 /* USER CODE END ET */

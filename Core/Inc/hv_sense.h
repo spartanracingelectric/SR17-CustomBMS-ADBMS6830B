@@ -4,7 +4,7 @@
 #ifndef INC_HV_SENSE_H_
 #define INC_HV_SENSE_H_
 
-#include "main.h"
+#include "accumulator.h"
 
 /* ===== Analog Front-End Parameters ==========================================
  * GAIN_TLV9001:

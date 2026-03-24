@@ -28,7 +28,9 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "module.h"
+#include "accumulator.h"
+#include "balance.h"
 /* USER CODE END Includes */
 
 extern CAN_HandleTypeDef hcan1;

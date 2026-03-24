@@ -1,5 +1,4 @@
 #include "accumulator.h"
-#include "main.h"
 #include <stdio.h>
 
 void Accumulator_init(AccumulatorData *acc)

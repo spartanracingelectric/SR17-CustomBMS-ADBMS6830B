@@ -2,13 +2,8 @@
  * @file    balance.c
  * @brief   Passive cell balancing control for ADBM6830b via DCC bits.
  */
-
 #include "balance.h"
-#include "can.h"
-#include "stm32f1xx_hal.h"
-#include "usart.h"
-#include <adbms6830b.h>
-#include <stdio.h>
+#include "adbms6830b.h"
 
 bool isBalancingEnabled = false;
 bool isBalancingFinished = false;
@@ -22,7 +17,6 @@ void Balance_init(BalanceStatus *blst, ConfigurationRegisterB *configB)
 	Balance_stopCellDischarge(blst);
 	Balance_getDischargeStatus(blst, configB);
 }
-
 
 void Balance_handleBalanceCANMessage(CAN_RxHeaderTypeDef *rxHeader, uint8_t *rxData)
 {

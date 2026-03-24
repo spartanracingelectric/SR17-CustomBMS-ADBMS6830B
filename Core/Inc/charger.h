@@ -1,8 +1,8 @@
 #ifndef CHARGER_H
 #define CHARGER_H
 
+#include "accumulator.h"
 #include "main.h"
-#include <stdint.h>
 
 extern bool isCharging;
 

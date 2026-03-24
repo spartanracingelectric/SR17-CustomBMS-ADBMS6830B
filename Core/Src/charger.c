@@ -1,6 +1,4 @@
 #include "charger.h"
-#include "main.h"
-#include "accumulator.h"
 
 bool isCharging;
 static AccumulatorData *accumulatorPointer = NULL;
