@@ -58,6 +58,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/safety.c
     Core/Src/soc.c
     Core/Src/contactor_sense.c
+	Core/Src/charger.c
 )
 
 # Add include paths

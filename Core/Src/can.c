@@ -28,6 +28,7 @@
 #include "usart.h"
 #include "stdio.h"
 #include "balance.h"
+#include "charger.h"
 #include "safety.h"
 #include <string.h>
 /* USER CODE END 0 */
@@ -170,17 +171,30 @@ HAL_StatusTypeDef CAN_activate() {
     return HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-	static CAN_RxHeaderTypeDef rxHeader;
-	static uint8_t rxData[8];
-	if (HAL_CAN_GetRxMessage(hcan1, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-	{
-		if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
-		{
-			Balance_handleBalanceCANMessage(&rxHeader, rxData);
-		}
-	}
+    CAN_RxHeaderTypeDef rxHeader;
+    uint8_t rxData[8];
+
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+    {
+        return;
+    }
+
+    if (rxHeader.IDE == CAN_ID_STD)
+    {
+        if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
+        {
+            Balance_handleBalanceCANMessage(&rxHeader, rxData);
+        }
+    }
+    else if (rxHeader.IDE == CAN_ID_EXT)
+    {
+        if (rxHeader.ExtId == ELCON_OUTPUT_CAN_ID)
+        {
+            Charger_handleElconCANMessage(&rxHeader, rxData);
+        }
+    }
 }
 
 /* ===== TX Path: Queueing a Frame ============================================
@@ -419,10 +433,10 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capaci
 	buffer->buffer[byteNumber++] = soc & 0xFF;
 	buffer->buffer[byteNumber++] = (soc >> 8) & 0xFF;
     buffer->buffer[byteNumber++] = percent;
-    buffer->buffer[byteNumber++] = batt->current & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 8) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 16) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 24)& 0xFF;
+    buffer->buffer[byteNumber++] = batt->current_mA & 0xFF;
+    buffer->buffer[byteNumber++] = (batt->current_mA >> 8) & 0xFF;
+    buffer->buffer[byteNumber++] = (batt->current_mA >> 16) & 0xFF;
+    buffer->buffer[byteNumber++] = (batt->current_mA >> 24)& 0xFF;
 //    printf("can id for soc: %d\n", CAN_ID);
     CAN_send(buffer, byteNumber);
 }

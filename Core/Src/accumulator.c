@@ -12,8 +12,8 @@ void Accumulator_init(AccumulatorData *acc)
 	acc->averagePointTemp_C = 0x0000;
 	acc->sumPackVoltage_cV = 0x0000;
 	acc->hvSensePackVoltage_cV = 0x0000;
-	acc->soc = 0x00000000; // microamps!!!!!
-	acc->current = 0x00000000;
+	acc->soc = 0x00000000;
+	acc->current_mA = 0x00000000;
 }
 
 void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod)
@@ -92,3 +92,5 @@ void Accumulator_getTemperatureStats(AccumulatorData *acc, ModuleData *mod){
 	acc->maxCellTemp_C = maxPointTemp;
 	acc->minCellTemp_C = minPointTemp;
 }
+
+

@@ -32,6 +32,7 @@
 #include "accumulator.h"
 #include "adbms6830b.h"
 #include "balance.h"
+#include "charger.h"
 #include "contactor_sense.h"
 #include "hv_sense.h"
 #include "module.h"
@@ -128,9 +129,11 @@ int main(void)
 	ADBMS_csHigh();
 	ADBMS_generateCrcTables();
 	ADBMS_init();
+
 	Module_init(modData);
 	Accumulator_init(&accmData);
 	Balance_init(balanceStatus, configB);
+	Charger_init(&accmData);
 
 	// TODO: Check if this is needed
 	// Sending a fault signal and reseting it

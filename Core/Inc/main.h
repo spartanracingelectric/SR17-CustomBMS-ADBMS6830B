@@ -78,7 +78,7 @@ typedef struct AccumulatorData {
 	uint16_t sumPackVoltage_cV;
 	uint16_t hvSensePackVoltage_cV;
     uint32_t soc; 
-    uint32_t current;
+    int32_t current_mA;
     uint8_t contactorState;
     uint16_t atmos_temp;
 	uint16_t pressure;
