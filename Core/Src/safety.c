@@ -36,9 +36,9 @@ static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod,
 static void Safety_checkOpenWire(int m, int c, uint16_t voltage, FaultFlags_t *faults, uint32_t current_time);
 static void Safety_checkRedundantVoltage(int m, int c, uint16_t voltage, FaultFlags_t *faults,
 										 uint16_t redundantVoltage, uint32_t current_time);
-static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
+static void Safety_checkOverVoltage(int m, int c, int16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
 									uint32_t current_time);
-static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
+static void Safety_checkUnderVoltage(int m, int c, int16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
 									 uint32_t current_time);
 static void Safety_checkOverTemp(int m, int t, uint16_t temp, FaultFlags_t *faults, WarningFlags_t *warns,
 								 uint32_t current_time);
@@ -79,8 +79,6 @@ void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod)
 void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 {
 	uint32_t current_time = HAL_GetTick();
-	Accumulator_getMaxVoltage(acc, mod);
-	Accumulator_getMinVoltage(acc, mod);
 
 	for (int m = 0; m < NUM_MOD; m++)
 	{
@@ -103,13 +101,6 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 		}
 	}
 }
-// void Cell_Balance_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings) {
-//	batt->cell_difference = batt->cell_volt_highest - batt->cell_volt_lowest;
-////cell volt imbalance warning
-//	if (batt->cell_difference >= CELL_VOLT_IMBALANCE_WARNING) {
-//		*warnings |= WARNING_BIT_IMBALANCE;
-//	}
-//}
 
 /* ===== Cell Temperature Evaluation ==========================================
  * Cell_Temperature_Fault():
@@ -373,7 +364,7 @@ static void Safety_checkRedundantVoltage(int m, int c, uint16_t voltage, FaultFl
 	}
 }
 
-static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
+static void Safety_checkOverVoltage(int m, int c, int16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
 									uint32_t current_time)
 {
 	if (voltage >= CELL_HIGH_VOLT_WARNING)
@@ -410,7 +401,7 @@ static void Safety_checkOverVoltage(int m, int c, uint16_t voltage, FaultFlags_t
 	}
 }
 
-static void Safety_checkUnderVoltage(int m, int c, uint16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
+static void Safety_checkUnderVoltage(int m, int c, int16_t voltage, FaultFlags_t *faults, WarningFlags_t *warns,
 									 uint32_t current_time)
 {
 	if (voltage <= CELL_LOW_VOLT_WARNING)
@@ -518,66 +509,3 @@ static void Safety_checkUnderTemp(int m, int t, uint16_t temp, FaultFlags_t *fau
 	}
 }
 
-/* ===== (Examples/Disabled) Pack-Level & Module Aggregates ====================
- * Illustrative routines for pack HV thresholds and per-module averages. These
- * remain commented until needed on your hardware/software path.
- */
-// void High_Voltage_Fault(struct batteryModule *batt, uint8_t *fault, uint8_t *warnings){
-//	uint32_t sum_voltage = 0;
-//
-//	for (int i = 0; i < NUM_CELLS; i++) {
-//		 sum_voltage += (uint32_t)batt->cell_volt[i]; //get sum voltage
-//	}
-//	if ((sum_voltage - batt->pack_voltage) >= FAULT_LOCK_MARGIN_LOW_VOLT){
-//		*warnings |= WARNING_BIT_SLAVE_VOLT;
-//	}
-//	if (batt->pack_voltage >= PACK_HIGH_VOLT_WARNING) {
-//		*warnings |= WARNING_BIT_HIGH_PACK_VOLT;
-//	}
-//	if (batt->pack_voltage <= PACK_LOW_VOLT_WARNING) {
-//		*warnings |= WARNING_BIT_LOW_PACK_VOLT;
-//	}
-//	if (batt->pack_voltage >= PACK_HIGH_VOLT_FAULT) {
-//		*fault |= FAULT_BIT_HIGH_PACK_VOLT;
-//		HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
-//	}
-//	else{
-//		*fault &= ~FAULT_BIT_HIGH_PACK_VOLT;
-//	}
-//	if (batt->pack_voltage <= PACK_LOW_VOLT_FAULT) {
-//		*fault |= FAULT_BIT_LOW_PACK_VOLT;
-//		HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
-//	}
-//	else{
-//		*fault &= ~FAULT_BIT_LOW_PACK_VOLT;
-//	}
-// }
-
-// void Module_Voltage_Averages(struct batteryModule *batt) {
-//     for (int i = 0; i < NUM_CELLS; i += NUM_CELL_PER_MOD) {
-//         uint16_t volt_sum = 0;
-//
-//         for (int j = i; j < i + NUM_CELL_PER_MOD && j < NUM_CELLS; j++) {
-//             volt_sum += batt->cell_volt[j];
-//         }
-//
-//         uint16_t average = volt_sum / NUM_CELL_PER_MOD;
-//
-//         batt->average_volt[i / NUM_CELL_PER_MOD] = average;
-//     }
-// }
-//
-//
-// void Module_Temperature_Averages(struct batteryModule *batt) {
-//     for (int i = 0; i < NUM_THERM_TOTAL; i += NUM_THERM_PER_MOD) {
-//         uint16_t temp_sum = 0;
-//
-//         for (int j = i; j < i + NUM_THERM_PER_MOD && j < NUM_THERM_TOTAL; j++) {
-//             temp_sum += batt->cell_temp[j];
-//         }
-//
-//         uint16_t average = temp_sum / NUM_THERM_PER_MOD;
-//
-//         batt->average_temp[i / NUM_THERM_PER_MOD] = average;
-//     }
-// }

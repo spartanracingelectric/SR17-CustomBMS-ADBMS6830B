@@ -161,6 +161,7 @@ int main(void)
 
 		// Passive balancing is called unless a fault has occurred
 		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
+
 		// CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 		CAN_sendPackSummary(&msg, &accmData);
 		CAN_sendVoltageData(&msg, modData);

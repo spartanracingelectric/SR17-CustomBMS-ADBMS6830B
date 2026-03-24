@@ -152,8 +152,8 @@ void Module_getTemperatureStats(ModuleData * mod){
 		module->maxPointTemperatureIndex = maxPointIndex;
 		module->minPointTemperature_C = pointTempList[minPointIndex];
 		module->minPointTemperatureIndex = minPointIndex;
-		printf("module %u avg point temperature: %uC max point temperature: %uC min point temperature: %uC", moduleIndex + 1,
-				module->averagePointTemperature_C, module->maxPointTemperature_C, module->minPointTemperature_C);
+		// printf("module %u avg point temperature: %uC max point temperature: %uC min point temperature: %uC", moduleIndex + 1,
+		// 		module->averagePointTemperature_C, module->maxPointTemperature_C, module->minPointTemperature_C);
 	}
 }
 
@@ -244,6 +244,6 @@ void Module_getVoltageStats(ModuleData *mod){
 		module->minCellVoltage_mV = voltageList[minVoltageIndex];
 		module->totalCellVoltage_mV = totalVoltage;
 		module->averageCellVoltage_mV = totalVoltage / NUM_CELL_PER_MOD;
-		printf("Module %d avg cell voltage: %d max: %d min: %d total %ld\n", moduleIndex + 1, module->averageCellVoltage_mV, voltageList[maxVoltageIndex], voltageList[minVoltageIndex], totalVoltage);
+		// printf("Module %d avg cell voltage: %d max: %d min: %d total %ld\n", moduleIndex + 1, module->averageCellVoltage_mV, voltageList[maxVoltageIndex], voltageList[minVoltageIndex], totalVoltage);
 	}
 }
