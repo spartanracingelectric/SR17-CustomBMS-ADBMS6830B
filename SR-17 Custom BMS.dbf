@@ -29,8 +29,8 @@
 
 [START_MSG] BMS_State_of_Charge,1569,7,3,1,S,Custom_BMS
 [START_SIGNALS] BMS_Capacity,16,1,0,U,65535,0,1,0,1,mAh,,Custom_BMS
-[START_SIGNALS] BMS_Percent,8,3,0,U,255,0,1,0,1,Percent,,Custom_BMS
-[START_SIGNALS] BMS_Current,32,4,0,U,2704,0,1,0,1,mA,,Custom_BMS
+[START_SIGNALS] BMS_HV_Sense_Pack_Voltage,16,3,0,U,65535,0,1,0,0.01,V,,Custom_BMS
+[START_SIGNALS] BMS_Current,32,5,0,U,2704,0,1,0,1,mA,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_Balance_Status_M1_to_M4,1571,8,56,1,S,Custom_BMS

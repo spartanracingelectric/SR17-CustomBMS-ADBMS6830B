@@ -432,7 +432,8 @@ void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capaci
     CAN_setId(buffer, canId);
 	buffer->buffer[byteNumber++] = soc & 0xFF;
 	buffer->buffer[byteNumber++] = (soc >> 8) & 0xFF;
-    buffer->buffer[byteNumber++] = percent;
+    buffer->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+    buffer->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
     buffer->buffer[byteNumber++] = batt->current_mA & 0xFF;
     buffer->buffer[byteNumber++] = (batt->current_mA >> 8) & 0xFF;
     buffer->buffer[byteNumber++] = (batt->current_mA >> 16) & 0xFF;

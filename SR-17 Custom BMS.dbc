@@ -26,8 +26,8 @@ SG_ BMS_Balance_Enable : 0|1@1- (1,0) [0|1] " " Custom_BMS
 
 BO_ 1569 BMS_State_of_Charge: 7 Custom_BMS
 SG_ BMS_Capacity : 0|16@1+ (1,0) [0|65535] "mAh" Custom_BMS
-SG_ BMS_Percent : 16|8@1+ (1,0) [0|255] "Percent" Custom_BMS
-SG_ BMS_Current : 24|32@1+ (1,0) [0|4.29497e+009] "mA" Custom_BMS
+SG_ BMS_HV_Sense_Pack_Voltage: 16|16@1+ (0.01,0) [0|65535] "V" Custom_BMS
+SG_ BMS_Current : 32|32@1+ (1,0) [0|4.29497e+009] "mA" Custom_BMS
 
 BO_ 1571 BMS_Balance_Status_M1_to_M4: 8 Custom_BMS
 SG_ BMS_M1_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS

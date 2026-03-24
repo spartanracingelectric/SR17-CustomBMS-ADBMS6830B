@@ -1,6 +1,9 @@
 Conversion Warnings Log
 
 
+MSG_ID: 1569 	MSG_TYPE: S 	MSG_NAME: BMS_State_of_Charge
+	SIG_NAME: BMS_HV_Sense_Pack_Voltage, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
 MSG_ID: 1694 	MSG_TYPE: S 	MSG_NAME: BMS_Faults_Message_1
 	SIG_NAME: BMS_Enable_Balance_Message, STATUS: Invalid Max or Min value., ACTION: Value Set to default
 	SIG_NAME: BMS_Cell_Overvolt_Fault	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
