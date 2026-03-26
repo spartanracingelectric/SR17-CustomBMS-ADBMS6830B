@@ -144,7 +144,6 @@ void ADBMS_sendCommand(uint16_t command)
 	txBuffer[3] = (uint8_t)(pec);
 
 	HAL_StatusTypeDef status = HAL_SPI_Transmit(&hspi1, txBuffer, COMMAND_LENGTH + PEC_LEN, 100);
-	printf("SPI STATUS: %d\n", status);
 }
 
 /**

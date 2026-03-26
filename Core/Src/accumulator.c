@@ -1,5 +1,4 @@
 #include "accumulator.h"
-#include "main.h"
 #include <stdio.h>
 
 void Accumulator_init(AccumulatorData *acc)
@@ -9,44 +8,56 @@ void Accumulator_init(AccumulatorData *acc)
 	acc->cellImbalance_mV = 0x0000;
 	acc->minCellTemp_C = 0x0000;
 	acc->maxCellTemp_C = 0x0000;
+	acc->averagePointTemp_C = 0x0000;
 	acc->sumPackVoltage_cV = 0x0000;
-	acc->hvsens_pack_voltage = 0x0000;
-	acc->soc = 0x00000000; // microamps!!!!!
-	acc->current = 0x00000000;
+	acc->hvSensePackVoltage_cV = 0x0000;
+	acc->soc = 0x00000000;
+	acc->current_mA = 0x00000000;
 }
 
 void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod)
 {
-	// TODO: Only look at module min cell voltage instead of every voltage in module
-	acc->minCellVoltage_mV = mod[0].cellVoltage_mV[0];
-
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
-	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			if (mod[moduleIndex].cellVoltage_mV[cellIndex] < acc->minCellVoltage_mV)
-			{
-				acc->minCellVoltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
-			}
+	int16_t minVoltage = mod[0].minCellVoltage_mV;
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		if(mod[moduleIndex].minCellVoltage_mV < minVoltage){
+			minVoltage = mod[moduleIndex].minCellVoltage_mV;
 		}
 	}
+	acc->minCellVoltage_mV = minVoltage;
 }
 
 void Accumulator_getMaxVoltage(AccumulatorData *acc, ModuleData *mod)
 {
-	// TODO: Only look at module max cell voltage instead of every voltage in module
-	acc->maxCellVoltage_mV = mod[0].cellVoltage_mV[0];
-
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
-	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			if (mod[moduleIndex].cellVoltage_mV[cellIndex] > acc->maxCellVoltage_mV)
-			{
-				acc->maxCellVoltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
-			}
+	int16_t maxVoltage = mod[0].maxCellVoltage_mV;
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		if(mod[moduleIndex].maxCellVoltage_mV > maxVoltage){
+			maxVoltage = mod[moduleIndex].maxCellVoltage_mV;
 		}
 	}
+	acc->maxCellVoltage_mV = maxVoltage;
+}
+
+void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
+	int32_t averageVoltageSum = mod[0].averageCellVoltage_mV;
+	int16_t maxVoltage = mod[0].maxCellVoltage_mV;
+	int16_t minVoltage = mod[0].minCellVoltage_mV;
+	uint32_t totalPackVoltage_mV = mod[0].totalCellVoltage_mV;
+
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData	*module = &mod[moduleIndex];
+		averageVoltageSum += module->averageCellVoltage_mV;
+		totalPackVoltage_mV += module->totalCellVoltage_mV;
+		if(module->maxCellVoltage_mV > maxVoltage){
+			maxVoltage = module->maxCellVoltage_mV;
+		}
+		if(module->minCellVoltage_mV < minVoltage){
+			minVoltage = module->minCellVoltage_mV;
+		}
+	}
+	acc->averageCellVoltage_mV = averageVoltageSum / NUM_MOD;
+	acc->maxCellVoltage_mV = maxVoltage;
+	acc->minCellVoltage_mV = minVoltage;
+	acc->sumPackVoltage_cV = totalPackVoltage_mV;
 }
 
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
@@ -55,11 +66,30 @@ void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
 
 	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
 	{
-		for (int cellIndex = 0; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
-		{
-			totalVoltage_mV += mod[moduleIndex].cellVoltage_mV[cellIndex];
-		}
+		totalVoltage_mV += mod[moduleIndex].totalCellVoltage_mV;
 	}
 
 	batt->sumPackVoltage_cV = (int16_t)(totalVoltage_mV / 100);
 }
+
+void Accumulator_getTemperatureStats(AccumulatorData *acc, ModuleData *mod){
+	int32_t avgTempSum = mod[0].averagePointTemperature_C;
+	uint16_t maxPointTemp = mod[0].maxPointTemperature_C;
+	uint16_t minPointTemp = mod[0].minPointTemperature_C;
+
+	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
+		ModuleData* module = &mod[moduleIndex];
+		avgTempSum += module->averagePointTemperature_C;
+		if(module->maxPointTemperature_C > maxPointTemp){
+			maxPointTemp = module->maxPointTemperature_C;
+		}
+		if(module->minPointTemperature_C < minPointTemp){
+			minPointTemp = module->minPointTemperature_C;
+		}
+	}
+	acc->averagePointTemp_C = avgTempSum / NUM_MOD;
+	acc->maxCellTemp_C = maxPointTemp;
+	acc->minCellTemp_C = minPointTemp;
+}
+
+

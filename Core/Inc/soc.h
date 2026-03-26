@@ -22,6 +22,8 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "accumulator.h"
+#include "module.h"
 
 /* ===== Shunt / Analog Front-End Parameters ===================================
  * MAX_SHUNT_AMPAGE:

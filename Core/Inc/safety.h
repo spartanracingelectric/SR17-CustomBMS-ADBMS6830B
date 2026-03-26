@@ -20,6 +20,8 @@
 #define INC_SAFETY_H_
 
 #include "main.h"
+#include "accumulator.h"
+#include "module.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -45,8 +47,8 @@
  */
 #define PACK_HIGH_VOLT_WARNING	    4085000
 #define PACK_LOW_VOLT_WARNING       3000000
-#define CELL_HIGH_VOLT_WARNING	    40000
-#define CELL_LOW_VOLT_WARNING	    27000
+#define CELL_HIGH_VOLT_WARNING	    4000
+#define CELL_LOW_VOLT_WARNING	    2700
 #define CELL_VOLT_IMBALANCE_WARNING	1000 //0.05 V
 #define CELL_HIGH_TEMP_WARNING		55
 #define CELL_LOW_TEMP_WARNING		0

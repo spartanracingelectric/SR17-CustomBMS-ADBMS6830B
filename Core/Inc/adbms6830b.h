@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "module.h"
+#include "balance.h"
 
 // Voltage conversion base commands
 #define ADCV 0x0260
