@@ -5,7 +5,7 @@
 [PROTOCOL] CAN
 
 [BUSMASTER_VERSION] [3.2.2]
-[NUMBER_OF_MESSAGES] 94
+[NUMBER_OF_MESSAGES] 95
 
 [START_MSG] BMS_Safety_Checker,1536,4,13,1,S,Custom_BMS
 [START_SIGNALS] BMS_Cell_High_Temp_Warning,1,1,2,B,1,0,1,0,1, ,,Custom_BMS
@@ -29,8 +29,8 @@
 
 [START_MSG] BMS_State_of_Charge,1569,7,3,1,S,Custom_BMS
 [START_SIGNALS] BMS_Capacity,16,1,0,U,65535,0,1,0,1,mAh,,Custom_BMS
-[START_SIGNALS] BMS_Percent,8,3,0,U,255,0,1,0,1,Percent,,Custom_BMS
-[START_SIGNALS] BMS_Current,32,4,0,U,2704,0,1,0,1,mA,,Custom_BMS
+[START_SIGNALS] BMS_HV_Sense_Pack_Voltage,16,3,0,U,65535,0,1,0,0.01,V,,Custom_BMS
+[START_SIGNALS] BMS_Current,32,5,0,U,2704,0,1,0,1,mA,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_Balance_Status_M1_to_M4,1571,8,56,1,S,Custom_BMS
@@ -185,9 +185,9 @@
 [START_MSG] BMS_Pack_Summary,1570,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_Highest_Cell_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_Lowest_Cell_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
-[START_SIGNALS] BMS_Higest_Cell_Temperature,8,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_Lowest_Cell_Temperature,8,6,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_Total_Pack_Voltage,16,7,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
+[START_SIGNALS] BMS_Higest_Cell_Temperature,8,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_Lowest_Cell_Temperature,8,6,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_Total_Pack_Voltage,16,7,0,U,3277,0,1,0,0.01,V,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_M1_Cell_Voltage_Data_1,1584,8,4,1,S,Custom_BMS
@@ -230,11 +230,14 @@
 [START_SIGNALS] BMS_M2_Cell_8_Voltage,16,7,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M2_Cell_Voltage_Data_3,1590,8,6,1,S,Custom_BMS
+[START_MSG] BMS_M2_Cell_Voltage_Data_3,1590,8,4,1,S,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_9_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_10_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_11_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_12_Voltage,16,7,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
+[END_MSG]
+
+[START_MSG] BMS_M2_Cell_Voltage_Data_4,1591,4,2,1,S,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_13_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_M2_Cell_14_voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS	CM_check
 [END_MSG]
@@ -444,197 +447,197 @@
 
 [START_MSG] BMS_M10_Cell_Voltage_Data_4,1623,4,2,1,S,Custom_BMS
 [START_SIGNALS] BMS_M10_Cell_13_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_14_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS	CM_check
+[START_SIGNALS] BMS_M10_Cell_14_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M1_Cell_Thermistor_Data_1,1664,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkchangedto16bytesforeachthermistor
-[START_SIGNALS] BMS_M1_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M1_Thermistor_Data_1,1664,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M1_Cell_Thermistor_Data_2,1665,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermistor10tempreaddeletedpressure,humidity,atmosphere,dewpoint
+[START_MSG] BMS_M1_Thermistor_Data_2,1665,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M1_Cell_Thermistor_Data_3,1666,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M1_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkaddmorestuffintothemessages
-[START_SIGNALS] BMS_M1_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M1_Thermistor_Data_3,1666,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M1_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M2_Cell_Thermistor_Data_1,1667,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M2_Thermistor_Data_1,1667,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M2_Cell_Thermistor_Data_2,1668,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M2_Thermistor_Data_2,1668,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M2_Cell_Thermistor_Data_3,1669,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M2_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermistor10readingsdeletedewpoint,atmospheretemp,pressure,humidity
+[START_MSG] BMS_M2_Thermistor_Data_3,1669,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M3_Cell_Thermistor_Data_1,1670,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M3_Thermistor_Data_1,1670,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M3_Cell_Thermistor_Data_2,1671,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M3_Thermistor_Data_2,1671,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M3_Cell_Thermistor_Data_3,1672,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M3_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermistor10readings
+[START_MSG] BMS_M3_Thermistor_Data_3,1672,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M3_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M2_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M4_Cell_Thermistor_Data_1,1673,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M4_Thermistor_Data_1,1673,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M4_Cell_Thermistor_Data_2,1674,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M4_Thermistor_Data_2,1674,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M4_Cell_Thermistor_Data_3,1675,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M4_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermister10readings
+[START_MSG] BMS_M4_Thermistor_Data_3,1675,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M4_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M5_Cell_Thermistor_Data_1,1676,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M5_Thermistor_Data_1,1676,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M5_Cell_Thermistor_Data_2,1677,8,4,1,S,Custom_BMSBO_
-[START_SIGNALS] BMS_M5_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M5_Thermistor_Data_2,1677,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M5_Cell_Thermistor_Data_3,1678,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M5_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermister10readings
+[START_MSG] BMS_M5_Thermistor_Data_3,1678,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M5_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M6_Cell_Thermistor_Data_1,1679,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M6_Thermistor_Data_1,1679,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M6_Cell_Thermistor_Data_2,1680,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M6_Thermistor_Data_2,1680,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M6_Cell_Thermistor_Data_3,1681,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M6_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermister10readings
+[START_MSG] BMS_M6_Thermistor_Data_3,1681,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M6_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M7_Cell_Thermistor_Data_1,1682,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M7_Thermistor_Data_1,1682,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M7_Cell_Thermistor_Data_2,1683,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M7_Thermistor_Data_2,1683,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M7_Cell_Thermistor_Data_3,1684,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M7_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermister10readings
+[START_MSG] BMS_M7_Thermistor_Data_3,1684,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M7_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M8_Cell_Thermistor_Data_1,1685,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M8_Thermistor_Data_1,1685,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M8_Cell_Thermistor_Data_2,1686,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M8_Thermistor_Data_2,1686,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M8_Cell_Thermistor_Data_3,1687,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M8_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMSCM_checkthermister10readings
+[START_MSG] BMS_M8_Thermistor_Data_3,1687,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M8_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M9_Cell_Thermistor_Data_1,1688,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M9_Thermistor_Data_1,1688,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M9_Cell_Thermistor_Data_2,1689,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M9_Thermistor_Data_2,1689,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M9_Cell_Thermistor_Data_3,1690,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M9_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M9_Thermistor_Data_3,1690,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M9_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M10_Cell_Thermistor_Data_1,1691,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_1_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_2_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_3_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_4_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M10_Thermistor_Data_1,1691,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_1,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_2,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_3,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_4,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M10_Cell_Thermistor_Data_2,1692,8,4,1,S,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_5_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_6_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_7_Thermistor,16,5,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_8_Thermistor,16,7,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M10_Thermistor_Data_2,1692,8,4,1,S,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_5,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_6,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_7,16,5,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_8,16,7,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M10_Cell_Thermistor_Data_2,1693,4,2,1,S,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_9_Thermistor,16,1,0,U,255,0,1,0,1,C,,Custom_BMS
-[START_SIGNALS] BMS_M10_Cell_10_Thermistor,16,3,0,U,255,0,1,0,1,C,,Custom_BMS
+[START_MSG] BMS_M10_Thermistor_Data_3,1693,4,2,1,S,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_9,16,1,0,I,127,-128,1,0,1,C,,Custom_BMS
+[START_SIGNALS] BMS_M10_Thermistor_10,16,3,0,I,127,-128,1,0,1,C,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_Faults_Message_1,1694,8,9,1,S,Custom_BMS
@@ -675,7 +678,7 @@
 [START_SIGNALS] BMS_avg_M10_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M1_Module_Summary,1700,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M1_Module_Voltage_Summary,1700,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M1_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M1_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M1_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
@@ -683,76 +686,76 @@
 [START_SIGNALS] BMS_M1_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M2_Module_Summary,1701,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M2_Module_Voltage_Summary,1701,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M2_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M2_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M2_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M2_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M2_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M2_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M2_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M3_Module_Summary,1702,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M3_Module_Voltage_Summary,1702,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M3_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M3_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M3_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M3_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M3_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M3_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M3_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M4_Module_Summary,1703,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M4_Module_Voltage_Summary,1703,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M4_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M4_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M4_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M4_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M4_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M4_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M4_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M5_Module_Summary,1704,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M5_Module_Voltage_Summary,1704,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M5_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M5_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M5_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M5_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M5_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M5_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M5_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M6_Module_Summary,1705,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M6_Module_Voltage_Summary,1705,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M6_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M6_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M6_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M6_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M6_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M6_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M6_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M7_Module_Summary,1706,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M7_Module_Voltage_Summary,1706,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M7_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M7_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M7_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M7_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M7_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M7_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M7_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M8_Module_Summary,1707,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M8_Module_Voltage_Summary,1707,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M8_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M8_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M8_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M8_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M8_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M8_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M8_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M9_Module_Summary,1708,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M9_Module_Voltage_Summary,1708,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M9_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M9_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M9_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M9_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M9_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M9_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M9_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_M10_Module_Summary,1709,8,5,1,S,Custom_BMS
+[START_MSG] BMS_M10_Module_Voltage_Summary,1709,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_M10_Max_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M10_Min_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
 [START_SIGNALS] BMS_M10_Avg_Voltage,16,5,0,I,32767,-32768,1,0,0.001,V,	,Custom_BMS
-[START_SIGNALS] BMS_M10_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,0.001,,,Custom_BMS
-[START_SIGNALS] BMS_M10_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,0.001,,,Custom_BMS
+[START_SIGNALS] BMS_M10_Max_Voltage_Cell_Number,8,7,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_M10_Min_Voltage_Cell_Number,8,8,0,U,255,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_Fault_Status_M1_to_M4,1710,8,56,1,S,Custom_BMS
@@ -964,7 +967,6 @@
 
 [START_NOT_PROCESSED]
 OF_:
-O0_ 1591 OZF_Z2_Pryy_Ibygntr_qngn_4: 4 Phfgbz_OZF
 O0_ 1696 OZF_Cnpx_Ibygntr_Qngn : 4 Phfgbz_OZF
 
 [END_NOT_PROCESSED]

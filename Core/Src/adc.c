@@ -1,31 +1,33 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    adc.c
-  * @brief   This file provides code for the configuration
-  *          of the ADC instances.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    adc.c
+ * @brief   This file provides code for the configuration
+ *          of the ADC instances.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-
+uint16_t adc1Buffer[NUM_ADC1_CHANNEL] = {0};
+bool isAdc1ConversionsFinished = false;
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
+DMA_HandleTypeDef hdma_adc1;
 
 /* ADC1 init function */
 void MX_ADC1_Init(void)
@@ -137,13 +139,27 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     /**ADC1 GPIO Configuration
     PC5     ------> ADC1_IN15
     */
-    GPIO_InitStruct.Pin = MCU_ADC_VSENSE_Pin;
+    GPIO_InitStruct.Pin = HV_SENSE_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    HAL_GPIO_Init(MCU_ADC_VSENSE_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(HV_SENSE_GPIO_Port, &GPIO_InitStruct);
 
-    /* ADC1 interrupt Init */
-    HAL_NVIC_SetPriority(ADC1_2_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
+    /* ADC1 DMA Init */
+    /* ADC1 Init */
+    hdma_adc1.Instance = DMA1_Channel1;
+    hdma_adc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    hdma_adc1.Init.Mode = DMA_NORMAL;
+    hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(adcHandle,DMA_Handle,hdma_adc1);
+
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
   /* USER CODE END ADC1_MspInit 1 */
@@ -166,9 +182,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    /* ADC2 interrupt Init */
-    HAL_NVIC_SetPriority(ADC1_2_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
   /* USER CODE END ADC2_MspInit 1 */
@@ -189,17 +202,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     /**ADC1 GPIO Configuration
     PC5     ------> ADC1_IN15
     */
-    HAL_GPIO_DeInit(MCU_ADC_VSENSE_GPIO_Port, MCU_ADC_VSENSE_Pin);
+    HAL_GPIO_DeInit(HV_SENSE_GPIO_Port, HV_SENSE_Pin);
 
-    /* ADC1 interrupt Deinit */
-  /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */
-    /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
-    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
-  /* USER CODE END ADC1:ADC1_2_IRQn disable */
-
+    /* ADC1 DMA DeInit */
+    HAL_DMA_DeInit(adcHandle->DMA_Handle);
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
   /* USER CODE END ADC1_MspDeInit 1 */
@@ -219,15 +225,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     */
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_1|Shunt_PIN_FOR_2A_Pin);
 
-    /* ADC2 interrupt Deinit */
-  /* USER CODE BEGIN ADC2:ADC1_2_IRQn disable */
-    /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
-    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
-  /* USER CODE END ADC2:ADC1_2_IRQn disable */
-
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
   /* USER CODE END ADC2_MspDeInit 1 */
@@ -235,28 +232,74 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-uint32_t readADCChannel(uint32_t channel)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-    ADC_ChannelConfTypeDef sConfig = {0};
-
-    sConfig.Channel = channel;
-    sConfig.Rank = ADC_REGULAR_RANK_1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
-
-    HAL_ADC_ConfigChannel(&hadc1, &sConfig);
-    HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-    uint32_t value = HAL_ADC_GetValue(&hadc1);
-    HAL_ADC_Stop(&hadc1);
-
-    return value;
+	if (hadc->Instance == ADC1)
+	{
+		isAdc1ConversionsFinished = true;
+	}
 }
 
-float getVref()
+void ADC1_startConversion(void)
 {
-	uint32_t adc_val_vref = readADCChannel(ADC_CHANNEL_VREFINT);
-    float Vref = (VREFINT_CAL * ADC_RESOLUTION) / (float)adc_val_vref;
-//    printf("vref:%f\n", Vref);
-    return Vref;
+	isAdc1ConversionsFinished = false;
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1Buffer, NUM_ADC1_CHANNEL);
 }
+
+float ADC_getHvSenseRawVoltage_mV(void)
+{
+	uint32_t startTick = HAL_GetTick();
+
+	while (!isAdc1ConversionsFinished)
+	{
+		if ((HAL_GetTick() - startTick) >= 10)
+		{
+			// Timeout after 10 ms
+			return 0;
+		}
+	}
+
+	uint16_t hvSenseAdcValue = adc1Buffer[HV_SENSE_ADC_RANK - 1];
+	uint16_t vRefRaw = adc1Buffer[VREFINT_ADC_RANK - 1];
+
+	float vRef_mV = ADC_calculateVref_mV(vRefRaw);
+
+	float hvSenseRawVoltage_mV = ADC_convertAdcCountToVoltage_mV(hvSenseAdcValue, vRef_mV);
+
+	ADC1_startConversion();
+	return hvSenseRawVoltage_mV;
+}
+
+float ADC_getVref_mV(void)
+{
+	uint32_t startTick = HAL_GetTick();
+
+	while (!isAdc1ConversionsFinished)
+	{
+		if ((HAL_GetTick() - startTick) >= 10)
+		{
+			// Timeout after 10 ms
+			return 0;
+		}
+	}
+
+	uint16_t vRefAdcCount = adc1Buffer[VREFINT_ADC_RANK - 1];
+	float vRef_mV = ADC_calculateVref_mV(vRefAdcCount);
+
+	ADC1_startConversion();
+	return vRef_mV;
+}
+
+float ADC_calculateVref_mV(uint16_t vRefAdcCount)
+{
+	float vRef_mV = VREFINT_CALIBRATION_SUPPLY_POWER_MV * VREFINT_CALIBRATION_ADC_RAW_COUNT / (float)vRefAdcCount;
+	return vRef_mV;
+}
+
+float ADC_convertAdcCountToVoltage_mV(uint16_t adcCount, float vRef_mV)
+{
+	float voltage_mv = ((float)adcCount / ADC_RESOLUTION) * vRef_mV;
+	return voltage_mv;
+}
+
 /* USER CODE END 1 */

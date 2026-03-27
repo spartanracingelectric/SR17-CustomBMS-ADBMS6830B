@@ -52,11 +52,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/accumulator.c
     Core/Src/adbms6830b.c
     Core/Src/balance.c
-    Core/Src/hv_sens.c
+    Core/Src/hv_sense.c
     Core/Src/main.c
     Core/Src/module.c
     Core/Src/safety.c
     Core/Src/soc.c
+    Core/Src/contactor_sense.c
+	Core/Src/charger.c
 )
 
 # Add include paths

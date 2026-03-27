@@ -23,11 +23,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
-
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
 #include "balance.h"
+#include "charger.h"
 #include "safety.h"
 #include <string.h>
 /* USER CODE END 0 */
@@ -35,19 +35,6 @@
 CAN_HandleTypeDef hcan1;
 
 /* CAN1 init function */
-/* CAN1 init function */
-/* ===== CubeMX: CAN1 init ====================================================
- * Bit timing:
- *  - Prescaler=9, BS1=3TQ, BS2=4TQ, SJW=1TQ → 1 + 3 + 4 = 8 TQ per bit
- *  - Effective bitrate depends on APB clock; adjust in .ioc as needed.
- *
- * Filter:
- *  - Bank 0, 32-bit mask, FIFO0
- *  - Accept only StdID 0x604 (exact match) used by the charger command path.
- *
- * Auto features:
- *  - AutoBusOff=ENABLE, AutoWakeUp=DISABLE, AutoRetransmission=ENABLE
- */
 void MX_CAN1_Init(void)
 {
 
@@ -91,7 +78,6 @@ void MX_CAN1_Init(void)
 
 }
 
-/* ===== CubeMX: MSP (GPIO/IRQ/Clock) ======================================== */
 void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 {
 
@@ -136,14 +122,12 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
   }
 }
 
-/* ===== CubeMX: MSP DeInit =================================================== */
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 {
 
   if(canHandle->Instance==CAN1)
   {
   /* USER CODE BEGIN CAN1_MspDeInit 0 */
-	  can_skip_flag = 0;
   /* USER CODE END CAN1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_CAN1_CLK_DISABLE();
@@ -165,17 +149,36 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
-/* ===== Runtime State & Thin HAL Wrappers ====================================
- * can_skip_flag: exit condition for a blocked TX wait loop on timeout.
- * CAN_Start():   starts CAN peripheral.
- * CAN_Activate(): enables RX FIFO0 message pending interrupt.
- */
-uint8_t can_skip_flag = 0;
-
 HAL_StatusTypeDef CAN_start() { return HAL_CAN_Start(&hcan1); }
 
 HAL_StatusTypeDef CAN_activate() {
     return HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_RxHeaderTypeDef rxHeader;
+    uint8_t rxData[8];
+
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+    {
+        return;
+    }
+
+    if (rxHeader.IDE == CAN_ID_STD)
+    {
+        if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
+        {
+            Balance_handleBalanceCANMessage(&rxHeader, rxData);
+        }
+    }
+    else if (rxHeader.IDE == CAN_ID_EXT)
+    {
+        if (rxHeader.ExtId == ELCON_OUTPUT_CAN_ID)
+        {
+            Charger_handleElconCANMessage(&rxHeader, rxData);
+        }
+    }
 }
 
 /* ===== TX Path: Queueing a Frame ============================================
@@ -194,9 +197,9 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
-    	printf("waiting\n");
+    	// printf("waiting\n");
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
-			printf("timeout\n");
+			// printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
@@ -289,11 +292,11 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod)
 
     for (int i = 0; i < NUM_MOD; i++)
     {
-    	for(int j = 0; j < NUM_THERM_TOTAL; j+= NUM_THERM_PER_MESSAGE)
+    	for(int j = 0; j < NUM_THERM_PER_MOD; j+= NUM_THERM_PER_MESSAGE)
     	{
     		int byteNumber = 0;
 
-    		if(j + 3 < NUM_THERM_TOTAL)
+    		if(j + 3 < NUM_THERM_PER_MOD)
     		{
     			CAN_setId(message, canId);
     			message->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
@@ -389,8 +392,8 @@ void CAN_Send_Safety_Checker(CANMessage *message, AccumulatorData *batt, uint8_t
 	message->buffer[byteNumber++] = *faults;
 	message->buffer[byteNumber++] =  batt->cellImbalance_mV           & 0xFF;
 	message->buffer[byteNumber++] = (batt->cellImbalance_mV     >> 8) & 0xFF;
-	message->buffer[byteNumber++] =  batt->hvsens_pack_voltage       & 0xFF;
-	message->buffer[byteNumber++] = (batt->hvsens_pack_voltage >> 8) & 0xFF;
+	message->buffer[byteNumber++] =  batt->hvSensePackVoltage_cV       & 0xFF;
+	message->buffer[byteNumber++] = (batt->hvSensePackVoltage_cV >> 8) & 0xFF;
 	message->buffer[byteNumber++] =  batt->sumPackVoltage_cV & 0xFF;
 	message->buffer[byteNumber++] = (batt->sumPackVoltage_cV   >> 8) & 0xFF;
 	CAN_send(message, byteNumber);
@@ -414,11 +417,12 @@ void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capac
     CAN_setId(message, canId);
 	message->buffer[byteNumber++] = soc & 0xFF;
 	message->buffer[byteNumber++] = (soc >> 8) & 0xFF;
-    message->buffer[byteNumber++] = percent;
-    message->buffer[byteNumber++] = batt->current & 0xFF;
-    message->buffer[byteNumber++] = (batt->current >> 8) & 0xFF;
-    message->buffer[byteNumber++] = (batt->current >> 16) & 0xFF;
-    message->buffer[byteNumber++] = (batt->current >> 24)& 0xFF;
+    message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+    message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+    message->buffer[byteNumber++] = batt->current_mA & 0xFF;
+    message->buffer[byteNumber++] = (batt->current_mA >> 8) & 0xFF;
+    message->buffer[byteNumber++] = (batt->current_mA >> 16) & 0xFF;
+    message->buffer[byteNumber++] = (batt->current_mA >> 24)& 0xFF;
 //    printf("can id for soc: %d\n", CAN_ID);
     CAN_send(message, byteNumber);
 }

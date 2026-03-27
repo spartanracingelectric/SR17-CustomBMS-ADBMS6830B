@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "module.h"
+#include "balance.h"
 
 // Voltage conversion base commands
 #define ADCV 0x0260
@@ -231,7 +233,6 @@ typedef enum
 
 extern DiagnosticPhase diagnosticPhase;
 
-void isoSPI_Idle_to_Ready();
 void ADBMS_wakeUp();
 void ADBMS_clearRegisters();
 
