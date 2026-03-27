@@ -86,7 +86,7 @@ int main(void)
 	AccumulatorData accmData;
 	ModuleData modData[NUM_MOD];
 	BalanceStatus balanceStatus[NUM_MOD] = {0};
-	ConfigurationRegisterB configB[NUM_MOD];
+	ConfigurationRegisterB configB[NUM_MOD] = {0};
 	CANMessage msg;
 	//	uint8_t moduleCounts = 0;
 
