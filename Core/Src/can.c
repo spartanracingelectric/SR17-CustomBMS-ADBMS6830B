@@ -23,7 +23,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
-
 /* USER CODE BEGIN 0 */
 #include "usart.h"
 #include "stdio.h"
@@ -36,19 +35,6 @@
 CAN_HandleTypeDef hcan1;
 
 /* CAN1 init function */
-/* CAN1 init function */
-/* ===== CubeMX: CAN1 init ====================================================
- * Bit timing:
- *  - Prescaler=9, BS1=3TQ, BS2=4TQ, SJW=1TQ → 1 + 3 + 4 = 8 TQ per bit
- *  - Effective bitrate depends on APB clock; adjust in .ioc as needed.
- *
- * Filter:
- *  - Bank 0, 32-bit mask, FIFO0
- *  - Accept only StdID 0x604 (exact match) used by the charger command path.
- *
- * Auto features:
- *  - AutoBusOff=ENABLE, AutoWakeUp=DISABLE, AutoRetransmission=ENABLE
- */
 void MX_CAN1_Init(void)
 {
 
@@ -92,7 +78,6 @@ void MX_CAN1_Init(void)
 
 }
 
-/* ===== CubeMX: MSP (GPIO/IRQ/Clock) ======================================== */
 void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 {
 
@@ -137,7 +122,6 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
   }
 }
 
-/* ===== CubeMX: MSP DeInit =================================================== */
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 {
 

@@ -23,8 +23,6 @@
 #include "dma.h"
 #include "gpio.h"
 #include "spi.h"
-#include "stm32f1xx_hal.h"
-#include "stm32f1xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
 
@@ -119,7 +117,10 @@ int main(void)
 	MX_SPI1_Init();
 	MX_CAN1_Init();
 	MX_USART1_UART_Init();
+	MX_TIM1_Init();
 	/* USER CODE BEGIN 2 */
+
+	HAL_TIM_Base_Start(&htim1);
 
 	CAN_settingsInit(&msg);
 
@@ -151,8 +152,6 @@ int main(void)
 	{
 		uint32_t start = HAL_GetTick();
 		Module_getCellVoltages(modData);
-		uint32_t end = HAL_GetTick();
-		printf("getting voltages time ms: %d\n", end - start);
 		Module_getVoltageStats(modData);
 		Accumulator_getVoltageStats(&accmData, modData);
 		HVSense_getPackVoltage(&accmData);
@@ -177,6 +176,8 @@ int main(void)
 		CAN_sendModuleSummary(&msg, modData);
 		CAN_sendFaultStatus(&msg);
 
+		uint32_t end = HAL_GetTick();
+		printf("cycle time ms: %d\n", end - start);
 		HAL_GPIO_TogglePin(MCU_HEARTBEAT_LED_GPIO_Port, MCU_HEARTBEAT_LED_Pin);
 		/* USER CODE END WHILE */
 

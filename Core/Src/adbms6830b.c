@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include "tim.h"
 
 static const uint16_t AVERAGE_CELL_VOLTAGE_REGISTERS[NUM_AVERAGE_CELL_VOLTAGE_REGISTERS] = {RDACA, RDACB, RDACC, RDACD, RDACE, RDACF}; // command to read average from register
 static const uint16_t REDUDANT_CELL_VOLTAGE_REGISTERS[NUM_REDUNDANT_CELL_VOLTAGE_REGISTERS] = {RDSVA, RDSVB, RDSVC, RDSVD, RDSVE, RDSVF};
@@ -33,9 +34,9 @@ void ADBMS_wakeUp()
 	for (int i = 0; i < NUM_MOD; i++)
 	{
 		ADBMS_csLow();
-		HAL_Delay(1);
+		TIM_delay_us(5);
 		ADBMS_csHigh();
-		HAL_Delay(1);
+		TIM_delay_us(5);
 	}
 }
 
@@ -232,7 +233,7 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
 				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
 				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
-				printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
+				// printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
 	}
