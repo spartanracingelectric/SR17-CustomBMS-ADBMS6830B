@@ -2,9 +2,9 @@
  * @file    module.c
  */
 #include "module.h"
+#include "adbms6830b.h"
 #include "main.h"
 #include "usart.h"
-#include "adbms6830b.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -52,12 +52,12 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 		{
 			float referenceVoltage = modData[moduleIndex].vref2;
 			float outputVoltage = modData[moduleIndex].gpioVoltage_mV[tempIndex];
-
 			// Guard against invalid values
 			if (outputVoltage <= 0 || outputVoltage >= (referenceVoltage - VREF2_MARGIN_MV))
 			{
 				// TODO: Set invalid temp fault
 				modData[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
+				// printf("INVALID TEMP\n");
 				continue;
 			}
 
@@ -73,7 +73,13 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 			// Convert to Celsius
 			float temperature_K = 1.0f / fmaxf(inverseTemperature_K, 1e-12f); // guard against division by 0
 			float temperature_C = temperature_K - KELVIN_OFFSET;
+
+			if (temperature_C < 0) // Prevent negative value when temperature sense is disconnected
+			{
+				temperature_C = 0;
+			}
 			modData[moduleIndex].pointTemp_C[tempIndex] = temperature_C;
+			// printf("Module %d, Cell %d Temp: %d C\n", moduleIndex, tempIndex, modData[moduleIndex].pointTemp_C[tempIndex]);
 		}
 	}
 }
@@ -86,12 +92,15 @@ void Module_getTemperatures(ModuleData *mod)
 	Module_convertGpioVoltageToTemp(mod);
 }
 
-void Module_getAveragePointTemperature(ModuleData *mod){
-	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
-		ModuleData* module = &mod[moduleIndex];
-		uint16_t* pointTempList = module->pointTemp_C;
+void Module_getAveragePointTemperature(ModuleData *mod)
+{
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
+		ModuleData *module = &mod[moduleIndex];
+		uint16_t *pointTempList = module->pointTemp_C;
 		uint32_t pointTempSum_C = 0;
-		for(uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
+		for (uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++)
+		{
 			pointTempSum_C += pointTempList[pointIndex];
 		}
 		module->averagePointTemperature_C = pointTempSum_C / NUM_THERM_PER_MOD;
@@ -99,13 +108,17 @@ void Module_getAveragePointTemperature(ModuleData *mod){
 	}
 }
 
-void Module_getMaxPointTemperature(ModuleData *mod){
-	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
-		ModuleData* module = &mod[moduleIndex];
-		uint16_t* pointTempList = module->pointTemp_C;
+void Module_getMaxPointTemperature(ModuleData *mod)
+{
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
+		ModuleData *module = &mod[moduleIndex];
+		uint16_t *pointTempList = module->pointTemp_C;
 		uint8_t maxPointIndex = 0;
-		for(uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
-			if(pointTempList[pointIndex] > pointTempList[maxPointIndex]){
+		for (uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++)
+		{
+			if (pointTempList[pointIndex] > pointTempList[maxPointIndex])
+			{
 				maxPointIndex = pointIndex;
 			}
 		}
@@ -115,13 +128,17 @@ void Module_getMaxPointTemperature(ModuleData *mod){
 	}
 }
 
-void Module_getMinPointTemperature(ModuleData *mod){
-	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
-		ModuleData* module = &mod[moduleIndex];
-		uint16_t* pointTempList = module->pointTemp_C;
+void Module_getMinPointTemperature(ModuleData *mod)
+{
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
+		ModuleData *module = &mod[moduleIndex];
+		uint16_t *pointTempList = module->pointTemp_C;
 		uint8_t minPointIndex = 0;
-		for(uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
-			if(pointTempList[pointIndex] < pointTempList[minPointIndex]){
+		for (uint8_t pointIndex = 1; pointIndex < NUM_THERM_PER_MOD; pointIndex++)
+		{
+			if (pointTempList[pointIndex] < pointTempList[minPointIndex])
+			{
 				minPointIndex = pointIndex;
 			}
 		}
@@ -131,18 +148,23 @@ void Module_getMinPointTemperature(ModuleData *mod){
 	}
 }
 
-void Module_getTemperatureStats(ModuleData * mod){
-	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
-		ModuleData* module = &mod[moduleIndex];
-		uint16_t* pointTempList = module->pointTemp_C;
-		uint32_t pointTempSum_C = 0;
+void Module_getTemperatureStats(ModuleData *mod)
+{
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
+		ModuleData *module = &mod[moduleIndex];
+		int16_t *pointTempList = module->pointTemp_C;
+		int32_t pointTempSum_C = 0;
 		uint8_t maxPointIndex = 0;
 		uint8_t minPointIndex = 0;
-		for(uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++){
-			if(pointTempList[pointIndex] > pointTempList[maxPointIndex]){
+		for (uint8_t pointIndex = 0; pointIndex < NUM_THERM_PER_MOD; pointIndex++)
+		{
+			if (pointTempList[pointIndex] > pointTempList[maxPointIndex])
+			{
 				maxPointIndex = pointIndex;
 			}
-			if(pointTempList[pointIndex] < pointTempList[minPointIndex]){
+			if (pointTempList[pointIndex] < pointTempList[minPointIndex])
+			{
 				minPointIndex = pointIndex;
 			}
 			pointTempSum_C += pointTempList[pointIndex];
@@ -222,18 +244,23 @@ void Module_getAverageCellVoltage(ModuleData *module)
 	}
 }
 
-void Module_getVoltageStats(ModuleData *mod){
-	for(uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++){
+void Module_getVoltageStats(ModuleData *mod)
+{
+	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	{
 		ModuleData *module = &mod[moduleIndex];
 		int16_t maxVoltageIndex = 0;
 		int16_t minVoltageIndex = 0;
 		int16_t *voltageList = module->cellVoltage_mV;
 		int32_t totalVoltage = voltageList[0];
-		for(uint8_t cellIndex = 1; cellIndex < NUM_CELL_PER_MOD; cellIndex++){
-			if(voltageList[cellIndex] > voltageList[maxVoltageIndex]){
+		for (uint8_t cellIndex = 1; cellIndex < NUM_CELL_PER_MOD; cellIndex++)
+		{
+			if (voltageList[cellIndex] > voltageList[maxVoltageIndex])
+			{
 				maxVoltageIndex = cellIndex;
 			}
-			if(voltageList[cellIndex] < voltageList[minVoltageIndex]){
+			if (voltageList[cellIndex] < voltageList[minVoltageIndex])
+			{
 				minVoltageIndex = cellIndex;
 			}
 			totalVoltage += voltageList[cellIndex];

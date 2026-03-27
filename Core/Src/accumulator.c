@@ -57,7 +57,7 @@ void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
 	acc->averageCellVoltage_mV = averageVoltageSum / NUM_MOD;
 	acc->maxCellVoltage_mV = maxVoltage;
 	acc->minCellVoltage_mV = minVoltage;
-	acc->sumPackVoltage_cV = totalPackVoltage_mV;
+	acc->sumPackVoltage_cV = totalPackVoltage_mV / 10;
 }
 
 void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
@@ -74,8 +74,8 @@ void Accumulator_getTotalVoltage(AccumulatorData *batt, ModuleData *mod)
 
 void Accumulator_getTemperatureStats(AccumulatorData *acc, ModuleData *mod){
 	int32_t avgTempSum = mod[0].averagePointTemperature_C;
-	uint16_t maxPointTemp = mod[0].maxPointTemperature_C;
-	uint16_t minPointTemp = mod[0].minPointTemperature_C;
+	int16_t maxPointTemp = mod[0].maxPointTemperature_C;
+	int16_t minPointTemp = mod[0].minPointTemperature_C;
 
 	for(uint8_t moduleIndex = 1; moduleIndex < NUM_MOD; moduleIndex++){
 		ModuleData* module = &mod[moduleIndex];
