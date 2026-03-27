@@ -52,19 +52,6 @@ extern "C" {
  *  - BALANCE is a feature toggle (0 = disabled at compile time).
  *  - MAX_*_CAPACITY are nominal capacities (mAh) used for SoC/estimation.
  */
-#define NUM_MOD					1	//1 slave board
-#define NUM_CELL_PER_MOD	 	14	//1 slave board
-#define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
-#define NUM_THERM_PER_MOD		10
-#define NUM_THERM_TOTAL			(NUM_MOD*NUM_THERM_PER_MOD)
-#define NUM_AUX_GROUP			6
-#define NUM_AUXES				(NUM_MOD*NUM_AUX_GROUP)
-#define CYCLETIME_CAP			10  //60ms update delay
-#define CAN_RECONNECTION_CHECK	500 //check can connection every 500ms
-#define LED_HEARTBEAT_DELAY_MS	50  //50ms update delay
-#define BALANCE 				0 	//FALSE
-#define MAX_CELL_CAPACITY 		3000
-#define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
 /* USER CODE END Private defines */
 
 
@@ -118,7 +105,7 @@ void Error_Handler(void);
  *  - BALANCE is a feature toggle (0 = disabled at compile time).
  *  - MAX_*_CAPACITY are nominal capacities (mAh) used for SoC/estimation.
  */
-#define NUM_MOD					1	//1 slave board
+#define NUM_MOD					5 //1 slave board
 #define NUM_CELL_PER_MOD	 	14	//1 slave board
 #define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	//multiple slave board
 #define NUM_THERM_PER_MOD		10

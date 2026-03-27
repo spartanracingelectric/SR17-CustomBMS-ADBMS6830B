@@ -23,6 +23,7 @@
 #include "dma.h"
 #include "gpio.h"
 #include "spi.h"
+#include "stm32f1xx_hal.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
@@ -148,10 +149,12 @@ int main(void)
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
+		uint32_t start = HAL_GetTick();
 		Module_getCellVoltages(modData);
+		uint32_t end = HAL_GetTick();
+		printf("getting voltages time ms: %d\n", end - start);
 		Module_getVoltageStats(modData);
 		Accumulator_getVoltageStats(&accmData, modData);
-
 		HVSense_getPackVoltage(&accmData);
 
 		Module_getTemperatures(modData);
@@ -164,7 +167,7 @@ int main(void)
 
 		// Passive balancing is called unless a fault has occurred
 		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
-
+		//
 		// CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
 		CAN_sendPackSummary(&msg, &accmData);
 		CAN_sendVoltageData(&msg, modData);

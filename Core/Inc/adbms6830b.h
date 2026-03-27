@@ -233,7 +233,6 @@ typedef enum
 
 extern DiagnosticPhase diagnosticPhase;
 
-void isoSPI_Idle_to_Ready();
 void ADBMS_wakeUp();
 void ADBMS_clearRegisters();
 
