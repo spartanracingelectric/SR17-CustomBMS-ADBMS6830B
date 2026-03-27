@@ -213,9 +213,9 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     ptr->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
-    	printf("waiting\n");
+    	// printf("waiting\n");
     	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
-			printf("timeout\n");
+			// printf("timeout\n");
     		return HAL_TIMEOUT;
     	}
     }
@@ -308,11 +308,11 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
 
     for (int i = 0; i < NUM_MOD; i++)
     {
-    	for(int j = 0; j < NUM_THERM_TOTAL; j+= NUM_THERM_PER_MESSAGE)
+    	for(int j = 0; j < NUM_THERM_PER_MOD; j+= NUM_THERM_PER_MESSAGE)
     	{
     		int byteNumber = 0;
 
-    		if(j + 3 < NUM_THERM_TOTAL)
+    		if(j + 3 < NUM_THERM_PER_MOD)
     		{
     			CAN_setId(buffer, canId);
     			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
