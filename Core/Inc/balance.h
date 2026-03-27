@@ -23,7 +23,7 @@ typedef struct ConfigurationRegisterB
 	// TODO: Add other fields in register
 } ConfigurationRegisterB;
 
-#define BALANCE_THRESHOLD_MV 50
+#define BALANCE_THRESHOLD_MV 5
 #define BALANCE_COMMAND_TIMEOUT_MS 5000
 
 void Balance_init(BalanceStatus *blst, ConfigurationRegisterB *RDFCGB_buff);
