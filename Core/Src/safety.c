@@ -113,20 +113,11 @@ void Safety_checkCellVoltageFault(AccumulatorData *acc, ModuleData *mod)
 void Safety_checkCellTemperatureFault(AccumulatorData *batt, ModuleData *mod)
 {
 	uint32_t current_time   = HAL_GetTick();
-	//TODO : Move to accumulator.c
-	batt->maxCellTemp_C = mod[0].pointTemp_C[0];
-	batt->minCellTemp_C = mod[0].pointTemp_C[0];
-
 	for (int m = 0; m < NUM_MOD; m++)
 	{
 		for (int t = 0; t < NUM_THERM_PER_MOD; t++)
 		{
 			uint16_t temp = mod[m].pointTemp_C[t];
-
-			if (temp > batt->maxCellTemp_C)
-				batt->maxCellTemp_C = temp;
-			if (temp < batt->minCellTemp_C)
-				batt->minCellTemp_C = temp;
 
 			FaultFlags_t   *faults = &GlobalFaults[m][t];
 			WarningFlags_t *warns  = &GlobalWarnings[m][t];
