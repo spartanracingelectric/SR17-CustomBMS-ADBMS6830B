@@ -57,6 +57,7 @@ void Accumulator_getVoltageStats(AccumulatorData *acc, ModuleData *mod){
 	acc->averageCellVoltage_mV = averageVoltageSum / NUM_MOD;
 	acc->maxCellVoltage_mV = maxVoltage;
 	acc->minCellVoltage_mV = minVoltage;
+	acc->cellImbalance_mV = maxVoltage - minVoltage;
 	acc->sumPackVoltage_cV = totalPackVoltage_mV / 10;
 }
 

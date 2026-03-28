@@ -57,7 +57,6 @@ void Module_convertGpioVoltageToTemp(ModuleData *modData)
 			{
 				// TODO: Set invalid temp fault
 				modData[moduleIndex].pointTemp_C[tempIndex] = DISCONNECTED_TEMP_C;
-				// printf("INVALID TEMP\n");
 				continue;
 			}
 

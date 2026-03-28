@@ -191,18 +191,20 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 {
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
 
-	// Receive data from last module first
-	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--)
+	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
 	{
+		// Data comes in reverse order
+		int logicalModuleIndex = NUM_MOD - 1 - moduleIndex;
+
 		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
 
 		if (!isDataValid)
 		{
-			moduleData[moduleIndex].pecError = true;
+			moduleData[logicalModuleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[moduleIndex].pecError = false;
+			moduleData[logicalModuleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -216,7 +218,7 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
+				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
 				continue;
 			}
 
@@ -226,13 +228,13 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE)
 			{
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = 0xFFFF;
+				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
 			}
 			else
 			{
 				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
 				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
-				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
+				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
 				// printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
@@ -471,7 +473,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid)
 			{
-				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
+				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = INT16_MIN;
 				continue;
 			}
 
@@ -483,7 +485,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (rawVoltageUnsigned == 0x8000) // Default value
 			{
-				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
+				moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = INT16_MIN;
 			}
 			else
 			{
@@ -492,7 +494,7 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 				if (milliVoltageSigned < 0 || milliVoltageSigned >= moduleData[moduleIndex].vref2)
 				{
-					moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = 0xFFFF;
+					moduleData[moduleIndex].gpioVoltage_mV[gpioIndex] = INT16_MIN;
 				}
 				else
 				{

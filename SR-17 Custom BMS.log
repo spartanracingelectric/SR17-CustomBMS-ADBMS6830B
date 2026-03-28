@@ -4,8 +4,11 @@ Conversion Warnings Log
 MSG_ID: 1569 	MSG_TYPE: S 	MSG_NAME: BMS_State_of_Charge
 	SIG_NAME: BMS_HV_Sense_Pack_Voltage, STATUS: Invalid Max or Min value., ACTION: Value Set to default
 
-MSG_ID: 1570 	MSG_TYPE: S 	MSG_NAME: BMS_Pack_Summary
+MSG_ID: 1570 	MSG_TYPE: S 	MSG_NAME: BMS_Pack_Summary_1
 	SIG_NAME: BMS_Total_Pack_Voltage, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1571 	MSG_TYPE: S 	MSG_NAME: BMS_Pack_Summary_2
+	SIG_NAME: BMS_Average_Cell_Voltage, STATUS: Invalid Max or Min value., ACTION: Value Set to default
 
 MSG_ID: 1694 	MSG_TYPE: S 	MSG_NAME: BMS_Faults_Message_1
 	SIG_NAME: BMS_Enable_Balance_Message, STATUS: Invalid Max or Min value., ACTION: Value Set to default
@@ -21,3 +24,18 @@ MSG_ID: 1694 	MSG_TYPE: S 	MSG_NAME: BMS_Faults_Message_1
 MSG_ID: 1695 	MSG_TYPE: S 	MSG_NAME: BMS_Pack_Data
 	SIG_NAME: MCU_Pressure, STATUS: Invalid Max or Min value., ACTION: Value Set to default
 	SIG_NAME: MCU_Humidity, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+
+MSG_ID: 1714 	MSG_TYPE: S 	MSG_NAME: BMS_Fault_And_Warning_Summary
+	SIG_NAME: BMS_Fault_Over_Volt		, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Under_Volt	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Open_Wire		, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_PEC			, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Over_Temp		, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Under_Temp	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Redundant_Volt, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Fault_Redundant_Temp, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Warning_Over_Volt	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Warning_Under_Volt	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Warning_Over_Temp	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Warning_Under_Temp	, STATUS: Invalid Max or Min value., ACTION: Value Set to default
+	SIG_NAME: BMS_Warning_Imbalance	, STATUS: Invalid Max or Min value., ACTION: Value Set to default

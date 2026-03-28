@@ -5,23 +5,7 @@
 [PROTOCOL] CAN
 
 [BUSMASTER_VERSION] [3.2.2]
-[NUMBER_OF_MESSAGES] 95
-
-[START_MSG] BMS_Safety_Checker,1536,4,13,1,S,Custom_BMS
-[START_SIGNALS] BMS_Cell_High_Temp_Warning,1,1,2,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_Volt_Imbalance_Warning,1,1,3,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_Low_Volt_Warning,1,1,4,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_High_Volt_Warning,1,1,5,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Pack_Low_Volt_Warning,1,1,6,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Pack_High_Volt_Warning,1,1,7,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_High_Temp_Fault,1,2,2,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_Volt_Imbalance_Fault,1,2,3,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_Low_Volt_Fault,1,2,4,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_High_Volt_Fault,1,2,5,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Pack_Low_Volt_Fault,1,2,6,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Pack_High_Volt_Fault,1,2,7,B,1,0,1,0,1, ,,Custom_BMS
-[START_SIGNALS] BMS_Cell_Max_Min_Difference,16,3,0,U,65535,0,1,0,0.0001,V,,Custom_BMS
-[END_MSG]
+[NUMBER_OF_MESSAGES] 97
 
 [START_MSG] BMS_Balance_Enable,1540,1,1,1,S,Custom_BMS
 [START_SIGNALS] BMS_Balance_Enable,1,1,0,B,1,0,1,0,1, ,,Custom_BMS
@@ -33,7 +17,7 @@
 [START_SIGNALS] BMS_Current,32,5,0,U,2704,0,1,0,1,mA,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_Balance_Status_M1_to_M4,1571,8,56,1,S,Custom_BMS
+[START_MSG] BMS_Balance_Status_M1_to_M4,1572,8,56,1,S,Custom_BMS
 [START_SIGNALS] BMS_M1_Cell_1,1,1,0,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M1_Cell_2,1,1,1,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M1_Cell_3,1,1,2,B,1,0,1,0,1, ,,Custom_BMS
@@ -92,7 +76,7 @@
 [START_SIGNALS] BMS_M4_Cell_14,1,8,5,B,1,0,1,0,1, ,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_Balance_Status_M5_to_M8,1572,8,56,1,S,Custom_BMS
+[START_MSG] BMS_Balance_Status_M5_to_M8,1573,8,56,1,S,Custom_BMS
 [START_SIGNALS] BMS_M5_Cell_1,1,1,0,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M5_Cell_2,1,1,1,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M5_Cell_3,1,1,2,B,1,0,1,0,1, ,,Custom_BMS
@@ -151,7 +135,7 @@
 [START_SIGNALS] BMS_M8_Cell_14,1,8,5,B,1,0,1,0,1, ,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_Balance_Status_M9_to_M10,1573,8,28,1,S,Custom_BMS
+[START_MSG] BMS_Balance_Status_M9_to_M10,1574,8,28,1,S,Custom_BMS
 [START_SIGNALS] BMS_M9_Cell_1,1,1,0,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M9_Cell_2,1,1,1,B,1,0,1,0,1, ,,Custom_BMS
 [START_SIGNALS] BMS_M9_Cell_3,1,1,2,B,1,0,1,0,1, ,,Custom_BMS
@@ -182,12 +166,18 @@
 [START_SIGNALS] BMS_M10_Cell_14,1,4,5,B,1,0,1,0,1, ,,Custom_BMS
 [END_MSG]
 
-[START_MSG] BMS_Pack_Summary,1570,8,5,1,S,Custom_BMS
+[START_MSG] BMS_Pack_Summary_1,1570,8,5,1,S,Custom_BMS
 [START_SIGNALS] BMS_Highest_Cell_Voltage,16,1,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_Lowest_Cell_Voltage,16,3,0,I,32767,-32768,1,0,0.001,V,,Custom_BMS
 [START_SIGNALS] BMS_Higest_Cell_Temperature,8,5,0,I,127,-128,1,0,1,C,,Custom_BMS
 [START_SIGNALS] BMS_Lowest_Cell_Temperature,8,6,0,I,127,-128,1,0,1,C,,Custom_BMS
 [START_SIGNALS] BMS_Total_Pack_Voltage,16,7,0,U,3277,0,1,0,0.01,V,,Custom_BMS
+[END_MSG]
+
+[START_MSG] BMS_Pack_Summary_2,1571,6,3,1,S,Custom_BMS
+[START_SIGNALS] BMS_Pack_Imbalance			,16,1,0,U,65535,0,1,0,1,mV,,Custom_BMS
+[START_SIGNALS] BMS_HV_Sense_Pack_Voltage,16,3,0,U,65535,0,1,0,1,cV,,Custom_BMS
+[START_SIGNALS] BMS_Average_Cell_Voltage,16,5,0,U,32767,0,1,0,1,mV,,Custom_BMS
 [END_MSG]
 
 [START_MSG] BMS_M1_Cell_Voltage_Data_1,1584,8,4,1,S,Custom_BMS
@@ -905,6 +895,30 @@
 [START_SIGNALS] BMS_M10_Cell_12_Fault,1,4,3,B,1,0,1,0,1,,,Custom_BMS
 [START_SIGNALS] BMS_M10_Cell_13_Fault,1,4,4,B,1,0,1,0,1,,,Custom_BMS
 [START_SIGNALS] BMS_M10_Cell_14_Fault,1,4,5,B,1,0,1,0,1,,,Custom_BMS
+[END_MSG]
+
+[START_MSG] BMS_Heartbeat_Message,1713,1,1,1,S,Custom_BMS
+[START_SIGNALS] BMS_HeartBeat,8,1,0,U,1,0,1,0,1,,	,Custom_BMS
+[END_MSG]
+
+[START_MSG] BMS_Fault_And_Warning_Summary,1714,8,17,1,S,Custom_BMS
+[START_SIGNALS] BMS_Fault_Module_Id		,8,1,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Cell_Id		,8,2,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Over_Volt		,1,3,0,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Under_Volt	,1,3,1,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Open_Wire		,1,3,2,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_PEC			,1,3,3,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Over_Temp		,1,3,4,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Under_Temp	,1,3,5,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Redundant_Volt,1,3,6,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Fault_Redundant_Temp,1,3,7,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Module_Id	,8,4,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Cell_Id		,8,5,0,U,255,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Over_Volt	,1,6,0,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Under_Volt	,1,6,1,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Over_Temp	,1,6,2,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Under_Temp	,1,6,3,B,1,0,1,0,1,,,Custom_BMS
+[START_SIGNALS] BMS_Warning_Imbalance	,1,6,4,B,1,0,1,0,1,,,Custom_BMS
 [END_MSG]
 
 [START_VALUE_TABLE]
