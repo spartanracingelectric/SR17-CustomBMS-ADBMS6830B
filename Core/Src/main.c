@@ -166,8 +166,7 @@ int main(void)
 
 		// Passive balancing is called unless a fault has occurred
 		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
-		//
-		// CAN_Send_Safety_Checker(&msg, &accmData, &safetyFaults, &safetyWarnings);
+
 		CAN_sendPackSummary(&msg, &accmData);
 		CAN_sendVoltageData(&msg, modData);
 		CAN_sendTemperatureData(&msg, modData);
@@ -175,6 +174,8 @@ int main(void)
 		CAN_sendBalanceStatus(&msg, balanceStatus);
 		CAN_sendModuleSummary(&msg, modData);
 		CAN_sendFaultStatus(&msg);
+		CAN_sendFaultAndWarningSummary(&msg);
+		CAN_sendCanHeartBeat(&msg);
 
 		uint32_t end = HAL_GetTick();
 		printf("cycle time ms: %d\n", end - start);

@@ -71,7 +71,7 @@ void Error_Handler(void);
 #define MCU_HEARTBEAT_LED_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
-#define NUM_MOD					8	
+#define NUM_MOD					10	
 #define NUM_CELL_PER_MOD	 	14
 #define NUM_CELLS				(NUM_MOD*NUM_CELL_PER_MOD)	
 #define NUM_THERM_PER_MOD		10

@@ -52,7 +52,7 @@ extern CAN_HandleTypeDef hcan1;
  */
 #define CAN_ID_VOLTAGE 				0x630
 #define CAN_ID_THERMISTOR 			0x680
-#define CAN_ID_SUMMARY				0x622
+#define CAN_ID_PACK_SUMMARY_BASE	0x622
 #define CAN_ID_SAFETY 				0x600
 #define CAN_ID_SOC 					0x621
 #define CAN_ID_BALANCE_STATUS		0x623
@@ -117,7 +117,6 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod);
 void CAN_sendPackSummary(CANMessage *message, struct AccumulatorData *batt);
 void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod);
 void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt);
-void CAN_Send_Safety_Checker(CANMessage *message, struct AccumulatorData *batt, uint8_t* faults, uint8_t* warnings); // change to camel case
 void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capacity);
 void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *message);

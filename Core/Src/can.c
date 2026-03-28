@@ -339,7 +339,7 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod)
  */
 void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt) {
 	int byteNumber = 0;
-	uint32_t canId = (uint32_t)CAN_ID_SUMMARY;
+	uint32_t canId = (uint32_t)CAN_ID_PACK_SUMMARY_BASE;
 	CAN_setId(message, canId);
 	message->buffer[byteNumber++] =  (uint8_t)batt->maxCellVoltage_mV;
 	message->buffer[byteNumber++] = (uint8_t)(batt->maxCellVoltage_mV >> 8);
@@ -350,7 +350,18 @@ void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt) {
 	message->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
 	message->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
 	CAN_send(message, byteNumber);
-
+	
+	byteNumber = 0;
+	canId++;
+	CAN_setId(message, canId);
+	message->buffer[byteNumber++] =  (uint8_t)batt->cellImbalance_mV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV >> 8);
+	message->buffer[byteNumber++] =  (uint8_t)batt->hvSensePackVoltage_cV;
+	message->buffer[byteNumber++] =  (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)(batt->averageCellVoltage_mV);
+	message->buffer[byteNumber++] = (uint8_t)(batt->averageCellVoltage_mV >> 8);
+	// TODO: Maybe add warning and faults in this message
+	CAN_send(message, byteNumber);
 }
 
 void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod) {
@@ -372,32 +383,6 @@ void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod) {
 	}
 }
 
-/* ===== High-Level TX: Safety/Health =========================================
- * CAN_Send_Safety_Checker():
- *  - Computes cell_difference = highest - lowest (mV)
- *  - Payload:
- *      [0]    = warnings bitfield
- *      [1]    = faults bitfield
- *      [2..3] = cell_difference (mV)
- *      [4..5] = hvsens_pack_voltage (mV)
- *      [6..7] = sum_pack_voltage (mV)
- */
-void CAN_Send_Safety_Checker(CANMessage *message, AccumulatorData *batt, uint8_t *faults, uint8_t *warnings) {
-	int byteNumber = 0;
-	// TODO: Put imbalance calculation in accumulator.c
-	batt->cellImbalance_mV = batt->maxCellVoltage_mV - batt->minCellVoltage_mV;
-	uint32_t canId = (uint32_t)CAN_ID_SAFETY;
-	CAN_setId(message, canId);
-	message->buffer[byteNumber++] = *warnings;
-	message->buffer[byteNumber++] = *faults;
-	message->buffer[byteNumber++] =  batt->cellImbalance_mV           & 0xFF;
-	message->buffer[byteNumber++] = (batt->cellImbalance_mV     >> 8) & 0xFF;
-	message->buffer[byteNumber++] =  batt->hvSensePackVoltage_cV       & 0xFF;
-	message->buffer[byteNumber++] = (batt->hvSensePackVoltage_cV >> 8) & 0xFF;
-	message->buffer[byteNumber++] =  batt->sumPackVoltage_cV & 0xFF;
-	message->buffer[byteNumber++] = (batt->sumPackVoltage_cV   >> 8) & 0xFF;
-	CAN_send(message, byteNumber);
-}
 
 /* ===== High-Level TX: SOC/Current ===========================================
  * CAN_Send_SOC():
@@ -427,12 +412,6 @@ void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capac
     CAN_send(message, byteNumber);
 }
 
-/* ===== High-Level TX: Balance DCC Bitmaps ===================================
- * CAN_Send_Balance_Status():
- *  - Two frames; each carries 4x uint16_t bitmaps (LSB..MSB).
- *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
- *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
- */
 void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst) {
 	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATUS;
 	for(int moduleIndex = 0; moduleIndex < NUM_MOD;)
@@ -518,11 +497,6 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 	    hasFault = Safety_getNextFault(&faultMsg);
 	    hasWarning = Safety_getNextWarning(&warningMsg);
 
-	    if (!hasFault && !hasWarning)
-	    {
-	        return;
-	    }
-
 	    CAN_setId(message, canId);
 
 	    if (hasFault)
@@ -530,6 +504,7 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 	        message->buffer[byteNumber++] = faultMsg.ModuleID;
 	        message->buffer[byteNumber++] = faultMsg.CellID;
 	        message->buffer[byteNumber++] = faultMsg.FaultType;
+			printf("fault type: %d", faultMsg.FaultType);
 	    }
 	    else
 	    {
