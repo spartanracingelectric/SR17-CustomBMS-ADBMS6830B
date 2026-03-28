@@ -14,7 +14,7 @@ SG_ BMS_Capacity : 0|16@1+ (1,0) [0|65535] "mAh" Custom_BMS
 SG_ BMS_HV_Sense_Pack_Voltage: 16|16@1+ (0.01,0) [0|65535] "V" Custom_BMS
 SG_ BMS_Current : 32|32@1+ (1,0) [0|4.29497e+009] "mA" Custom_BMS
 
-BO_ 1571 BMS_Balance_Status_M1_to_M4: 8 Custom_BMS
+BO_ 1572 BMS_Balance_Status_M1_to_M4: 8 Custom_BMS
 SG_ BMS_M1_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M1_Cell_2 : 1|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M1_Cell_3 : 2|1@1- (1,0) [0|1] " " Custom_BMS
@@ -72,7 +72,7 @@ SG_ BMS_M4_Cell_12 : 59|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M4_Cell_13 : 60|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M4_Cell_14 : 61|1@1- (1,0) [0|1] " " Custom_BMS
 
-BO_ 1572 BMS_Balance_Status_M5_to_M8: 8 Custom_BMS
+BO_ 1573 BMS_Balance_Status_M5_to_M8: 8 Custom_BMS
 SG_ BMS_M5_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M5_Cell_2 : 1|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M5_Cell_3 : 2|1@1- (1,0) [0|1] " " Custom_BMS
@@ -130,7 +130,7 @@ SG_ BMS_M8_Cell_12 : 59|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M8_Cell_13 : 60|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M8_Cell_14 : 61|1@1- (1,0) [0|1] " " Custom_BMS
 
-BO_ 1573 BMS_Balance_Status_M9_to_M10: 8 Custom_BMS
+BO_ 1574 BMS_Balance_Status_M9_to_M10: 8 Custom_BMS
 SG_ BMS_M9_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M9_Cell_2 : 1|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M9_Cell_3 : 2|1@1- (1,0) [0|1] " " Custom_BMS

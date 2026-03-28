@@ -55,7 +55,7 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_ID_PACK_SUMMARY_BASE	0x622
 #define CAN_ID_SAFETY 				0x600
 #define CAN_ID_SOC 					0x621
-#define CAN_ID_BALANCE_STATUS		0x623
+#define CAN_ID_BALANCE_STATUS		0x624
 #define CAN_ID_MODULE_SUMMARY_BASE  0x6A4 // hex of 1700 can id #
 #define BALANCE_COMMAND_CAN_ID      0x604
 #define ELCON_OUTPUT_CAN_ID         0x18FF50E5
