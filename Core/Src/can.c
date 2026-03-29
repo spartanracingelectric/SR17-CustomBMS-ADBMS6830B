@@ -29,6 +29,7 @@
 #include "balance.h"
 #include "charger.h"
 #include "safety.h"
+#include "shunt.h"
 #include <string.h>
 /* USER CODE END 0 */
 
@@ -170,6 +171,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
         {
             Balance_handleBalanceCANMessage(&rxHeader, rxData);
+        }
+        else if (rxHeader.StdId == CAN_ID_SHUNT_CURRENT){
+        	Shunt_handleCANMessage_Current(rxData);
+        }
+        else if(rxHeader.StdId == CAN_ID_SHUNT_COULOMB){
+        	Shunt_handleCANMessage_Coulomb(rxData);
         }
     }
     else if (rxHeader.IDE == CAN_ID_EXT)
@@ -404,10 +411,10 @@ void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capac
 	message->buffer[byteNumber++] = (soc >> 8) & 0xFF;
     message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
     message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
-    message->buffer[byteNumber++] = batt->current_mA & 0xFF;
-    message->buffer[byteNumber++] = (batt->current_mA >> 8) & 0xFF;
-    message->buffer[byteNumber++] = (batt->current_mA >> 16) & 0xFF;
-    message->buffer[byteNumber++] = (batt->current_mA >> 24)& 0xFF;
+    message->buffer[byteNumber++] = batt->shuntCurrent_mA & 0xFF;
+    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 8) & 0xFF;
+    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 16) & 0xFF;
+    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 24)& 0xFF;
 //    printf("can id for soc: %d\n", CAN_ID);
     CAN_send(message, byteNumber);
 }

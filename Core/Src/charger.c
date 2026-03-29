@@ -17,7 +17,7 @@ void Charger_handleElconCANMessage(CAN_RxHeaderTypeDef *rxHeader, uint8_t *rxDat
 	{
 		isCharging = true;
 	}
-	accumulatorPointer->current_mA = current_mA;
+	accumulatorPointer->shuntCurrent_mA = current_mA;
 }
 
 // TODO: Add function to pass in SOC value from charger

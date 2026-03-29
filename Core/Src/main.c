@@ -37,6 +37,7 @@
 #include "module.h"
 #include "safety.h"
 #include "soc.h"
+#include "shunt.h"
 #include "string.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -88,6 +89,7 @@ int main(void)
 	BalanceStatus balanceStatus[NUM_MOD] = {0};
 	ConfigurationRegisterB configB[NUM_MOD] = {0};
 	CANMessage msg;
+
 	//	uint8_t moduleCounts = 0;
 
 	/* USER CODE END 1 */
@@ -136,7 +138,7 @@ int main(void)
 	Accumulator_init(&accmData);
 	Balance_init(balanceStatus, configB);
 	Charger_init(&accmData);
-
+	Shunt_init();
 	// TODO: Check if this is needed
 	// Sending a fault signal and reseting it
 	// HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
@@ -159,6 +161,7 @@ int main(void)
 		Module_getTemperatures(modData);
 		Module_getTemperatureStats(modData);
 		Accumulator_getTemperatureStats(&accmData, modData);
+		Shunt_updateAccumulator(&accmData);
 
 		// ContactorSense_getContactorState(&accmData);
 
