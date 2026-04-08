@@ -191,20 +191,20 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 {
 	uint8_t initialCellIndex = registerIndex * CELLS_PER_ADC_REGISTER;
 
-	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
+	for (int rxIndex = 0; rxIndex < NUM_MOD; rxIndex++)
 	{
 		// Data comes in reverse order
-		int logicalModuleIndex = NUM_MOD - 1 - moduleIndex;
+		int moduleIndex = NUM_MOD - 1 - rxIndex;
 
-		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[rxIndex][0], DATA_LEN, &rxBuffer[rxIndex][DATA_LEN]);
 
 		if (!isDataValid)
 		{
-			moduleData[logicalModuleIndex].pecError = true;
+			moduleData[moduleIndex].pecError = true;
 		}
 		else
 		{
-			moduleData[logicalModuleIndex].pecError = false;
+			moduleData[moduleIndex].pecError = false;
 		}
 
 		for (uint8_t cellOffset = 0; cellOffset < CELLS_PER_ADC_REGISTER; cellOffset++)
@@ -218,23 +218,23 @@ void ADBMS_parseCellVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 
 			if (!isDataValid)
 			{
-				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
 				continue;
 			}
 
-			uint8_t lowByte = rxBuffer[moduleIndex][2 * cellOffset];
-			uint8_t highByte = rxBuffer[moduleIndex][2 * cellOffset + 1];
+			uint8_t lowByte = rxBuffer[rxIndex][2 * cellOffset];
+			uint8_t highByte = rxBuffer[rxIndex][2 * cellOffset + 1];
 			int16_t rawVoltage = (int16_t)(((uint16_t)highByte << 8) | (uint16_t)lowByte);
 
 			if (rawVoltage == (int16_t)DEFAULT_VOLTAGE_VALUE)
 			{
-				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = INT16_MIN;
 			}
 			else
 			{
 				int32_t microVoltage = (int32_t)(1500000 + rawVoltage * 150);
 				int16_t milliVoltage = (int16_t)(microVoltage / 1000);
-				moduleData[logicalModuleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
+				moduleData[moduleIndex].cellVoltage_mV[cellIndex] = milliVoltage;
 				// printf("Module %d, Cell %d, voltage %d\n", moduleIndex, cellIndex, milliVoltage);
 			}
 		}
