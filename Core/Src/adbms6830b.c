@@ -523,9 +523,11 @@ void ADBMS_getVref2(ModuleData *moduleData)
 void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *moduleData)
 {
 	// Receive data from last module first
-	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--)
+	for (int rxIndex = 0; rxIndex < NUM_MOD; rxIndex++)
 	{
-		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		int moduleIndex = NUM_MOD - 1 - rxIndex;
+
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[rxIndex][0], DATA_LEN, &rxBuffer[rxIndex][DATA_LEN]);
 
 		if (!isDataValid)
 		{
@@ -533,8 +535,8 @@ void ADBMS_parseVref2Voltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], ModuleData *mo
 			continue;
 		}
 
-		uint8_t lowByte = rxBuffer[moduleIndex][0];
-		uint8_t highByte = rxBuffer[moduleIndex][1];
+		uint8_t lowByte = rxBuffer[rxIndex][0];
+		uint8_t highByte = rxBuffer[rxIndex][1];
 		uint16_t rawVoltage = (uint16_t)((highByte << 8) | lowByte);
 
 		if (rawVoltage == 0x8000u) // Default value
