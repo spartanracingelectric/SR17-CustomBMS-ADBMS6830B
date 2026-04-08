@@ -459,10 +459,12 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 {
 	uint8_t initialGpioIndex = registerIndex * GPIOS_PER_AUX_REGISTER;
 
-	// Receive data from last module first
-	for (int moduleIndex = NUM_MOD - 1; moduleIndex >= 0; moduleIndex--)
+	for (int rxIndex = 0; rxIndex < NUM_MOD; rxIndex++)
 	{
-		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN]);
+		// Receive data from last module first
+		int moduleIndex = NUM_MOD - 1 - rxIndex;
+
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[rxIndex][0], DATA_LEN, &rxBuffer[rxIndex][DATA_LEN]);
 
 		for (uint8_t gpioOffset = 0; gpioOffset < GPIOS_PER_AUX_REGISTER; gpioOffset++)
 		{
@@ -477,8 +479,8 @@ void ADBMS_parseGpioVoltages(uint8_t rxBuffer[NUM_MOD][REG_LEN], uint8_t registe
 				continue;
 			}
 
-			uint8_t lowByte = rxBuffer[moduleIndex][2 * gpioOffset];
-			uint8_t highByte = rxBuffer[moduleIndex][2 * gpioOffset + 1];
+			uint8_t lowByte = rxBuffer[rxIndex][2 * gpioOffset];
+			uint8_t highByte = rxBuffer[rxIndex][2 * gpioOffset + 1];
 			uint16_t rawVoltageUnsigned = (uint16_t)((highByte << 8) | lowByte);
 			int16_t rawVoltageSigned = (int16_t)((highByte << 8) | lowByte);
 			// printf("Module: %d, GPIO: %d, Raw Voltage: %d\n", moduleIndex, gpioIndex, rawVoltage);
