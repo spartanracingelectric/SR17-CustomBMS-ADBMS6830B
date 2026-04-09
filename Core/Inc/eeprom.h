@@ -12,5 +12,7 @@
 
 void EEPROM_writeSOC(uint32_t soc_uAh);
 uint32_t EEPROM_readSOC(void);
+void EEPROM_csLow(void);
+void EEPROM_csHigh(void);
 
 #endif
