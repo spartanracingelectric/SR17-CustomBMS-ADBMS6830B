@@ -187,11 +187,11 @@ HAL_StatusTypeDef CAN_activate() {
  *
  * Returns HAL status; HAL_TIMEOUT if skip/timeout condition is hit.
  */
-HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
+HAL_StatusTypeDef CAN_send(CANMessage *message, uint8_t length) {
     if(length > 8) {
     	length = 8;
     }
-    ptr->TxHeader.DLC = length;
+    message->TxHeader.DLC = length;
     uint32_t previousTime = HAL_GetTick();
     while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
     	printf("waiting\n");
@@ -200,7 +200,7 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
     		return HAL_TIMEOUT;
     	}
     }
-	return HAL_CAN_AddTxMessage(&hcan1, &ptr->TxHeader, ptr->buffer, &ptr->TxMailbox);
+	return HAL_CAN_AddTxMessage(&hcan1, &message->TxHeader, message->buffer, &message->TxMailbox);
 }
 
 /* ===== Runtime Settings: Default TX Header ==================================
@@ -209,18 +209,18 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
  *  - Sets Standard ID mode, RTR=DATA, DLC=8.
  *  - Caller should update StdId via Set_CAN_Id() per frame.
  */
-void CAN_settingsInit(CANMessage *ptr) {
+void CAN_settingsInit(CANMessage *message) {
     CAN_start();
     CAN_activate();
     HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-    ptr->TxHeader.IDE = CAN_ID_STD;
-    ptr->TxHeader.StdId = 0x00;
-    ptr->TxHeader.RTR = CAN_RTR_DATA;
-    ptr->TxHeader.DLC = 0;
+    message->TxHeader.IDE = CAN_ID_STD;
+    message->TxHeader.StdId = 0x00;
+    message->TxHeader.RTR = CAN_RTR_DATA;
+    message->TxHeader.DLC = 0;
 }
 
 /** @brief Convenience setter for Standard ID. */
-void CAN_setId(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
+void CAN_setId(CANMessage *message, uint32_t id) { message->TxHeader.StdId = id; }
 
 /* ===== High-Level TX: Voltage Pages =========================================
  * CAN_Send_Voltage():
@@ -352,8 +352,9 @@ void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt) {
 
 void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod) {
 	uint32_t canId = (uint32_t)CAN_ID_MODULE_SUMMARY_BASE;
-	int byteNumber = 0;
+
 	for (int modIndex = 0; modIndex < NUM_MOD; modIndex++) {
+		int byteNumber = 0;
 		CAN_setId(message, canId);
 		message->buffer[byteNumber++] =  (uint8_t)mod[modIndex].maxCellVoltage_mV;
 		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].maxCellVoltage_mV		>> 8);
@@ -496,7 +497,7 @@ void CAN_sendCanHeartBeat(CANMessage *message)
 
 	    CAN_setId(message, canId);
 
-	    message->buffer[byteNumber] = 1;
+	    message->buffer[byteNumber++] = 1;
 
 	    CAN_send(message, (uint8_t)byteNumber);
 
@@ -549,6 +550,20 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 
 	    CAN_send(message, byteNumber);
 
+}
+
+
+void CAN_sendAllData(CANMessage *message, ModuleData *mod, AccumulatorData *batt, BalanceStatus *blst, uint8_t *faults, uint8_t *warnings, uint16_t max_capacity) {
+	CAN_sendVoltageData(message, mod);
+	CAN_sendTemperatureData(message, mod);
+	CAN_sendPackSummary(message, batt);
+	CAN_sendModuleSummary(message, mod);
+	CAN_Send_Safety_Checker(message, batt, faults, warnings);
+	CAN_Send_SOC(message, batt, max_capacity);
+	CAN_sendBalanceStatus(message, blst);
+	CAN_sendFaultStatus(message);
+	CAN_sendCanHeartBeat(message);
+	CAN_sendFaultAndWarningSummary(message);
 }
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
 //    uint16_t CAN_ID = 0x602;

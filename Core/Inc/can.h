@@ -91,11 +91,11 @@ HAL_StatusTypeDef CAN_Start();
 
 HAL_StatusTypeDef CAN_Activate();
 
-HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length);
+HAL_StatusTypeDef CAN_send(CANMessage *message, uint8_t length);
 
-void CAN_settingsInit(CANMessage *ptr);
+void CAN_settingsInit(CANMessage *message);
 
-void CAN_setId(CANMessage *ptr, uint32_t id);
+void CAN_setId(CANMessage *message, uint32_t id);
 
 /* ===== Public API: High-Level TX Helpers ====================================
  * CAN_Send_Voltage():        voltages in groups of 4 cells per frame.
@@ -119,6 +119,7 @@ void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *message);
 void CAN_sendCanHeartBeat(CANMessage *message);
 void CAN_sendFaultAndWarningSummary(CANMessage *message);
+void CAN_sendAllData(CANMessage *message, ModuleData *mod, AccumulatorData *batt, BalanceStatus *blst, uint8_t *faults, uint8_t *warnings, uint16_t max_capacity);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 
