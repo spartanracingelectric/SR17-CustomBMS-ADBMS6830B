@@ -106,7 +106,7 @@ void SOC_Init(AccumulatorData *batt, ModuleData *mod) {
         batt->soc = saved_soc;
     } else 
     {
-        SOC_CalculateFromOCV(batt, mod);
+        SOC_calculateFromOCV(batt, mod);
         EEPROM_writeSOC(batt->soc); 
     }
 }
