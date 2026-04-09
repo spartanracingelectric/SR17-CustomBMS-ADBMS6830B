@@ -1,6 +1,7 @@
 #include "eeprom.h"
 #include "main.h"
 #include "spi.h"
+#include "crc.h"
 
 void EEPROM_csLow(void)
 {
@@ -51,7 +52,7 @@ void EEPROM_writeSOC(uint32_t soc_uAh)
     HAL_SPI_Transmit(&hspi3, tx_buffer, 10, 100);
     EEPROM_csHigh();
 
-    HAL_Delay(5);
+    HAL_Delay(6);
 }
 
 /**
@@ -62,6 +63,7 @@ uint32_t EEPROM_readSOC(void)
 	uint8_t header[2];
 	uint8_t dataBuffer[8] = {0};
 	uint32_t reconstructed_soc = 0;
+    uint32_t stored_crc = 0;
 
 	header[0] = EEPROM_CMD_READ;
 	header[1] = EEPROM_ADDR_SOC;
