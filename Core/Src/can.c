@@ -490,7 +490,6 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 		message->buffer[byteNumber++] = faultMsg.ModuleID;
 		message->buffer[byteNumber++] = faultMsg.CellID;
 		message->buffer[byteNumber++] = faultMsg.FaultType;
-		printf("fault type: %d", faultMsg.FaultType);
 	}
 	else
 	{
@@ -513,6 +512,17 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 	}
 
 	CAN_send(message, byteNumber);
+}
+
+void CAN_sendBalanceState(CANMessage *message)
+{
+	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATE;
+    CAN_setId(message, canId);
+    message->buffer[0] = 0;
+    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_DISABLED) << 0;
+    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_REST) << 1;
+    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_ACTIVE) << 2;
+    CAN_send(message, 1);
 }
 // void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
 //     uint16_t CAN_ID = 0x602;

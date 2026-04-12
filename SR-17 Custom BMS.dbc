@@ -14,6 +14,31 @@ SG_ BMS_Capacity : 0|16@1+ (1,0) [0|65535] "mAh" Custom_BMS
 SG_ BMS_HV_Sense_Pack_Voltage: 16|16@1+ (0.01,0) [0|65535] "V" Custom_BMS
 SG_ BMS_Current : 32|32@1+ (1,0) [0|4.29497e+009] "mA" Custom_BMS
 
+BO_ 1570 BMS_Pack_Summary_1: 8 Custom_BMS
+SG_ BMS_Highest_Cell_Voltage : 0|16@1- (0.001,0) [-32.768|32.767] "V" Custom_BMS
+SG_ BMS_Lowest_Cell_Voltage : 16|16@1- (0.001,0) [-32.768|32.767] "V" Custom_BMS
+SG_ BMS_Higest_Cell_Temperature : 32|8@1- (1,0) [-128|127] "C" Custom_BMS
+SG_ BMS_Lowest_Cell_Temperature : 40|8@1- (1,0) [-128|127] "C" Custom_BMS
+SG_ BMS_Total_Pack_Voltage   : 48|16@1+ (0.01,0) [0|655.35] "V" Custom_BMS
+
+BO_ 1571 BMS_Pack_Summary_2: 8 Custom_BMS
+SG_ BMS_Cell_Overvolt_Fault          : 0|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Undervolt_Fault         : 1|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_High_Temp_Fault         : 2|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Low_Temp_Fault          : 3|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Redundant_Voltage_Fault      : 4|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Redundant_Temp_Fault         : 5|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Invalid_Data_Fault           : 6|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Open_Wire_Detection_Fault    : 7|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Overvolt_Warning        : 8|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Undervolt_Warning       : 9|1@1+  (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_High_Temp_Warning       : 10|1@1+ (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Low_Temp_Warning        : 11|1@1+ (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Cell_Imbalance_Warning       : 12|1@1+ (1,0) [0|1]     ""    Custom_BMS
+SG_ BMS_Pack_Imbalance               : 16|16@1- (0.001,0) [-32.768|32.767] "mV"  Custom_BMS
+SG_ BMS_HV_Sense_Pack_Voltage        : 32|16@1+ (0.01,0) [0|655.35] "cV"  Custom_BMS
+SG_ BMS_State_of_Charge              : 48|16@1+ (0.01,0) [0|655.35] "mAh" Custom_BMS
+
 BO_ 1572 BMS_Balance_Status_M1_to_M4: 8 Custom_BMS
 SG_ BMS_M1_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M1_Cell_2 : 1|1@1- (1,0) [0|1] " " Custom_BMS
@@ -160,30 +185,10 @@ SG_ BMS_M10_Cell_12 : 27|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M10_Cell_13 : 28|1@1- (1,0) [0|1] " " Custom_BMS
 SG_ BMS_M10_Cell_14 : 29|1@1- (1,0) [0|1] " " Custom_BMS
 
-BO_ 1570 BMS_Pack_Summary_1: 8 Custom_BMS
-SG_ BMS_Highest_Cell_Voltage : 0|16@1- (0.001,0) [-32.768|32.767] "V" Custom_BMS
-SG_ BMS_Lowest_Cell_Voltage : 16|16@1- (0.001,0) [-32.768|32.767] "V" Custom_BMS
-SG_ BMS_Higest_Cell_Temperature : 32|8@1- (1,0) [-128|127] "C" Custom_BMS
-SG_ BMS_Lowest_Cell_Temperature : 40|8@1- (1,0) [-128|127] "C" Custom_BMS
-SG_ BMS_Total_Pack_Voltage   : 48|16@1+ (0.01,0) [0|655.35] "V" Custom_BMS
-
-BO_ 1571 BMS_Pack_Summary_2: 8 Custom_BMS
-SG_ BMS_Cell_Overvolt_Fault          : 0|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Undervolt_Fault         : 1|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_High_Temp_Fault         : 2|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Low_Temp_Fault          : 3|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Redundant_Voltage_Fault      : 4|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Redundant_Temp_Fault         : 5|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Invalid_Data_Fault           : 6|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Open_Wire_Detection_Fault    : 7|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Overvolt_Warning        : 8|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Undervolt_Warning       : 9|1@1+  (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_High_Temp_Warning       : 10|1@1+ (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Low_Temp_Warning        : 11|1@1+ (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Cell_Imbalance_Warning       : 12|1@1+ (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Pack_Imbalance               : 16|16@1- (0.001,0) [-32.768|32.767] "mV"  Custom_BMS
-SG_ BMS_HV_Sense_Pack_Voltage        : 32|16@1+ (0.01,0) [0|655.35] "cV"  Custom_BMS
-SG_ BMS_State_of_Charge              : 48|16@1+ (0.01,0) [0|655.35] "mAh" Custom_BMS
+BO_ 1575 BMS_Balance_State : 1 Custom_BMS
+SG_ BMS_Balance_State_Idle   : 0|1@1+ (1,0) [0|1] "" Custom_BMS
+SG_ BMS_Balance_State_Rest   : 1|1@1+ (1,0) [0|1] "" Custom_BMS
+SG_ BMS_Balance_State_Active : 2|1@1+ (1,0) [0|1] "" Custom_BMS
 
 BO_ 1584 BMS_M1_Cell_Voltage_Data_1: 8 Custom_BMS
 SG_ BMS_M1_Cell_1_Voltage  : 0|16@1- (0.001,0) [-32.768|32.767] "V" Custom_BMS
