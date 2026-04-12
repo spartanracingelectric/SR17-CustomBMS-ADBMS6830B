@@ -59,11 +59,11 @@
  *  - *_VOLT margins in 0.1 mV steps (e.g., 100 → 10 mV).
  *  - *_TEMP margins in °C.
  */
-#define FAULT_LOCK_MARGIN_HIGH_VOLT 100			//10 mV
-#define FAULT_LOCK_MARGIN_LOW_VOLT 	1000		//100 mV
-#define FAULT_LOCK_MARGIN_IMBALANCE 1000		//100 mV
-#define FAULT_LOCK_MARGIN_TEMP  10			    //10 ℃
-#define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 50	//5 mV
+#define FAULT_LOCK_MARGIN_HIGH_VOLT 10			//10 mV
+#define FAULT_LOCK_MARGIN_LOW_VOLT 	10		    //10 mV
+#define FAULT_LOCK_MARGIN_IMBALANCE 100			//100 mV
+#define FAULT_LOCK_MARGIN_TEMP  1			    //1 C
+#define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 5 	//5 mV
 
 /* ===== Time Limits (Hysteresis to Assert States) =========================
  * Time limits (in ms) that a fault condition must persist before being asserted. 
