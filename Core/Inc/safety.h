@@ -143,6 +143,7 @@ typedef struct WarningMessage_t {
 
 extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
 extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
+extern bool isFaulting;
 
 /* ===== Public API: Safety Evaluators & Aggregates ============================
  * Cell_Voltage_Fault():

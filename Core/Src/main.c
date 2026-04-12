@@ -156,14 +156,16 @@ int main(void)
 		Module_getVoltageStats(modData);
 		Accumulator_getVoltageStats(&accmData, modData);
 		HVSense_getPackVoltage(&accmData);
-
 		Module_getTemperatures(modData);
 		Module_getTemperatureStats(modData);
 		Accumulator_getTemperatureStats(&accmData, modData);
 
 		// ContactorSense_getContactorState(&accmData);
 
-		Safety_checkFaults(&accmData, modData);
+		// Voltage readings are wrong during balancing so don't check faults while balancing
+		if (currentBalanceState != BALANCE_STATE_ACTIVE) {
+			Safety_checkFaults(&accmData, modData);
+		}
 
 		// Passive balancing is called unless a fault has occurred
 		Balance_handleBalancing(modData, &accmData, balanceStatus, configB);
@@ -177,6 +179,7 @@ int main(void)
 		CAN_sendFaultStatus(&msg);
 		CAN_sendFaultAndWarningSummary(&msg);
 		CAN_sendCanHeartBeat(&msg);
+		CAN_sendBalanceState(&msg);
 
 		uint32_t end = HAL_GetTick();
 		printf("cycle time ms: %d\n", end - start);

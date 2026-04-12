@@ -31,6 +31,7 @@
 #include "main.h"
 #include "stdio.h"
 
+
 static void Safety_clearFaults(void);
 static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod, uint32_t current_time);
 static void Safety_checkOpenWire(int m, int c, uint16_t voltage, FaultFlags_t *faults, uint32_t current_time);
@@ -60,6 +61,8 @@ static uint32_t Timer_UnderTemp[NUM_MOD][NUM_THERM_PER_MOD] = {0};
 static uint32_t Timer_OverTemp[NUM_MOD][NUM_THERM_PER_MOD] = {0};
 static uint32_t Timer_OpenWire[NUM_MOD][NUM_CELL_PER_MOD] = {0};
 static uint32_t Timer_PEC[NUM_MOD] = {0};
+
+bool isFaulting = false;
 
 void Safety_checkFaults(AccumulatorData *batt, ModuleData *mod)
 {
@@ -271,7 +274,7 @@ static void Safety_clearFaults(void)
 			}
 		}
 	}
-
+	isFaulting = false;
 	ClearFaultSignal();
 }
 
@@ -402,6 +405,7 @@ static void Safety_checkOverVoltage(int m, int c, int16_t voltage, FaultFlags_t 
 		else if ((current_time - Timer_OverVolt[m][c]) > TIME_LIMIT_OVER_VOLT && faults->OverVolt == 0)
 		{
 			faults->OverVolt = 1;
+			isFaulting = true;
 			SendFaultSignal();
 		}
 	}
@@ -438,6 +442,7 @@ static void Safety_checkUnderVoltage(int m, int c, int16_t voltage, FaultFlags_t
 		else if ((current_time - Timer_UnderVolt[m][c]) > TIME_LIMIT_UNDER_VOLT && faults->UnderVolt == 0)
 		{
 			faults->UnderVolt = 1;
+			isFaulting = true;
 			SendFaultSignal();
 		}
 	}
@@ -474,6 +479,7 @@ static void Safety_checkOverTemp(int m, int t, int16_t temp, FaultFlags_t *fault
 		else if ((current_time - Timer_OverTemp[m][t]) > TIME_LIMIT_OVER_TEMP && faults->OverTemp == 0)
 		{
 			faults->OverTemp = 1;
+			isFaulting = true;
 			SendFaultSignal();
 		}
 	}
@@ -510,6 +516,7 @@ static void Safety_checkUnderTemp(int m, int t, int16_t temp, FaultFlags_t *faul
 		else if ((current_time - Timer_UnderTemp[m][t]) > TIME_LIMIT_UNDER_TEMP && faults->UnderTemp == 0)
 		{
 			faults->UnderTemp = 1;
+			isFaulting = true;
 			SendFaultSignal();
 		}
 	}

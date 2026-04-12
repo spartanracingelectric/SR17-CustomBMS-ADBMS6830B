@@ -9,6 +9,11 @@
 #include "accumulator.h"
 #include "main.h"
 
+#define BALANCE_THRESHOLD_MV 5
+#define BALANCE_COMMAND_TIMEOUT_MS 5000
+#define BALANCE_STATE_ACTIVE_LENGTH_MS 30000
+#define BALANCE_STATE_REST_LENGTH_MS 5000
+
 typedef struct BalanceStatus
 {
 	uint8_t cellsToBalance[NUM_CELL_PER_MOD];
@@ -23,8 +28,13 @@ typedef struct ConfigurationRegisterB
 	// TODO: Add other fields in register
 } ConfigurationRegisterB;
 
-#define BALANCE_THRESHOLD_MV 5
-#define BALANCE_COMMAND_TIMEOUT_MS 5000
+typedef enum {
+	BALANCE_STATE_DISABLED,
+	BALANCE_STATE_ACTIVE,
+	BALANCE_STATE_REST,
+} BalanceState;
+
+extern BalanceState currentBalanceState;
 
 void Balance_init(BalanceStatus *blst, ConfigurationRegisterB *RDFCGB_buff);
 void Balance_handleBalancing(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst, ConfigurationRegisterB *configB);

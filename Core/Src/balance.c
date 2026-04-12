@@ -4,16 +4,17 @@
  */
 #include "balance.h"
 #include "adbms6830b.h"
+#include "safety.h"
 
-bool isBalancingEnabled = false;
-bool isBalancingFinished = false;
+BalanceState currentBalanceState = BALANCE_STATE_DISABLED;
+BalanceState previousBalanceState = BALANCE_STATE_DISABLED;
 static uint32_t lastBalanceCommandTick = 0;
+static uint32_t balanceStateStartTick = 0;
 
 void Balance_init(BalanceStatus *blst, ConfigurationRegisterB *configB)
 {
-	isBalancingEnabled = false;
-	isBalancingFinished = false;
 	lastBalanceCommandTick = HAL_GetTick();
+	balanceStateStartTick = HAL_GetTick();
 	Balance_stopCellDischarge(blst);
 	Balance_getDischargeStatus(blst, configB);
 }
@@ -22,14 +23,15 @@ void Balance_handleBalanceCANMessage(CAN_RxHeaderTypeDef *rxHeader, uint8_t *rxD
 {
 	uint8_t balanceCommand = rxData[0];
 	lastBalanceCommandTick = HAL_GetTick();
-	if (balanceCommand == 1)
+	if (balanceCommand == 1 && currentBalanceState == BALANCE_STATE_DISABLED && !isFaulting)
 	{
-		isBalancingEnabled = true;
+		currentBalanceState = BALANCE_STATE_ACTIVE;
+		balanceStateStartTick = HAL_GetTick();
 	}
 	else if (balanceCommand == 0)
 	{
-		isBalancingEnabled = false;
-		isBalancingFinished = true;
+		currentBalanceState = BALANCE_STATE_DISABLED;
+		balanceStateStartTick = HAL_GetTick();
 	}
 }
 
@@ -37,30 +39,61 @@ void Balance_handleBalancing(ModuleData *mod, AccumulatorData *accm, BalanceStat
 {
 	// Stop balancing if balance command is not received every BALANCE_COMMAND_TIMEOUT_MS
 	uint32_t currentTick = HAL_GetTick();
-	if (isBalancingEnabled && (currentTick - lastBalanceCommandTick > BALANCE_COMMAND_TIMEOUT_MS))
+	if (currentBalanceState != BALANCE_STATE_DISABLED && (currentTick - lastBalanceCommandTick > BALANCE_COMMAND_TIMEOUT_MS))
 	{
-		isBalancingEnabled = false;
-		isBalancingFinished = true;
+		currentBalanceState = BALANCE_STATE_DISABLED;
+	}
+	
+	// Don't balance if there is a fault
+	if (isFaulting) {
+		currentBalanceState = BALANCE_STATE_DISABLED;
 	}
 
-	if (isBalancingEnabled)
+	switch (currentBalanceState)
 	{
-		Balance_setCellDischarge(mod, accm, blst);
-		Balance_getDischargeStatus(blst, configB);
-	}
-	else if (isBalancingFinished)
-	{
-		// Runs once when balancing stops
-		Balance_stopCellDischarge(blst);
-		Balance_getDischargeStatus(blst, configB);
-		isBalancingFinished = false;
+	case BALANCE_STATE_DISABLED:
+		if (previousBalanceState != BALANCE_STATE_DISABLED)
+		{
+			Balance_stopCellDischarge(blst);
+			Balance_getDischargeStatus(blst, configB);
+			previousBalanceState = BALANCE_STATE_DISABLED;
+		}
+		break;
+	case BALANCE_STATE_REST:
+		if (previousBalanceState != BALANCE_STATE_REST)
+		{
+			balanceStateStartTick = currentTick;
+			Balance_stopCellDischarge(blst);
+			Balance_getDischargeStatus(blst, configB);
+			previousBalanceState = BALANCE_STATE_REST;
+		}
+		if (currentTick - balanceStateStartTick >= BALANCE_STATE_REST_LENGTH_MS)
+		{
+			previousBalanceState = BALANCE_STATE_REST;
+			currentBalanceState = BALANCE_STATE_ACTIVE;
+		}
+		break;
+	case BALANCE_STATE_ACTIVE:
+		if (previousBalanceState != BALANCE_STATE_ACTIVE)
+		{
+			balanceStateStartTick = currentTick;
+			Balance_setCellDischarge(mod, accm, blst);
+			Balance_getDischargeStatus(blst, configB);
+			previousBalanceState = currentBalanceState;
+		}
+		if (currentTick - balanceStateStartTick >= BALANCE_STATE_ACTIVE_LENGTH_MS)
+		{
+			previousBalanceState = BALANCE_STATE_ACTIVE;
+			currentBalanceState = BALANCE_STATE_REST;
+		}
+		break;
 	}
 }
 
 /* Discharge Algorithm
  *  For each cell, compare its voltage to lowest cell voltage pack.
  *  If the difference is greater than BALANCE_THRESHOLD_MV, enable discharge for that cell (DCC = 1)
- *  Discharging will only occur if Enable Balance CAN message is receieved every BALANCE_COMMAND_TIMEOUT_MS
+ *  Discharging will only occur if Enable Balance CAN message is received every BALANCE_COMMAND_TIMEOUT_MS
  */
 void Balance_setCellDischarge(ModuleData *mod, AccumulatorData *accm, BalanceStatus *blst)
 {
