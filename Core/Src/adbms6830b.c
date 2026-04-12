@@ -378,7 +378,7 @@ void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
 	// Pack command bits into the register CFGBR4
 	for (int moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
 	{
-		int txIndex = NUM_MOD - 1 - moduleIndex; // Need to package into txBuffer in reverse order
+		// int txIndex = NUM_MOD - 1 - moduleIndex; // Need to package into txBuffer in reverse order
 
 		uint8_t CFGBR4 = 0;
 		uint8_t CFGBR5 = 0;
@@ -394,12 +394,12 @@ void ADBMS_writeConfigurationRegisterB(BalanceStatus *blst)
 				CFGBR5 |= (blst[moduleIndex].cellsToBalance[cellIndex] & 0x01) << (cellIndex - 8);
 			}
 		}
-		txBuffer[txIndex][0] = CFGBR0;
-		txBuffer[txIndex][1] = CFGBR1;
-		txBuffer[txIndex][2] = CFGBR2;
-		txBuffer[txIndex][3] = CFGBR3;
-		txBuffer[txIndex][4] = CFGBR4;
-		txBuffer[txIndex][5] = CFGBR5;
+		txBuffer[moduleIndex][0] = CFGBR0;
+		txBuffer[moduleIndex][1] = CFGBR1;
+		txBuffer[moduleIndex][2] = CFGBR2;
+		txBuffer[moduleIndex][3] = CFGBR3;
+		txBuffer[moduleIndex][4] = CFGBR4;
+		txBuffer[moduleIndex][5] = CFGBR5;
 	}
 	ADBMS_wakeUp();
 	ADBMS_csLow();
@@ -420,13 +420,14 @@ void ADBMS_readConfigurationRegisterB(ConfigurationRegisterB *configB)
 
 	for (uint8_t moduleIndex = 0; moduleIndex < NUM_MOD; moduleIndex++)
 	{
-		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[moduleIndex][0], DATA_LEN, &rxBuffer[moduleIndex][DATA_LEN + 0]);
+		uint8_t txIndex = NUM_MOD - 1 - moduleIndex; // Need to read in reverse order
+		bool isDataValid = ADBMS_checkDataPec(&rxBuffer[txIndex][0], DATA_LEN, &rxBuffer[txIndex][DATA_LEN + 0]);
 		if (!isDataValid)
 		{
 			// TODO: Add proper error state
 			continue;
 		}
-		ADBMS_parseConfigurationRegisterB(rxBuffer[moduleIndex], &configB[moduleIndex]);
+		ADBMS_parseConfigurationRegisterB(rxBuffer[txIndex], &configB[moduleIndex]);
 	}
 }
 
