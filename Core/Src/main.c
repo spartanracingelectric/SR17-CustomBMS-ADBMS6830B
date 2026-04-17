@@ -180,6 +180,7 @@ int main(void)
 		CAN_sendFaultAndWarningSummary(&msg);
 		CAN_sendCanHeartBeat(&msg);
 		CAN_sendBalanceState(&msg);
+		CAN_sendSafetyChecker(&msg, &accmData);
 
 		uint32_t end = HAL_GetTick();
 		printf("cycle time ms: %d\n", end - start);

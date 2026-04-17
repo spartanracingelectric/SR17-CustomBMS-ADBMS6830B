@@ -43,34 +43,34 @@ void MX_CAN1_Init(void)
 
 	/* USER CODE BEGIN CAN1_Init 1 */
 
-  /* USER CODE END CAN1_Init 1 */
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 4;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_7TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = ENABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = ENABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN1_Init 2 */
-  CAN_FilterTypeDef sFilterConfig;
-	  sFilterConfig.FilterBank = 0;
-	  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-	  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	  sFilterConfig.FilterIdHigh = 0x604 << 5;  // Recieve only ID 0x604
-	  sFilterConfig.FilterIdLow = 0x0000;
-	  sFilterConfig.FilterMaskIdHigh = 0xFFF << 5;  // only accept complete match
-	  sFilterConfig.FilterMaskIdLow = 0x0000;
-	  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-	  sFilterConfig.FilterActivation = ENABLE;
+	/* USER CODE END CAN1_Init 1 */
+	hcan1.Instance = CAN1;
+	hcan1.Init.Prescaler = 4;
+	hcan1.Init.Mode = CAN_MODE_NORMAL;
+	hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+	hcan1.Init.TimeSeg1 = CAN_BS1_7TQ;
+	hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+	hcan1.Init.TimeTriggeredMode = DISABLE;
+	hcan1.Init.AutoBusOff = ENABLE;
+	hcan1.Init.AutoWakeUp = DISABLE;
+	hcan1.Init.AutoRetransmission = ENABLE;
+	hcan1.Init.ReceiveFifoLocked = DISABLE;
+	hcan1.Init.TransmitFifoPriority = DISABLE;
+	if (HAL_CAN_Init(&hcan1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN CAN1_Init 2 */
+	CAN_FilterTypeDef sFilterConfig;
+	sFilterConfig.FilterBank = 0;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x604 << 5; // Recieve only ID 0x604
+	sFilterConfig.FilterIdLow = 0x0000;
+	sFilterConfig.FilterMaskIdHigh = 0xFFF << 5; // only accept complete match
+	sFilterConfig.FilterMaskIdLow = 0x0000;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig.FilterActivation = ENABLE;
 
 	HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
 	/* USER CODE END CAN1_Init 2 */
@@ -259,6 +259,7 @@ void CAN_sendVoltageData(CANMessage *message, ModuleData *mod)
 			{
 				int moduleIndex = cellNumber / NUM_CELL_PER_MOD;
 				int cellIndex = cellNumber % NUM_CELL_PER_MOD;
+
 				uint16_t voltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
 
 				message->buffer[byteNumber++] = (uint8_t)voltage_mV;
@@ -320,28 +321,31 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod)
  */
 void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
 {
+	uint16_t maxCellVoltageScaled = (uint16_t)batt->maxCellVoltage_mV * 10; // Need to scale by 10 to keep backwards compatibility with SR-16 BMS
+	uint16_t minCellVoltageScaled = (uint16_t)batt->minCellVoltage_mV * 10;
+
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_PACK_SUMMARY_BASE;
 	CAN_setId(message, canId);
-	message->buffer[byteNumber++] = (uint8_t)batt->maxCellVoltage_mV;
-	message->buffer[byteNumber++] = (uint8_t)(batt->maxCellVoltage_mV >> 8);
-	message->buffer[byteNumber++] = (uint8_t)batt->minCellVoltage_mV;
-	message->buffer[byteNumber++] = (uint8_t)(batt->minCellVoltage_mV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)maxCellVoltageScaled;
+	message->buffer[byteNumber++] = (uint8_t)(maxCellVoltageScaled >> 8);
+	message->buffer[byteNumber++] = (uint8_t)minCellVoltageScaled;
+	message->buffer[byteNumber++] = (uint8_t)(minCellVoltageScaled >> 8);
 	message->buffer[byteNumber++] = (uint8_t)batt->maxCellTemp_C;
 	message->buffer[byteNumber++] = (uint8_t)batt->minCellTemp_C;
 	message->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
 	message->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
 	CAN_send(message, byteNumber);
 
-	byteNumber = 0;
-	canId++;
-	CAN_setId(message, canId);
 
 	FaultMessage_t faultMsg = {0};
 	WarningMessage_t warningMsg = {0};
 	Safety_getNextFault(&faultMsg);
 	Safety_getNextWarning(&warningMsg);
 
+	byteNumber = 0;
+	canId++;
+	CAN_setId(message, canId);
 	message->buffer[byteNumber++] = (uint8_t)faultMsg.FaultType;
 	message->buffer[byteNumber++] = (uint8_t)warningMsg.WarningType;
 	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV);
@@ -350,6 +354,28 @@ void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
 	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
 	message->buffer[byteNumber++] = (uint8_t)(batt->soc);
 	message->buffer[byteNumber++] = (uint8_t)(batt->soc >> 8);
+	CAN_send(message, byteNumber);
+}
+
+// This message is for backwards compatibility with SR16 BMS
+void CAN_sendSafetyChecker(CANMessage *message, AccumulatorData *batt)
+{
+	uint32_t canId = (uint32_t)CAN_ID_SAFETY_CHECKER;
+	uint8_t byteNumber = 0;
+	uint16_t safetyFlags = Safety_getSafetyCheckerFlags(batt);
+	uint16_t cellImbalanceScaled = (uint16_t)batt->cellImbalance_mV * 10; // Need to scale by 10 to keep backwards compatibility with SR-16 BMS
+
+	CAN_setId(message, canId);
+
+	message->buffer[byteNumber++] = (uint8_t)safetyFlags;
+	message->buffer[byteNumber++] = (uint8_t)(safetyFlags >> 8);
+	message->buffer[byteNumber++] = (uint8_t)cellImbalanceScaled;
+	message->buffer[byteNumber++] = (uint8_t)(cellImbalanceScaled >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
+
 	CAN_send(message, byteNumber);
 }
 
@@ -517,12 +543,12 @@ void CAN_sendFaultAndWarningSummary(CANMessage *message)
 void CAN_sendBalanceState(CANMessage *message)
 {
 	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATE;
-    CAN_setId(message, canId);
-    message->buffer[0] = 0;
-    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_DISABLED) << 0;
-    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_REST) << 1;
-    message->buffer[0] |= (currentBalanceState == BALANCE_STATE_ACTIVE) << 2;
-    CAN_send(message, 1);
+	CAN_setId(message, canId);
+	message->buffer[0] = 0;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_DISABLED) << 0;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_REST) << 1;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_ACTIVE) << 2;
+	CAN_send(message, 1);
 }
 // void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
 //     uint16_t CAN_ID = 0x602;

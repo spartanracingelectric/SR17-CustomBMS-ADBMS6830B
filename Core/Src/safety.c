@@ -31,7 +31,6 @@
 #include "main.h"
 #include "stdio.h"
 
-
 static void Safety_clearFaults(void);
 static void Safety_checkPEC(int m, FaultFlags_t *module_faults, ModuleData *mod, uint32_t current_time);
 static void Safety_checkOpenWire(int m, int c, uint16_t voltage, FaultFlags_t *faults, uint32_t current_time);
@@ -257,6 +256,50 @@ void Safety_getModuleFaultBits(uint16_t *faultBuffer)
 
 		faultBuffer[m] = faultBits;
 	}
+}
+
+// For backwards compatibility with SR16 BMS fault CAN message format
+uint16_t Safety_getSafetyCheckerFlags(AccumulatorData *batt)
+{
+	uint16_t safetyFlags = 0;
+	FaultMessage_t faultMsg = {0};
+	WarningMessage_t warningMsg = {0};
+
+	Safety_getNextFault(&faultMsg);
+	Safety_getNextWarning(&warningMsg);
+
+	if (warningMsg.WarningType & WARNING_OVER_TEMP)
+	{
+		safetyFlags |= (1u << 2);
+	}
+	if (warningMsg.WarningType & WARNING_IMBALANCE)
+	{
+		safetyFlags |= (1u << 3);
+	}
+	if (warningMsg.WarningType & WARNING_UNDER_VOLT)
+	{
+		safetyFlags |= (1u << 4);
+	}
+	if (warningMsg.WarningType & WARNING_OVER_VOLT)
+	{
+		safetyFlags |= (1u << 5);
+	}
+
+	if (faultMsg.FaultType & FAULT_OVER_TEMP)
+	{
+		safetyFlags |= (1u << 10);
+	}
+
+	if (faultMsg.FaultType & FAULT_UNDER_VOLT)
+	{
+		safetyFlags |= (1u << 12);
+	}
+	if (faultMsg.FaultType & FAULT_OVER_VOLT)
+	{
+		safetyFlags |= (1u << 13);
+	}
+
+	return safetyFlags;
 }
 
 static void Safety_clearFaults(void)

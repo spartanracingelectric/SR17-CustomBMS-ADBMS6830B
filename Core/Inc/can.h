@@ -70,6 +70,7 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_ID_HeartBeat_Message	0x6B1
 #define CAN_ID_Fault_And_Warning_Summary		0x6B2
 #define CAN_ID_BALANCE_STATE  0x627   
+#define CAN_ID_SAFETY_CHECKER 0x600
 
 
 typedef struct CANMessage{
@@ -125,6 +126,7 @@ void CAN_sendFaultStatus(CANMessage *message);
 void CAN_sendCanHeartBeat(CANMessage *message);
 void CAN_sendFaultAndWarningSummary(CANMessage *message);
 void CAN_sendBalanceState(CANMessage *message);
+void CAN_sendSafetyChecker(CANMessage *message, AccumulatorData *batt);
 //void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt);
 /* USER CODE END Prototypes */
 

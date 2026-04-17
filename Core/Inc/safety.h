@@ -174,5 +174,6 @@ void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod);
 bool Safety_getNextFault(FaultMessage_t *faultMsg);
 bool Safety_getNextWarning(WarningMessage_t *warningMsg);
 void Safety_getModuleFaultBits(uint16_t *faultBuffer);
+uint16_t Safety_getSafetyCheckerFlags(AccumulatorData *batt);
 
 #endif /* INC_SAFETY_H_ */
