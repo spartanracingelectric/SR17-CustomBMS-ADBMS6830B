@@ -31,8 +31,8 @@ SG_ BMS_HV_Sense_Pack_Voltage: 16|16@1+ (0.01,0) [0|65535] "V" Custom_BMS
 SG_ BMS_Current : 32|32@1+ (1,0) [0|4.29497e+009] "mA" Custom_BMS
 
 BO_ 1570 BMS_Pack_Summary_1: 8 Custom_BMS											CM_ This message is backwards compatible with SR16 EXCEPT for pack voltage
-SG_ BMS_Highest_Cell_Voltage : 0|16@1- (0.0001,0) [-32.768|32.767] "V" Custom_BMS
-SG_ BMS_Lowest_Cell_Voltage : 16|16@1- (0.0001,0) [-32.768|32.767] "V" Custom_BMS
+SG_ BMS_Highest_Cell_Voltage : 0|16@1+ (0.0001,0) [0|6.5535] "V"
+SG_ BMS_Lowest_Cell_Voltage  : 16|16@1+ (0.0001,0) [0|6.5535] "V"
 SG_ BMS_Higest_Cell_Temperature : 32|8@1- (1,0) [-128|127] "C" Custom_BMS
 SG_ BMS_Lowest_Cell_Temperature : 40|8@1- (1,0) [-128|127] "C" Custom_BMS
 SG_ BMS_Total_Pack_Voltage   : 48|16@1+ (0.01,0) [0|655.35] "V" Custom_BMS			CM_ Read pack voltage from BMS_Safety_Checker message if you want backwards compatibilty with SR16 BMS
@@ -51,7 +51,7 @@ SG_ BMS_Cell_Undervolt_Warning       : 9|1@1+  (1,0) [0|1]     ""    Custom_BMS
 SG_ BMS_Cell_High_Temp_Warning       : 10|1@1+ (1,0) [0|1]     ""    Custom_BMS
 SG_ BMS_Cell_Low_Temp_Warning        : 11|1@1+ (1,0) [0|1]     ""    Custom_BMS
 SG_ BMS_Cell_Imbalance_Warning       : 12|1@1+ (1,0) [0|1]     ""    Custom_BMS
-SG_ BMS_Pack_Imbalance               : 16|16@1- (0.001,0) [-32.768|32.767] "mV"  Custom_BMS
+SG_ BMS_Pack_Imbalance               : 16|16@1- (1,0) [-32.768|32.767] "mV"  Custom_BMS
 SG_ BMS_HV_Sense_Pack_Voltage        : 32|16@1+ (0.01,0) [0|655.35] "cV"  Custom_BMS
 SG_ BMS_State_of_Charge              : 48|16@1+ (0.01,0) [0|655.35] "mAh" Custom_BMS
 
