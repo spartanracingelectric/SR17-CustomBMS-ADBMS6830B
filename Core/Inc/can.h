@@ -72,6 +72,8 @@ extern CAN_HandleTypeDef hcan1;
 #define CAN_ID_BALANCE_STATE  0x627   
 #define CAN_ID_SAFETY_CHECKER 0x600
 
+#define CAN_ID_SHUNT_CURRENT		0x514
+#define CAN_ID_SHUNT_COULOMB		0x517
 
 typedef struct CANMessage{
     CAN_TxHeaderTypeDef TxHeader;

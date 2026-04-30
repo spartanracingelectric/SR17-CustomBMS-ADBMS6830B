@@ -12,7 +12,7 @@ void Accumulator_init(AccumulatorData *acc)
 	acc->sumPackVoltage_cV = 0x0000;
 	acc->hvSensePackVoltage_cV = 0x0000;
 	acc->soc = 0x00000000;
-	acc->current_mA = 0x00000000;
+	acc->shuntCurrent_mA = 0x00000000;
 }
 
 void Accumulator_getMinVoltage(AccumulatorData *acc, ModuleData *mod)
