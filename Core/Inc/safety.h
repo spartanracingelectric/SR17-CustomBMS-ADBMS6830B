@@ -20,6 +20,8 @@
 #define INC_SAFETY_H_
 
 #include "main.h"
+#include "accumulator.h"
+#include "module.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -31,11 +33,11 @@
 #define PACK_HIGH_VOLT_FAULT	    590000
 #define PACK_LOW_VOLT_FAULT         288000
 #define CELL_HIGH_VOLT_DISCONNECT	45000
-#define CELL_HIGH_VOLT_FAULT	    4250
-#define CELL_LOW_VOLT_FAULT		    2500
+#define CELL_HIGH_VOLT_FAULT	    4200
+#define CELL_LOW_VOLT_FAULT		    2800
 #define CELL_VOLT_IMBALANCE_FAULT   2000 //0.1 V
-#define CELL_HIGH_TEMP_FAULT		70
-#define CELL_LOW_TEMP_FAULT         0
+#define CELL_HIGH_TEMP_FAULT		60
+#define CELL_LOW_TEMP_FAULT         -1 // Temporary until sensor breakouts are fixed
 #define CELL_OPEN_WIRE_FAULT        2000 
 #define REDUNDANCY_VOLT_FAULT       5
 
@@ -45,8 +47,8 @@
  */
 #define PACK_HIGH_VOLT_WARNING	    4085000
 #define PACK_LOW_VOLT_WARNING       3000000
-#define CELL_HIGH_VOLT_WARNING	    40000
-#define CELL_LOW_VOLT_WARNING	    27000
+#define CELL_HIGH_VOLT_WARNING	    4000
+#define CELL_LOW_VOLT_WARNING	    2700
 #define CELL_VOLT_IMBALANCE_WARNING	1000 //0.05 V
 #define CELL_HIGH_TEMP_WARNING		55
 #define CELL_LOW_TEMP_WARNING		0
@@ -57,11 +59,11 @@
  *  - *_VOLT margins in 0.1 mV steps (e.g., 100 → 10 mV).
  *  - *_TEMP margins in °C.
  */
-#define FAULT_LOCK_MARGIN_HIGH_VOLT 100			//10 mV
-#define FAULT_LOCK_MARGIN_LOW_VOLT 	1000		//100 mV
-#define FAULT_LOCK_MARGIN_IMBALANCE 1000		//100 mV
-#define FAULT_LOCK_MARGIN_TEMP  10			    //10 ℃
-#define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 50	//5 mV
+#define FAULT_LOCK_MARGIN_HIGH_VOLT 10			//10 mV
+#define FAULT_LOCK_MARGIN_LOW_VOLT 	10		    //10 mV
+#define FAULT_LOCK_MARGIN_IMBALANCE 100			//100 mV
+#define FAULT_LOCK_MARGIN_TEMP  1			    //1 C
+#define FAULT_LOCK_MARGIN_REDUNDANCY_VOLT 5 	//5 mV
 
 /* ===== Time Limits (Hysteresis to Assert States) =========================
  * Time limits (in ms) that a fault condition must persist before being asserted. 
@@ -95,12 +97,12 @@ typedef struct WarningFlags_t {
 } WarningFlags_t;
 
 typedef enum WarningType_e {
-    WARNING_NONE            = 0x00,
-    WARNING_OVER_VOLT       = 0x80,  // 0b10000000
-    WARNING_UNDER_VOLT      = 0x40,  // 0b01000000
-    WARNING_OVER_TEMP       = 0x20,  // 0b00100000
-    WARNING_UNDER_TEMP      = 0x10,  // 0b00010000
-    WARNING_IMBALANCE       = 0x08   // 0b00001000
+    WARNING_NONE            = 0x00,  // 0b00000000
+    WARNING_OVER_VOLT       = 0x01,  // 0b00000001
+    WARNING_UNDER_VOLT      = 0x02,  // 0b00000010
+    WARNING_OVER_TEMP       = 0x04,  // 0b00000100
+    WARNING_UNDER_TEMP      = 0x08,  // 0b00001000
+    WARNING_IMBALANCE       = 0x10   // 0b00010000
 } WarningType_e;
 
 // Fault byte
@@ -116,15 +118,15 @@ typedef struct FaultFlags_t {
 } FaultFlags_t;
 
 typedef enum FaultType_e {
-    FAULT_NONE             = 0x00,
-    FAULT_OVER_VOLT        = 0x80,  // 0b10000000
-    FAULT_UNDER_VOLT       = 0x40,  // 0b01000000
-    FAULT_OPEN_WIRE        = 0x20,  // 0b00100000 
-    FAULT_PEC              = 0x10,  // 0b00010000
-    FAULT_OVER_TEMP        = 0x08,  // 0b00001000
-    FAULT_UNDER_TEMP       = 0x04,  // 0b00000100
-    FAULT_REDUNDANT_VOLT   = 0x02,  // 0b00000010
-    FAULT_REDUNDANT_TEMP   = 0x01   // 0b00000001
+    FAULT_NONE             = 0x00,  // 0b00000000
+    FAULT_OVER_VOLT        = 0x01,  // 0b00000001
+    FAULT_UNDER_VOLT       = 0x02,  // 0b00000010
+    FAULT_OPEN_WIRE        = 0x04,  // 0b00000100
+    FAULT_PEC              = 0x08,  // 0b00001000
+    FAULT_OVER_TEMP        = 0x10,  // 0b00010000
+    FAULT_UNDER_TEMP       = 0x20,  // 0b00100000
+    FAULT_REDUNDANT_VOLT   = 0x40,  // 0b01000000
+    FAULT_REDUNDANT_TEMP   = 0x80   // 0b10000000
 } FaultType_e;
 
 typedef struct FaultMessage_t {
@@ -141,6 +143,7 @@ typedef struct WarningMessage_t {
 
 extern FaultFlags_t   GlobalFaults[NUM_MOD][NUM_CELL_PER_MOD];
 extern WarningFlags_t GlobalWarnings[NUM_MOD][NUM_CELL_PER_MOD];
+extern bool isFaulting;
 
 /* ===== Public API: Safety Evaluators & Aggregates ============================
  * Cell_Voltage_Fault():
@@ -171,5 +174,6 @@ void Module_Temperature_Averages(AccumulatorData *batt, ModuleData *mod);
 bool Safety_getNextFault(FaultMessage_t *faultMsg);
 bool Safety_getNextWarning(WarningMessage_t *warningMsg);
 void Safety_getModuleFaultBits(uint16_t *faultBuffer);
+uint16_t Safety_getSafetyCheckerFlags(AccumulatorData *batt);
 
 #endif /* INC_SAFETY_H_ */

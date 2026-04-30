@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "module.h"
+#include "balance.h"
 
 // Voltage conversion base commands
 #define ADCV 0x0260
@@ -25,7 +27,7 @@
 #define RDCVC 0x0008
 #define RDCVD 0x000A
 #define RDCVE 0x0009
-#define RDCVF 0x000B
+#define RDCVF 0x0011
 #define NUM_CELL_VOLTAGE_REGISTERS 6
 
 // Read average cell voltage registers A-F commands
@@ -231,7 +233,6 @@ typedef enum
 
 extern DiagnosticPhase diagnosticPhase;
 
-void isoSPI_Idle_to_Ready();
 void ADBMS_wakeUp();
 void ADBMS_clearRegisters();
 

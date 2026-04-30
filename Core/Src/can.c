@@ -18,164 +18,167 @@
  *    (NUM_MOD, NUM_CELL_PER_MOD, NUM_THERM_TOTAL) are defined in headers.
  *  - HAL errors are surfaced via return values; Error_Handler() on init failure.
  ******************************************************************************
-*/
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
 
-
 /* USER CODE BEGIN 0 */
-#include "usart.h"
-#include "stdio.h"
 #include "balance.h"
+#include "charger.h"
 #include "safety.h"
+#include "stdio.h"
+#include "usart.h"
 #include <string.h>
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
 
 /* CAN1 init function */
-/* CAN1 init function */
-/* ===== CubeMX: CAN1 init ====================================================
- * Bit timing:
- *  - Prescaler=9, BS1=3TQ, BS2=4TQ, SJW=1TQ → 1 + 3 + 4 = 8 TQ per bit
- *  - Effective bitrate depends on APB clock; adjust in .ioc as needed.
- *
- * Filter:
- *  - Bank 0, 32-bit mask, FIFO0
- *  - Accept only StdID 0x604 (exact match) used by the charger command path.
- *
- * Auto features:
- *  - AutoBusOff=ENABLE, AutoWakeUp=DISABLE, AutoRetransmission=ENABLE
- */
 void MX_CAN1_Init(void)
 {
+	/* USER CODE BEGIN CAN1_Init 0 */
 
-  /* USER CODE BEGIN CAN1_Init 0 */
+	/* USER CODE END CAN1_Init 0 */
 
-  /* USER CODE END CAN1_Init 0 */
+	/* USER CODE BEGIN CAN1_Init 1 */
 
-  /* USER CODE BEGIN CAN1_Init 1 */
+	/* USER CODE END CAN1_Init 1 */
+	hcan1.Instance = CAN1;
+	hcan1.Init.Prescaler = 4;
+	hcan1.Init.Mode = CAN_MODE_NORMAL;
+	hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+	hcan1.Init.TimeSeg1 = CAN_BS1_7TQ;
+	hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+	hcan1.Init.TimeTriggeredMode = DISABLE;
+	hcan1.Init.AutoBusOff = ENABLE;
+	hcan1.Init.AutoWakeUp = DISABLE;
+	hcan1.Init.AutoRetransmission = ENABLE;
+	hcan1.Init.ReceiveFifoLocked = DISABLE;
+	hcan1.Init.TransmitFifoPriority = DISABLE;
+	if (HAL_CAN_Init(&hcan1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN CAN1_Init 2 */
+	CAN_FilterTypeDef sFilterConfig;
+	sFilterConfig.FilterBank = 0;
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x604 << 5; // Recieve only ID 0x604
+	sFilterConfig.FilterIdLow = 0x0000;
+	sFilterConfig.FilterMaskIdHigh = 0xFFF << 5; // only accept complete match
+	sFilterConfig.FilterMaskIdLow = 0x0000;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	sFilterConfig.FilterActivation = ENABLE;
 
-  /* USER CODE END CAN1_Init 1 */
-  hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 9;
-  hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
-  hcan1.Init.TimeTriggeredMode = DISABLE;
-  hcan1.Init.AutoBusOff = ENABLE;
-  hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = ENABLE;
-  hcan1.Init.ReceiveFifoLocked = DISABLE;
-  hcan1.Init.TransmitFifoPriority = DISABLE;
-  if (HAL_CAN_Init(&hcan1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN CAN1_Init 2 */
-  CAN_FilterTypeDef sFilterConfig;
-	  sFilterConfig.FilterBank = 0;
-	  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-	  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	  sFilterConfig.FilterIdHigh = 0x604 << 5;  // Recieve only ID 0x604
-	  sFilterConfig.FilterIdLow = 0x0000;
-	  sFilterConfig.FilterMaskIdHigh = 0xFFF << 5;  // only accept complete match
-	  sFilterConfig.FilterMaskIdLow = 0x0000;
-	  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-	  sFilterConfig.FilterActivation = ENABLE;
-
-  HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
-  /* USER CODE END CAN1_Init 2 */
-
+	HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
+	/* USER CODE END CAN1_Init 2 */
 }
 
-/* ===== CubeMX: MSP (GPIO/IRQ/Clock) ======================================== */
-void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
+void HAL_CAN_MspInit(CAN_HandleTypeDef *canHandle)
 {
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	if (canHandle->Instance == CAN1)
+	{
+		/* USER CODE BEGIN CAN1_MspInit 0 */
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(canHandle->Instance==CAN1)
-  {
-  /* USER CODE BEGIN CAN1_MspInit 0 */
+		/* USER CODE END CAN1_MspInit 0 */
+		/* CAN1 clock enable */
+		__HAL_RCC_CAN1_CLK_ENABLE();
 
-  /* USER CODE END CAN1_MspInit 0 */
-    /* CAN1 clock enable */
-    __HAL_RCC_CAN1_CLK_ENABLE();
+		__HAL_RCC_GPIOB_CLK_ENABLE();
+		/**CAN1 GPIO Configuration
+		PB8     ------> CAN1_RX
+		PB9     ------> CAN1_TX
+		*/
+		GPIO_InitStruct.Pin = GPIO_PIN_8;
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**CAN1 GPIO Configuration
-    PB8     ------> CAN1_RX
-    PB9     ------> CAN1_TX
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_8;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = GPIO_PIN_9;
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		__HAL_AFIO_REMAP_CAN1_2();
 
-    __HAL_AFIO_REMAP_CAN1_2();
+		/* CAN1 interrupt Init */
+		HAL_NVIC_SetPriority(CAN1_TX_IRQn, 2, 0);
+		HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+		HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 2, 0);
+		HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+		HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 2, 0);
+		HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+		HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 2, 0);
+		HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
+		/* USER CODE BEGIN CAN1_MspInit 1 */
 
-    /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_TX_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-    HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
-  /* USER CODE BEGIN CAN1_MspInit 1 */
-
-  /* USER CODE END CAN1_MspInit 1 */
-  }
+		/* USER CODE END CAN1_MspInit 1 */
+	}
 }
 
-/* ===== CubeMX: MSP DeInit =================================================== */
-void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
+void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle)
 {
+	if (canHandle->Instance == CAN1)
+	{
+		/* USER CODE BEGIN CAN1_MspDeInit 0 */
+		/* USER CODE END CAN1_MspDeInit 0 */
+		/* Peripheral clock disable */
+		__HAL_RCC_CAN1_CLK_DISABLE();
 
-  if(canHandle->Instance==CAN1)
-  {
-  /* USER CODE BEGIN CAN1_MspDeInit 0 */
-	  can_skip_flag = 0;
-  /* USER CODE END CAN1_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_CAN1_CLK_DISABLE();
+		/**CAN1 GPIO Configuration
+		PB8     ------> CAN1_RX
+		PB9     ------> CAN1_TX
+		*/
+		HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8 | GPIO_PIN_9);
 
-    /**CAN1 GPIO Configuration
-    PB8     ------> CAN1_RX
-    PB9     ------> CAN1_TX
-    */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
-
-    /* CAN1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
-    HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
-    HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
-    HAL_NVIC_DisableIRQ(CAN1_SCE_IRQn);
-  /* USER CODE BEGIN CAN1_MspDeInit 1 */
-  /* USER CODE END CAN1_MspDeInit 1 */
-  }
+		/* CAN1 interrupt Deinit */
+		HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
+		HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+		HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
+		HAL_NVIC_DisableIRQ(CAN1_SCE_IRQn);
+		/* USER CODE BEGIN CAN1_MspDeInit 1 */
+		/* USER CODE END CAN1_MspDeInit 1 */
+	}
 }
 
 /* USER CODE BEGIN 1 */
-/* ===== Runtime State & Thin HAL Wrappers ====================================
- * can_skip_flag: exit condition for a blocked TX wait loop on timeout.
- * CAN_Start():   starts CAN peripheral.
- * CAN_Activate(): enables RX FIFO0 message pending interrupt.
- */
-uint8_t can_skip_flag = 0;
+HAL_StatusTypeDef CAN_start()
+{
+	return HAL_CAN_Start(&hcan1);
+}
 
-HAL_StatusTypeDef CAN_start() { return HAL_CAN_Start(&hcan1); }
+HAL_StatusTypeDef CAN_activate()
+{
+	return HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+}
 
-HAL_StatusTypeDef CAN_activate() {
-    return HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_RxHeaderTypeDef rxHeader;
+	uint8_t rxData[8];
+
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+	{
+		return;
+	}
+
+	if (rxHeader.IDE == CAN_ID_STD)
+	{
+		if (rxHeader.StdId == BALANCE_COMMAND_CAN_ID)
+		{
+			Balance_handleBalanceCANMessage(&rxHeader, rxData);
+		}
+	}
+	else if (rxHeader.IDE == CAN_ID_EXT)
+	{
+		if (rxHeader.ExtId == ELCON_OUTPUT_CAN_ID)
+		{
+			Charger_handleElconCANMessage(&rxHeader, rxData);
+		}
+	}
 }
 
 /* ===== TX Path: Queueing a Frame ============================================
@@ -187,19 +190,23 @@ HAL_StatusTypeDef CAN_activate() {
  *
  * Returns HAL status; HAL_TIMEOUT if skip/timeout condition is hit.
  */
-HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
-    if(length > 8) {
-    	length = 8;
-    }
-    ptr->TxHeader.DLC = length;
-    uint32_t previousTime = HAL_GetTick();
-    while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {
-    	printf("waiting\n");
-    	if(HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS){
-			printf("timeout\n");
-    		return HAL_TIMEOUT;
-    	}
-    }
+HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length)
+{
+	if (length > 8)
+	{
+		length = 8;
+	}
+	ptr->TxHeader.DLC = length;
+	uint32_t previousTime = HAL_GetTick();
+	while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0)
+	{
+		// printf("waiting\n");
+		if (HAL_GetTick() - previousTime > CAN_TIME_OUT_THRESHOLD_MS)
+		{
+			// printf("timeout\n");
+			return HAL_TIMEOUT;
+		}
+	}
 	return HAL_CAN_AddTxMessage(&hcan1, &ptr->TxHeader, ptr->buffer, &ptr->TxMailbox);
 }
 
@@ -209,18 +216,22 @@ HAL_StatusTypeDef CAN_send(CANMessage *ptr, uint8_t length) {
  *  - Sets Standard ID mode, RTR=DATA, DLC=8.
  *  - Caller should update StdId via Set_CAN_Id() per frame.
  */
-void CAN_settingsInit(CANMessage *ptr) {
-    CAN_start();
-    CAN_activate();
-    HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-    ptr->TxHeader.IDE = CAN_ID_STD;
-    ptr->TxHeader.StdId = 0x00;
-    ptr->TxHeader.RTR = CAN_RTR_DATA;
-    ptr->TxHeader.DLC = 0;
+void CAN_settingsInit(CANMessage *ptr)
+{
+	CAN_start();
+	CAN_activate();
+	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+	ptr->TxHeader.IDE = CAN_ID_STD;
+	ptr->TxHeader.StdId = 0x00;
+	ptr->TxHeader.RTR = CAN_RTR_DATA;
+	ptr->TxHeader.DLC = 0;
 }
 
 /** @brief Convenience setter for Standard ID. */
-void CAN_setId(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
+void CAN_setId(CANMessage *ptr, uint32_t id)
+{
+	ptr->TxHeader.StdId = id;
+}
 
 /* ===== High-Level TX: Voltage Pages =========================================
  * CAN_Send_Voltage():
@@ -230,100 +241,74 @@ void CAN_setId(CANMessage *ptr, uint32_t id) { ptr->TxHeader.StdId = id; }
  *  - Tail case (if <4 remain): byte[4..7] carry average_volt and sum_volt_module.
  *  - IDs start at CAN_ID_VOLTAGE and increment per frame.
  */
-void CAN_sendVoltageData(CANMessage *buffer, ModuleData *mod)
+void CAN_sendVoltageData(CANMessage *message, ModuleData *mod)
 {
 	uint32_t canId = (uint32_t)CAN_ID_VOLTAGE;
-    for (int i = 0; i < NUM_MOD; i++) {  //pack every 4 cell group in 1 CAN message
-    	for (int j = 0; j < NUM_CELL_PER_MOD; j += 4)
-    	{
-    		int byteNumber = 0;
-    		if(j + 3 < NUM_CELL_PER_MOD)
-    		{
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[  j  ];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[  j  ] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 1];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 1] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 2];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 2] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 3];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 3] >> 8);
-		//        printf("can id for voltage: %d\n", CAN_ID);
+	int totalCells = NUM_MOD * NUM_CELL_PER_MOD;
 
-				CAN_setId(buffer, canId);
-				CAN_send(buffer, byteNumber);
-				canId++;
-    		}
+	// Iterate through all cells and pack four cells into each CAN message
+	for (int globalCell = 0; globalCell < totalCells; globalCell += 4)
+	{
+		int byteNumber = 0;
 
+		for (int k = 0; k < 4; k++)
+		{
+			int cellNumber = globalCell + k;
+
+			if (cellNumber < totalCells)
+			{
+				int moduleIndex = cellNumber / NUM_CELL_PER_MOD;
+				int cellIndex = cellNumber % NUM_CELL_PER_MOD;
+
+				uint16_t voltage_mV = mod[moduleIndex].cellVoltage_mV[cellIndex];
+
+				message->buffer[byteNumber++] = (uint8_t)voltage_mV;
+				message->buffer[byteNumber++] = (uint8_t)(voltage_mV >> 8);
+			}
 			else
 			{
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[  j  ];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[  j  ] >> 8);
-				buffer->buffer[byteNumber++] =  (uint8_t)mod[i].cellVoltage_mV[j + 1];
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].cellVoltage_mV[j + 1] >> 8);
-				buffer->buffer[byteNumber++] = (uint8_t)mod[i].totalCellVoltage_mV;
-				buffer->buffer[byteNumber++] = (uint8_t)(mod[i].totalCellVoltage_mV >> 8);
-
-				CAN_setId(buffer, canId);
-				CAN_send(buffer, byteNumber);
-				canId++;
-
+				message->buffer[byteNumber++] = 0;
+				message->buffer[byteNumber++] = 0;
 			}
-    	}
-    }
+		}
+
+		CAN_setId(message, canId);
+		CAN_send(message, byteNumber);
+		canId++;
+	}
 }
 
-/* ===== High-Level TX: Thermistors & Ambient Sensors =========================
- * CAN_Send_Temperature():
- *  - Emits two frames per 12-entry block.
- *  - Frame A: byte[0..7] = temps[i + 0 .. i + 7]
- *  - Frame B: byte[0..3] = temps[i + 8 .. i + 11]
- *             byte[4]    = pressure (LSB)
- *             byte[5]    = atmos_temp (LSB)
- *             byte[6]    = humidity (LSB)
- *             byte[7]    = dew_point (LSB)
- *  - IDs start at CAN_ID_THERMISTOR and increment per frame.
- */
-void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
+void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod)
 {
-    uint32_t canId = (uint32_t)CAN_ID_THERMISTOR;
+	uint32_t canId = (uint32_t)CAN_ID_THERMISTOR;
+	int totalTherms = NUM_MOD * NUM_THERM_PER_MOD;
 
-    for (int i = 0; i < NUM_MOD; i++)
-    {
-    	for(int j = 0; j < NUM_THERM_TOTAL; j+= NUM_THERM_PER_MESSAGE)
-    	{
-    		int byteNumber = 0;
+	// Iterate through all temps and pack eight temps into each CAN message
+	for (int globalTherm = 0; globalTherm < totalTherms; globalTherm += 8)
+	{
+		int byteNumber = 0;
 
-    		if(j + 3 < NUM_THERM_TOTAL)
-    		{
-    			CAN_setId(buffer, canId);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ] >> 8);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 1]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 1] >> 8);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 2]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 2] >> 8);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 3]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j + 3] >> 8);
+		for (int k = 0; k < 8; k++)
+		{
+			int thermNumber = globalTherm + k;
 
-    			CAN_send(buffer, byteNumber);
-    			canId++;
+			if (thermNumber < totalTherms)
+			{
+				int moduleIndex = thermNumber / NUM_THERM_PER_MOD;
+				int thermIndex = thermNumber % NUM_THERM_PER_MOD;
 
-    			CAN_setId(buffer, canId);
-    		}
-    		else
-    		{
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[  j  ] >> 8);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j +  1]);
-    			buffer->buffer[byteNumber++] = (uint8_t)(mod[i].pointTemp_C[j +  1] >> 8);
+				message->buffer[byteNumber++] = (uint8_t)mod[moduleIndex].pointTemp_C[thermIndex];
+			}
+			else
+			{
+				message->buffer[byteNumber++] = 0;
+			}
+		}
 
-    			CAN_send(buffer, byteNumber);
-    			canId++;
-
-    			CAN_setId(buffer, canId);
-    		}
-    	}
-    }
+		CAN_setId(message, canId);
+		CAN_send(message, byteNumber);
+		canId++;
+	}
 }
 /* ===== High-Level TX: Cell Summary ==========================================
  * CAN_Send_Cell_Summary():
@@ -334,65 +319,85 @@ void CAN_sendTemperatureData(CANMessage *buffer, ModuleData *mod)
  *      [5]    = lowest  cell temperature (8-bit)
  *      [6..7] = (unused)
  */
-void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt) {
+void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
+{
+	uint16_t maxCellVoltageScaled = (uint16_t)batt->maxCellVoltage_mV * 10; // Need to scale by 10 to keep backwards compatibility with SR-16 BMS
+	uint16_t minCellVoltageScaled = (uint16_t)batt->minCellVoltage_mV * 10;
+
 	int byteNumber = 0;
-	uint32_t canId = (uint32_t)CAN_ID_SUMMARY;
-	CAN_setId(buffer, canId);
-	buffer->buffer[byteNumber++] =  (uint8_t)batt->maxCellVoltage_mV;
-	buffer->buffer[byteNumber++] = (uint8_t)(batt->maxCellVoltage_mV >> 8);
-	buffer->buffer[byteNumber++] =  (uint8_t)batt->minCellVoltage_mV;
-	buffer->buffer[byteNumber++] = (uint8_t)(batt->minCellVoltage_mV >> 8);
-	buffer->buffer[byteNumber++] = (uint8_t)batt->maxCellTemp_C;
-	buffer->buffer[byteNumber++] = (uint8_t)batt->minCellTemp_C;
-	buffer->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
-	buffer->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
-	CAN_send(buffer, byteNumber);
+	uint32_t canId = (uint32_t)CAN_ID_PACK_SUMMARY_BASE;
+	CAN_setId(message, canId);
+	message->buffer[byteNumber++] = (uint8_t)maxCellVoltageScaled;
+	message->buffer[byteNumber++] = (uint8_t)(maxCellVoltageScaled >> 8);
+	message->buffer[byteNumber++] = (uint8_t)minCellVoltageScaled;
+	message->buffer[byteNumber++] = (uint8_t)(minCellVoltageScaled >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->maxCellTemp_C;
+	message->buffer[byteNumber++] = (uint8_t)batt->minCellTemp_C;
+	message->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
+	CAN_send(message, byteNumber);
+
+
+	FaultMessage_t faultMsg = {0};
+	WarningMessage_t warningMsg = {0};
+	Safety_getNextFault(&faultMsg);
+	Safety_getNextWarning(&warningMsg);
+
+	byteNumber = 0;
+	canId++;
+	CAN_setId(message, canId);
+	message->buffer[byteNumber++] = (uint8_t)faultMsg.FaultType;
+	message->buffer[byteNumber++] = (uint8_t)warningMsg.WarningType;
+	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV);
+	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)(batt->soc);
+	message->buffer[byteNumber++] = (uint8_t)(batt->soc >> 8);
+	CAN_send(message, byteNumber);
 }
 
-void CAN_sendModuleSummary(CANMessage *buffer, ModuleData *mod) {
+// This message is for backwards compatibility with SR16 BMS
+void CAN_sendSafetyChecker(CANMessage *message, AccumulatorData *batt)
+{
+	uint32_t canId = (uint32_t)CAN_ID_SAFETY_CHECKER;
+	uint8_t byteNumber = 0;
+	uint16_t safetyFlags = Safety_getSafetyCheckerFlags(batt);
+	uint16_t cellImbalanceScaled = (uint16_t)batt->cellImbalance_mV * 10; // Need to scale by 10 to keep backwards compatibility with SR-16 BMS
+
+	CAN_setId(message, canId);
+
+	message->buffer[byteNumber++] = (uint8_t)safetyFlags;
+	message->buffer[byteNumber++] = (uint8_t)(safetyFlags >> 8);
+	message->buffer[byteNumber++] = (uint8_t)cellImbalanceScaled;
+	message->buffer[byteNumber++] = (uint8_t)(cellImbalanceScaled >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+	message->buffer[byteNumber++] = (uint8_t)batt->sumPackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->sumPackVoltage_cV >> 8);
+
+	CAN_send(message, byteNumber);
+}
+
+void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod)
+{
 	uint32_t canId = (uint32_t)CAN_ID_MODULE_SUMMARY_BASE;
 	int byteNumber = 0;
-	for (int i = 0; i < NUM_MOD; i++) {
-		CAN_setId(buffer, canId);
-		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].maxCellVoltage_mV;
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].maxCellVoltage_mV		>> 8);
-		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].minCellVoltage_mV;
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellVoltage_mV  		>> 8);
-		buffer->buffer[byteNumber++] =  (uint8_t)mod[i].averageCellVoltage_mV;
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].averageCellVoltage_mV		>> 8);
-		buffer->buffer[byteNumber++] =  (uint8_t)(mod[i].maxCellIndex + 1);
-		buffer->buffer[byteNumber++] = (uint8_t)(mod[i].minCellIndex + 1);
+	for (int modIndex = 0; modIndex < NUM_MOD; modIndex++)
+	{
+		CAN_setId(message, canId);
+		message->buffer[byteNumber++] = (uint8_t)mod[modIndex].maxCellVoltage_mV;
+		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].maxCellVoltage_mV >> 8);
+		message->buffer[byteNumber++] = (uint8_t)mod[modIndex].minCellVoltage_mV;
+		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].minCellVoltage_mV >> 8);
+		message->buffer[byteNumber++] = (uint8_t)mod[modIndex].averageCellVoltage_mV;
+		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].averageCellVoltage_mV >> 8);
+		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].maxCellIndex + 1);
+		message->buffer[byteNumber++] = (uint8_t)(mod[modIndex].minCellIndex + 1);
 
-		CAN_send(buffer,byteNumber);
+		CAN_send(message, byteNumber);
 		canId++;
 	}
-}
-
-/* ===== High-Level TX: Safety/Health =========================================
- * CAN_Send_Safety_Checker():
- *  - Computes cell_difference = highest - lowest (mV)
- *  - Payload:
- *      [0]    = warnings bitfield
- *      [1]    = faults bitfield
- *      [2..3] = cell_difference (mV)
- *      [4..5] = hvsens_pack_voltage (mV)
- *      [6..7] = sum_pack_voltage (mV)
- */
-void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t *faults, uint8_t *warnings) {
-	int byteNumber = 0;
-	// TODO: Put imbalance calculation in accumulator.c
-	batt->cellImbalance_mV = batt->maxCellVoltage_mV - batt->minCellVoltage_mV;
-	uint32_t canId = (uint32_t)CAN_ID_SAFETY;
-	CAN_setId(buffer, canId);
-	buffer->buffer[byteNumber++] = *warnings;
-	buffer->buffer[byteNumber++] = *faults;
-	buffer->buffer[byteNumber++] =  batt->cellImbalance_mV           & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->cellImbalance_mV     >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->hvsens_pack_voltage       & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->hvsens_pack_voltage >> 8) & 0xFF;
-	buffer->buffer[byteNumber++] =  batt->sumPackVoltage_cV & 0xFF;
-	buffer->buffer[byteNumber++] = (batt->sumPackVoltage_cV   >> 8) & 0xFF;
-	CAN_send(buffer, byteNumber);
 }
 
 /* ===== High-Level TX: SOC/Current ===========================================
@@ -405,38 +410,35 @@ void CAN_Send_Safety_Checker(CANMessage *buffer, AccumulatorData *batt, uint8_t 
  *      [3..6] = current (uint32_t, LSB..MSB)
  *      [7]    = (unused)
  */
-void CAN_Send_SOC(CANMessage *buffer, AccumulatorData *batt, uint16_t max_capacity) {
+void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capacity)
+{
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
-    uint8_t percent = (uint8_t)((float) (batt->soc / 1000) * 100 / (float) max_capacity);  // 1000 for micro->milli
-    uint16_t soc = (uint16_t) (batt->soc / 1000);
-    CAN_setId(buffer, canId);
-	buffer->buffer[byteNumber++] = soc & 0xFF;
-	buffer->buffer[byteNumber++] = (soc >> 8) & 0xFF;
-    buffer->buffer[byteNumber++] = percent;
-    buffer->buffer[byteNumber++] = batt->current & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 8) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 16) & 0xFF;
-    buffer->buffer[byteNumber++] = (batt->current >> 24)& 0xFF;
-//    printf("can id for soc: %d\n", CAN_ID);
-    CAN_send(buffer, byteNumber);
+	uint8_t percent = (uint8_t)((float)(batt->soc / 1000) * 100 / (float)max_capacity); // 1000 for micro->milli
+	uint16_t soc = (uint16_t)(batt->soc / 1000);
+	CAN_setId(message, canId);
+	message->buffer[byteNumber++] = soc & 0xFF;
+	message->buffer[byteNumber++] = (soc >> 8) & 0xFF;
+	message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
+	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
+	message->buffer[byteNumber++] = batt->current_mA & 0xFF;
+	message->buffer[byteNumber++] = (batt->current_mA >> 8) & 0xFF;
+	message->buffer[byteNumber++] = (batt->current_mA >> 16) & 0xFF;
+	message->buffer[byteNumber++] = (batt->current_mA >> 24) & 0xFF;
+	//    printf("can id for soc: %d\n", CAN_ID);
+	CAN_send(message, byteNumber);
 }
 
-/* ===== High-Level TX: Balance DCC Bitmaps ===================================
- * CAN_Send_Balance_Status():
- *  - Two frames; each carries 4x uint16_t bitmaps (LSB..MSB).
- *  - Frame 1 ID = CAN_ID_BALANCE_STATUS  → [0..1]=idx0, [2..3]=idx1, [4..5]=idx2, [6..7]=idx3
- *  - Frame 2 ID = CAN_ID_BALANCE_STATUS+1→ [0..1]=idx4, [2..3]=idx5, [4..5]=idx6, [6..7]=idx7
- */
-void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst) {
+void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst)
+{
 	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATUS;
-	for(int moduleIndex = 0; moduleIndex < NUM_MOD;)
+	for (int moduleIndex = 0; moduleIndex < NUM_MOD;)
 	{
 		memset(message->buffer, 0, sizeof(message->buffer));
 		int byteNumber = 0;
 		for (int currentFrameIndex = 0; currentFrameIndex < 4; currentFrameIndex++)
 		{
-			uint16_t data = (moduleIndex < NUM_MOD) ? blst[moduleIndex].cellsBalancing : 0;	
+			uint16_t data = (moduleIndex < NUM_MOD) ? blst[moduleIndex].cellsBalancing : 0;
 			message->buffer[byteNumber++] = (uint8_t)data;
 			message->buffer[byteNumber++] = (uint8_t)(data >> 8);
 			moduleIndex++;
@@ -448,36 +450,108 @@ void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst) {
 	return;
 }
 
-
 void CAN_sendFaultStatus(CANMessage *message)
 {
-	uint32_t canId = (uint32_t) CAN_ID_Fault_Status;
+	uint32_t canId = (uint32_t)CAN_ID_Fault_Status;
 	uint16_t faultBitStorage[NUM_MOD];
 
 	Safety_getModuleFaultBits(faultBitStorage);
-	
-	for (uint8_t start = 0; start < NUM_MOD; start += 4 )
-	{
-		for (uint8_t j = 0; j < 8; j++)
-		{
-			message-> buffer[j] = 0; // make sure the whole can message starts at 00000000
-		}
-			int byteNumber = 0;
-			for (uint8_t i = start; i < (start + 4) && (i < NUM_MOD); i++)
-			{
-				uint16_t faultBits = faultBitStorage[i];
 
-				message->buffer[byteNumber++] = (uint8_t)faultBits;
-				message->buffer[byteNumber++] = (uint8_t)(faultBits >> 8);
-			
-			}
+	for (uint8_t start = 0; start < NUM_MOD; start += 4)
+	{
+		for (uint8_t reset = 0; reset < 8; reset++)
+		{
+			message->buffer[reset] = 0; // make sure the whole can message starts at 00000000
+		}
+		int byteNumber = 0;
+		for (uint8_t i = start; i < (start + 4) && (i < NUM_MOD); i++)
+		{
+			uint16_t faultBits = faultBitStorage[i];
+
+			message->buffer[byteNumber++] = (uint8_t)faultBits;
+			message->buffer[byteNumber++] = (uint8_t)(faultBits >> 8);
+		}
 		CAN_setId(message, canId);
 		CAN_send(message, byteNumber);
 		canId++;
 	}
 }
-//void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
-//    uint16_t CAN_ID = 0x602;
+
+void CAN_sendCanHeartBeat(CANMessage *message)
+{
+	uint32_t canId = (uint32_t)CAN_ID_HeartBeat_Message;
+	int byteNumber = 0;
+	static uint32_t previousTime = 0;
+	uint32_t presentTime = HAL_GetTick();
+
+	if ((presentTime - previousTime) < 1000u)
+	{
+		return;
+	}
+	previousTime = presentTime;
+
+	CAN_setId(message, canId);
+
+	message->buffer[byteNumber] = 1;
+
+	CAN_send(message, (uint8_t)byteNumber);
+}
+
+void CAN_sendFaultAndWarningSummary(CANMessage *message)
+{
+	uint32_t canId = (uint32_t)CAN_ID_Fault_And_Warning_Summary;
+	FaultMessage_t faultMsg;
+	WarningMessage_t warningMsg;
+	uint8_t byteNumber = 0;
+	bool hasFault;
+	bool hasWarning;
+
+	hasFault = Safety_getNextFault(&faultMsg);
+	hasWarning = Safety_getNextWarning(&warningMsg);
+
+	CAN_setId(message, canId);
+
+	if (hasFault)
+	{
+		message->buffer[byteNumber++] = faultMsg.ModuleID;
+		message->buffer[byteNumber++] = faultMsg.CellID;
+		message->buffer[byteNumber++] = faultMsg.FaultType;
+	}
+	else
+	{
+		message->buffer[byteNumber++] = 0;
+		message->buffer[byteNumber++] = 0;
+		message->buffer[byteNumber++] = 0;
+	}
+
+	if (hasWarning)
+	{
+		message->buffer[byteNumber++] = warningMsg.ModuleID;
+		message->buffer[byteNumber++] = warningMsg.CellID;
+		message->buffer[byteNumber++] = warningMsg.WarningType;
+	}
+	else
+	{
+		message->buffer[byteNumber++] = 0;
+		message->buffer[byteNumber++] = 0;
+		message->buffer[byteNumber++] = 0;
+	}
+
+	CAN_send(message, byteNumber);
+}
+
+void CAN_sendBalanceState(CANMessage *message)
+{
+	uint32_t canId = (uint32_t)CAN_ID_BALANCE_STATE;
+	CAN_setId(message, canId);
+	message->buffer[0] = 0;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_DISABLED) << 0;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_REST) << 1;
+	message->buffer[0] |= (currentBalanceState == BALANCE_STATE_ACTIVE) << 2;
+	CAN_send(message, 1);
+}
+// void CAN_Send_Sensor(struct CANMessage *ptr, batteryModule *batt) {
+//     uint16_t CAN_ID = 0x602;
 //	Set_CAN_Id(ptr, CAN_ID);
 //
 //	for (int i = 0; i < NUM_MOD; ++i) {
@@ -494,5 +568,5 @@ void CAN_sendFaultStatus(CANMessage *message)
 //		CAN_ID++;
 //		Set_CAN_Id(ptr, CAN_ID);
 //	}
-//}
+// }
 /* USER CODE END 1 */

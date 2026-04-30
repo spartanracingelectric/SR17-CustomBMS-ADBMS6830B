@@ -119,12 +119,12 @@ void SOC_Init(AccumulatorData *batt, ModuleData *mod) {
  *  - Applies SHUNT_OFFSET bias compensation (project convention).
  */
 void SOC_updateCurrent(AccumulatorData *batt) {
-    uint32_t adcValue = 0;
-	float vRef = getVref();
-
-	adcValue = readADCChannel(ADC_CHANNEL_13);
-    float voltage = ((float)adcValue / ADC_RESOLUTION) * vRef;
-    batt->current = (voltage / (MAX_SHUNT_VOLTAGE * SHUNT_OPAMP_RATIO)) * MAX_SHUNT_AMPAGE + SHUNT_OFFSET;
+	//    uint32_t adcValue = 0;
+	// float vRef = getVref();
+	//
+	// adcValue = readADCChannel(ADC_CHANNEL_13);
+	//    float voltage = ((float)adcValue / ADC_RESOLUTION) * vRef;
+	//    batt->current = (voltage / (MAX_SHUNT_VOLTAGE * SHUNT_OPAMP_RATIO)) * MAX_SHUNT_AMPAGE + SHUNT_OFFSET;
 }
 
 /* ===== Coulomb Counter Update (µAh) =========================================
@@ -136,13 +136,13 @@ void SOC_updateCurrent(AccumulatorData *batt) {
  *      soc_new = soc_old - ΔQ
  */
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time) {
-	if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
-		batt->current = 0;
-	} else {
-		SOC_updateCurrent(batt);
-	}
-
-	batt->soc -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
+	// if (batt->hvsens_pack_voltage <= 10000) { // 100.00 V
+	// 	batt->current = 0;
+	// } else {
+	// 	SOC_updateCurrent(batt);
+	// }
+	//
+	// batt->soc -= (1000 * batt->current * (float)(elapsed_time / 3600000.0f));
 }
 
 /* ===== OCV Table Binary Search ==============================================
