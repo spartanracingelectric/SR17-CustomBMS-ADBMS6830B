@@ -20,6 +20,7 @@ typedef struct AccumulatorData {
     uint8_t contactorState;
     uint16_t atmos_temp;
 	uint16_t pressure;
+	uint32_t chargerCurrent_mA;
 } AccumulatorData;
 
 

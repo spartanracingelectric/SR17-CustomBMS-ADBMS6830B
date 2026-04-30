@@ -150,6 +150,7 @@ int main(void)
 	HAL_Delay(1000);
 	ClearFaultSignal(); // those are for debug the charger and mobo
 	SOC_init(&accmData, modData);
+  uint32_t lastSOCTime_ms = HAL_GetTick();
 	// HAL_ADCEx_Calibration_Start(&hadc2);
   /* USER CODE END 2 */
 
@@ -166,6 +167,12 @@ int main(void)
 		Module_getTemperatureStats(modData);
 		Accumulator_getTemperatureStats(&accmData, modData);
 		Shunt_updateAccumulator(&accmData);
+    Charger_updateStatus(&accmData);
+    SOC_updateCharge(&accmData, HAL_GetTick() - lastSOCTime_ms);
+    lastSOCTime_ms = HAL_GetTick();
+    printf("SOC: %lu\n", accmData.soc);
+    printf("SOC percent: %.2f\n", SOC_getPercent(&accmData));
+    printf("Shunt Current: %ld mA\n", accmData.shuntCurrent_mA);
 
 		// ContactorSense_getContactorState(&accmData);
 

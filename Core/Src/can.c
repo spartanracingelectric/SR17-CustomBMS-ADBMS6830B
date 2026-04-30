@@ -165,6 +165,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
 
+	printf("testing\n");
+
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
 	{
 		return;
@@ -177,6 +179,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			Balance_handleBalanceCANMessage(&rxHeader, rxData);
 		}
         else if (rxHeader.StdId == CAN_ID_SHUNT_CURRENT){
+			printf("test\n");
         	Shunt_handleCANMessage_Current(rxData);
         }
         else if(rxHeader.StdId == CAN_ID_SHUNT_COULOMB){

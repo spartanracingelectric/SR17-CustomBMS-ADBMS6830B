@@ -60,6 +60,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/contactor_sense.c
 	Core/Src/charger.c
     Core/Src/eeprom.c
+    Core/Src/shunt.c
 )
 
 # Add include paths

@@ -8,5 +8,6 @@ extern bool isCharging;
 
 void Charger_init(AccumulatorData *acc);
 void Charger_handleElconCANMessage(CAN_RxHeaderTypeDef *rxHeader, uint8_t *rxData);
+void Charger_updateStatus(AccumulatorData *acc);
 
 #endif
