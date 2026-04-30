@@ -58,5 +58,6 @@
  */
 void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
+void SOC_init(AccumulatorData *batt, ModuleData *mod);
 
 #endif
