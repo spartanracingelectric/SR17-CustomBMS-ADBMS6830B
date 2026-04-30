@@ -42,6 +42,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include "eeprom.h"
 
 /* USER CODE END Includes */
 
@@ -146,7 +147,6 @@ int main(void)
 	// HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
 	HAL_Delay(1000);
 	ClearFaultSignal(); // those are for debug the charger and mobo
-
 	// HAL_ADCEx_Calibration_Start(&hadc2);
   /* USER CODE END 2 */
 
