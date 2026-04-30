@@ -69,6 +69,8 @@ void Error_Handler(void);
 #define MCU_SHUTDOWN_SIGNAL_GPIO_Port GPIOB
 #define MCU_HEARTBEAT_LED_Pin GPIO_PIN_6
 #define MCU_HEARTBEAT_LED_GPIO_Port GPIOC
+#define EEPROM_nCS_Pin GPIO_PIN_15
+#define EEPROM_nCS_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 #define NUM_MOD					10
