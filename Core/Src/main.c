@@ -20,8 +20,8 @@
 #include "main.h"
 #include "adc.h"
 #include "can.h"
-#include "dma.h"
 #include "crc.h"
+#include "dma.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -120,8 +120,8 @@ int main(void)
   MX_CAN1_Init();
   MX_USART1_UART_Init();
   MX_TIM1_Init();
-  MX_SPI3_Init();
   MX_CRC_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_TIM_Base_Start(&htim1);

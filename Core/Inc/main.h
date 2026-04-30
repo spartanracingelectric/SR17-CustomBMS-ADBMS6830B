@@ -84,7 +84,6 @@ void Error_Handler(void);
 #define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
 /* USER CODE END Private defines */
 
-
 #ifdef __cplusplus
 }
 #endif
