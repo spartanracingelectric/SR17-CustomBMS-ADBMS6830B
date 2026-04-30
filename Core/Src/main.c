@@ -147,8 +147,7 @@ int main(void)
 	// HAL_GPIO_WritePin(MCU_SHUTDOWN_SIGNAL_GPIO_Port, MCU_SHUTDOWN_SIGNAL_Pin, GPIO_PIN_SET);
 	HAL_Delay(1000);
 	ClearFaultSignal(); // those are for debug the charger and mobo
-  EEPROM_writeSOC(0); // set initial SOC to 0 for testing
-  SOC_init(&accmData, modData);
+	SOC_init(&accmData, modData);
 	// HAL_ADCEx_Calibration_Start(&hadc2);
   /* USER CODE END 2 */
 
@@ -164,8 +163,6 @@ int main(void)
 		Module_getTemperatures(modData);
 		Module_getTemperatureStats(modData);
 		Accumulator_getTemperatureStats(&accmData, modData);
-
-    printf("SoC: %lu\n", (unsigned long)accmData.soc);
 
 		// ContactorSense_getContactorState(&accmData);
 

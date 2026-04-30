@@ -19,33 +19,14 @@
 #ifndef INC_SOC_H_
 #define INC_SOC_H_
 
-#include <stdlib.h>
-
 #include "main.h"
 #include "accumulator.h"
 #include "module.h"
 
-/* ===== Shunt / Analog Front-End Parameters ===================================
- * MAX_SHUNT_AMPAGE:
- *  - Maximum measurable current magnitude permitted by the design/AFE.
- *
- * MAX_SHUNT_VOLTAGE:
- *  - Maximum voltage at the ADC/AFE input corresponding to full-scale current.
- *
- * SHUNT_R1 / SHUNT_R2 / SHUNT_OPAMP_RATIO:
- *  - Resistor values that establish the amplifier/divider gain from shunt to ADC.
- *  - SHUNT_OPAMP_RATIO = SHUNT_R1 / SHUNT_R2 (dimensionless gain factor).
- *
- * SHUNT_OFFSET:
- *  - Static bias used to null residual offset of the shunt/op-amp/ADC path.
- */
-#define MAX_SHUNT_AMPAGE 500000
-#define MAX_SHUNT_VOLTAGE 2.62f
-
-#define SHUNT_R1 24925.0f  // 24.9 kΩ
-#define SHUNT_R2 20000.0f  // 20 kΩ
-#define SHUNT_OPAMP_RATIO SHUNT_R1 / SHUNT_R2
-#define SHUNT_OFFSET 500  // 500 mA
+#define NUM_OCV_TABLES 3
+#define MAX_CELL_CAPACITY_MAH 5000
+#define PACK_CAPACITY_UAH (MAX_CELL_CAPACITY_MAH * NUM_CELLS_IN_PARALLEL * 1000)
+#define SOC_SAVE_THRESHOLD_UAH (PACK_CAPACITY_UAH / 100)
 
 /* ===== Public API ============================================================
  * SOC_getInitialCharge():
@@ -56,8 +37,8 @@
  *  - Update the SoC accumulator by integrating measured current over time.
  *    The elapsed_time argument is in milliseconds unless otherwise documented.
  */
-void SOC_getInitialCharge(AccumulatorData *batt, ModuleData *mod);
 void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsed_time);
 void SOC_init(AccumulatorData *batt, ModuleData *mod);
+float SOC_getPercent(AccumulatorData *batt);
 
 #endif

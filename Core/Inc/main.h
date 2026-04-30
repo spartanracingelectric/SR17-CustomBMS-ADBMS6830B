@@ -82,6 +82,8 @@ void Error_Handler(void);
 #define NUM_AUXES				(NUM_MOD*NUM_AUX_GROUP)
 #define MAX_CELL_CAPACITY 		3000
 #define MAX_BATTERY_CAPACITY 	(NUM_MOD* MAX_CELL_CAPACITY)
+#define NUM_CELLS_IN_PARALLEL 3
+#define NUM_CELLS_IN_SERIES 14
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
