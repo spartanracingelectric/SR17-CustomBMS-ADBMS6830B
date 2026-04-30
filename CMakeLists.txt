@@ -57,6 +57,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/module.c
     Core/Src/safety.c
     Core/Src/soc.c
+    Core/Src/eeprom.c
 )
 
 # Add include paths
