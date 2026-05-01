@@ -53,7 +53,7 @@ SG_ BMS_Cell_Low_Temp_Warning        : 11|1@1+ (1,0) [0|1]     ""    Custom_BMS
 SG_ BMS_Cell_Imbalance_Warning       : 12|1@1+ (1,0) [0|1]     ""    Custom_BMS
 SG_ BMS_Pack_Imbalance               : 16|16@1- (1,0) [-32.768|32.767] "mV"  Custom_BMS
 SG_ BMS_HV_Sense_Pack_Voltage        : 32|16@1+ (0.01,0) [0|655.35] "cV"  Custom_BMS
-SG_ BMS_State_of_Charge              : 48|16@1+ (0.01,0) [0|655.35] "mAh" Custom_BMS
+SG_ BMS_State_of_Charge              : 48|16@1+ (1,0) [0|65535] "mAh" Custom_BMS
 
 BO_ 1572 BMS_Balance_Status_M1_to_M4: 8 Custom_BMS
 SG_ BMS_M1_Cell_1 : 0|1@1- (1,0) [0|1] " " Custom_BMS

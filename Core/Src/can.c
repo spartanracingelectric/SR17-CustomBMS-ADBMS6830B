@@ -382,14 +382,15 @@ void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
 	byteNumber = 0;
 	canId++;
 	CAN_setId(message, canId);
+	uint16_t soc_mAh = batt->soc / 1000;
 	message->buffer[byteNumber++] = (uint8_t)faultMsg.FaultType;
 	message->buffer[byteNumber++] = (uint8_t)warningMsg.WarningType;
 	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV);
 	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV >> 8);
 	message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
 	message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
-	message->buffer[byteNumber++] = (uint8_t)(batt->soc);
-	message->buffer[byteNumber++] = (uint8_t)(batt->soc >> 8);
+	message->buffer[byteNumber++] = (uint8_t)(soc_mAh);
+	message->buffer[byteNumber++] = (uint8_t)(soc_mAh >> 8);
 	CAN_send(message, byteNumber);
 }
 
