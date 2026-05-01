@@ -75,7 +75,7 @@ void MX_CAN1_Init(void)
 	sFilterConfig.FilterActivation = ENABLE;
 
 	CAN_FilterTypeDef shuntFilterConfig;
-	shuntFilterConfig.FilterBank = 0;
+	shuntFilterConfig.FilterBank = 1;
 	shuntFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	shuntFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
 	shuntFilterConfig.FilterIdHigh = 0x514 << 5; // Recieve only ID 0x514
@@ -86,7 +86,7 @@ void MX_CAN1_Init(void)
 	shuntFilterConfig.FilterActivation = ENABLE;
 
 	CAN_FilterTypeDef chargerFilterConfig;
-	chargerFilterConfig.FilterBank = 0;
+	chargerFilterConfig.FilterBank = 2;
 	chargerFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
 	chargerFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
 	chargerFilterConfig.FilterIdHigh = (int16_t)(0x18FF50E5 >> 13); // Recieve only ID 0x604
