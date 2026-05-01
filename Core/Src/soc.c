@@ -113,8 +113,9 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsedTime_ms)
 		Shunt_updateAccumulator(batt);
 		current_mA = -1 * (batt->shuntCurrent_mA);
 	}
-
-	if (batt->hvSensePackVoltage_cV <= 1000 || abs(current_mA) <= 1000)
+	
+	// Ensure pack is in HV and current is not noise
+	if (batt->hvSensePackVoltage_cV <= SOC_MIN_HV_PACK_VOLTAGE_CV || abs(current_mA) <= SOC_MIN_CURRENT_MA)
 	{
 		current_mA = 0;
 	}
