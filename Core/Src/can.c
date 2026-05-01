@@ -443,7 +443,7 @@ void CAN_sendSOC(CANMessage *message, AccumulatorData *batt)
 {
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
-	uint8_t soc_percent = (uint8_t)(SOC_getPercent(batt) * 100.0f);
+	uint16_t soc_percent = (uint16_t)(SOC_getPercent(batt) * 100.0f);
 	int16_t soc_mAh = batt->soc / 1000;
 	CAN_setId(message, canId);
 	message->buffer[byteNumber++] = (uint8_t)soc_mAh;
