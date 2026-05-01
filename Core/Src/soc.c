@@ -114,10 +114,10 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsedTime_ms)
 		current_mA = -1 * (batt->shuntCurrent_mA);
 	}
 
-	/*if (batt->hvSensePackVoltage_cV <= 1000)
+	if (batt->hvSensePackVoltage_cV <= 1000 || abs(current_mA) <= 1000)
 	{
 		current_mA = 0;
-	}*/
+	}
 
 	float delta_mAh = current_mA * (elapsedTime_ms / 3600000.0f);
 	int32_t deltaCharge_uAh = (int32_t)(delta_mAh * 1000.0f);
