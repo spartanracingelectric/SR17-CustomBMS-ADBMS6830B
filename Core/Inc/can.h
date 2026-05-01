@@ -122,7 +122,7 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod);
 void CAN_sendPackSummary(CANMessage *message, struct AccumulatorData *batt);
 void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod);
 void CAN_sendPackSummary(CANMessage *buffer, AccumulatorData *batt);
-void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capacity);
+void CAN_sendSOC(CANMessage *message, AccumulatorData *batt);
 void CAN_sendBalanceStatus(CANMessage *message, BalanceStatus *blst);
 void CAN_sendFaultStatus(CANMessage *message);
 void CAN_sendCanHeartBeat(CANMessage *message);

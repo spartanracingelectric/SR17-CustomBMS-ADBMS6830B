@@ -183,7 +183,7 @@ int main(void)
 		CAN_sendPackSummary(&msg, &accmData);
 		CAN_sendVoltageData(&msg, modData);
 		CAN_sendTemperatureData(&msg, modData);
-		CAN_Send_SOC(&msg, &accmData, MAX_BATTERY_CAPACITY);
+		CAN_sendSOC(&msg, &accmData);
 		CAN_sendBalanceStatus(&msg, balanceStatus);
 		CAN_sendModuleSummary(&msg, modData);
 		CAN_sendFaultStatus(&msg);

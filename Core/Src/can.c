@@ -31,6 +31,7 @@
 #include "usart.h"
 #include "shunt.h"
 #include <string.h>
+#include "soc.h"
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -445,22 +446,22 @@ void CAN_sendModuleSummary(CANMessage *message, ModuleData *mod)
  *      [3..6] = current (uint32_t, LSB..MSB)
  *      [7]    = (unused)
  */
-void CAN_Send_SOC(CANMessage *message, AccumulatorData *batt, uint16_t max_capacity)
+void CAN_sendSOC(CANMessage *message, AccumulatorData *batt)
 {
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
-	uint8_t percent = (uint8_t)((float)(batt->soc / 1000) * 100 / (float)max_capacity); // 1000 for micro->milli
-	uint16_t soc = (uint16_t)(batt->soc / 1000);
+	uint8_t soc_percent = (uint8_t)(SOC_getPercent(batt) * 100.0f);
+	uint16_t soc_mAh = (uint16_t)(batt->soc / 1000);
 	CAN_setId(message, canId);
-	message->buffer[byteNumber++] = soc & 0xFF;
-	message->buffer[byteNumber++] = (soc >> 8) & 0xFF;
-    message->buffer[byteNumber++] = (uint8_t)batt->hvSensePackVoltage_cV;
-    message->buffer[byteNumber++] = (uint8_t)(batt->hvSensePackVoltage_cV >> 8);
-    message->buffer[byteNumber++] = batt->shuntCurrent_mA & 0xFF;
-    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 8) & 0xFF;
-    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 16) & 0xFF;
-    message->buffer[byteNumber++] = (batt->shuntCurrent_mA >> 24)& 0xFF;
-//    printf("can id for soc: %d\n", CAN_ID);
+	message->buffer[byteNumber++] = (uint8_t)soc_mAh;
+	message->buffer[byteNumber++] = (uint8_t)(soc_mAh >> 8);
+    message->buffer[byteNumber++] = (uint8_t)(soc_percent);
+    message->buffer[byteNumber++] = (uint8_t)(soc_percent >> 8);
+    message->buffer[byteNumber++] = (uint8_t)(batt->shuntCurrent_mA);
+    message->buffer[byteNumber++] = (uint8_t)((batt->shuntCurrent_mA >> 8));
+    message->buffer[byteNumber++] = (uint8_t)((batt->shuntCurrent_mA >> 16));
+    message->buffer[byteNumber++] = (uint8_t)((batt->shuntCurrent_mA >> 24));
+
     CAN_send(message, byteNumber);
 }
 
