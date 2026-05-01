@@ -74,7 +74,31 @@ void MX_CAN1_Init(void)
 	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 	sFilterConfig.FilterActivation = ENABLE;
 
+	CAN_FilterTypeDef shuntFilterConfig;
+	shuntFilterConfig.FilterBank = 0;
+	shuntFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	shuntFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	shuntFilterConfig.FilterIdHigh = 0x514 << 5; // Recieve only ID 0x514
+	shuntFilterConfig.FilterIdLow = 0x0000;
+	shuntFilterConfig.FilterMaskIdHigh = 0xFFF << 5; // only accept complete match
+	shuntFilterConfig.FilterMaskIdLow = 0x0000;
+	shuntFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	shuntFilterConfig.FilterActivation = ENABLE;
+
+	CAN_FilterTypeDef chargerFilterConfig;
+	chargerFilterConfig.FilterBank = 0;
+	chargerFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	chargerFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	chargerFilterConfig.FilterIdHigh = (int16_t)(0x18FF50E5 >> 13); // Recieve only ID 0x604
+	chargerFilterConfig.FilterIdLow = (int16_t)((0x18FF50E5 << 3) | (1 << 2));
+	chargerFilterConfig.FilterMaskIdHigh = 0xFFF; // only accept complete match
+	chargerFilterConfig.FilterMaskIdLow = 0xFFFC;
+	chargerFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	chargerFilterConfig.FilterActivation = ENABLE;
+
 	HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
+	HAL_CAN_ConfigFilter(&hcan1, &shuntFilterConfig);
+	HAL_CAN_ConfigFilter(&hcan1, &chargerFilterConfig);
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -165,8 +189,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	CAN_RxHeaderTypeDef rxHeader;
 	uint8_t rxData[8];
 
-	printf("testing\n");
-
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
 	{
 		return;
@@ -179,7 +201,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			Balance_handleBalanceCANMessage(&rxHeader, rxData);
 		}
         else if (rxHeader.StdId == CAN_ID_SHUNT_CURRENT){
-			printf("test\n");
         	Shunt_handleCANMessage_Current(rxData);
         }
         else if(rxHeader.StdId == CAN_ID_SHUNT_COULOMB){

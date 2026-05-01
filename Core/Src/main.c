@@ -170,10 +170,6 @@ int main(void)
     Charger_updateStatus(&accmData);
     SOC_updateCharge(&accmData, HAL_GetTick() - lastSOCTime_ms);
     lastSOCTime_ms = HAL_GetTick();
-    printf("SOC: %lu\n", accmData.soc);
-    printf("SOC percent: %.2f\n", SOC_getPercent(&accmData));
-    printf("Shunt Current: %ld mA\n", accmData.shuntCurrent_mA);
-
 		// ContactorSense_getContactorState(&accmData);
 
 		// Voltage readings are wrong during balancing so don't check faults while balancing

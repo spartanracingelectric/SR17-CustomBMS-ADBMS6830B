@@ -28,6 +28,7 @@ static uint16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVolt
 static uint16_t SOC_getCapacity10C(uint16_t cellVoltage_mV);
 static uint16_t SOC_getCapacity25C(uint16_t cellVoltage_mV);
 static uint16_t SOC_getCapacity40C(uint16_t cellVoltage_mV);
+static void SOC_saveToEEPROM(AccumulatorData *batt);
 
 static uint32_t lastSavedSoc_uAh = 0xFFFFFFFF;
 
@@ -120,21 +121,16 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsedTime_ms)
 		current_mA = -1*(batt->shuntCurrent_mA);
 	}
 
-	if (batt->hvSensePackVoltage_cV <= 1000)
+	/*if (batt->hvSensePackVoltage_cV <= 1000)
 	{
 		current_mA = 0;
-	}
+	}*/
 
 	float delta_mAh = current_mA * (elapsedTime_ms / 3600000.0f);
 	int32_t deltaCharge_uAh = (int32_t)(delta_mAh * 1000.0f);
-	if (deltaCharge_uAh >= batt->soc)
-	{
-		batt->soc = 0;
-	}
-	else
-	{
-		batt->soc += deltaCharge_uAh;
-	}
+	batt->soc += deltaCharge_uAh;
+	
+	SOC_saveToEEPROM(batt);
 }
 
 float SOC_getPercent(AccumulatorData *batt)
@@ -193,7 +189,7 @@ static uint16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVolt
 	}
 }
 
-void SOC_saveToEEPROM(AccumulatorData *batt)
+static void SOC_saveToEEPROM(AccumulatorData *batt)
 {
 	// Only write to EEPROM when SOC changes by atleast 1%
 	if (abs((int32_t)batt->soc - (int32_t)lastSavedSoc_uAh) >= SOC_SAVE_THRESHOLD_UAH)
