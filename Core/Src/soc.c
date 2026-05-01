@@ -16,27 +16,20 @@
 #include "shunt.h"
 #include "usart.h"
 
-/* ===== Internal Prototypes ===================================================
- * SOC_updateCurrent(): acquire/scale shunt reading → batt->current (mA).
- * OCV helpers: mapping ADC/OCV to capacities via piecewise tables and search.
- */
-void SOC_updateCurrent(AccumulatorData *batt);
-
-uint16_t SOC_offsetFilter(uint16_t measuredX, uint16_t lowerX, uint16_t upperX, uint16_t lowerY, uint16_t upperY);
-
-static uint16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVoltage_mV, uint16_t ocvTableLength);
-static uint16_t SOC_getCapacity10C(uint16_t cellVoltage_mV);
-static uint16_t SOC_getCapacity25C(uint16_t cellVoltage_mV);
-static uint16_t SOC_getCapacity40C(uint16_t cellVoltage_mV);
+static int16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVoltage_mV, uint16_t ocvTableLength);
+static int16_t SOC_getCapacity10C(uint16_t cellVoltage_mV);
+static int16_t SOC_getCapacity25C(uint16_t cellVoltage_mV);
+static int16_t SOC_getCapacity40C(uint16_t cellVoltage_mV);
 static void SOC_saveToEEPROM(AccumulatorData *batt);
+static int32_t SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod);
 
 static uint32_t lastSavedSoc_uAh = 0xFFFFFFFF;
 
-uint32_t SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod)
+static int32_t SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod)
 {
 	// Get initial voltage and temperature readings
-	int initialTime_ms = HAL_GetTick();
-	int currentTime_ms = HAL_GetTick();
+	uint32_t initialTime_ms = HAL_GetTick();
+	uint32_t currentTime_ms = HAL_GetTick();
 	while (currentTime_ms - initialTime_ms <= 3000)
 	{
 		Module_getCellVoltages(mod);
@@ -66,7 +59,7 @@ uint32_t SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod)
 			selectedOcvTemp_C = ocvTemps_C[i];
 		}
 	}
-	uint16_t averageCellCapacity_mAh;
+	int16_t averageCellCapacity_mAh;
 	switch (selectedOcvTemp_C)
 	{
 	case 10:
@@ -79,15 +72,15 @@ uint32_t SOC_calculateFromOCV(AccumulatorData *batt, ModuleData *mod)
 		averageCellCapacity_mAh = SOC_getCapacity40C(averageCellVoltage_mV);
 		break;
 	}
-	uint32_t stateOfCharge_uAh = averageCellCapacity_mAh * NUM_CELLS_IN_PARALLEL * 1000; // TODO: Check
+	int32_t stateOfCharge_uAh = averageCellCapacity_mAh * NUM_CELLS_IN_PARALLEL * 1000; // TODO: Check
 	return stateOfCharge_uAh;
 }
 
 void SOC_init(AccumulatorData *batt, ModuleData *mod)
 {
-	uint32_t savedSoc_mAh = EEPROM_readSOC();
+	int32_t savedSoc_mAh = EEPROM_readSOC();
 
-	if (savedSoc_mAh != 0xFFFFFFFF && savedSoc_mAh != 0)
+	if (savedSoc_mAh != INT32_MAX && savedSoc_mAh != 0)
 	{
 		batt->soc = savedSoc_mAh;
 	}
@@ -118,7 +111,7 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsedTime_ms)
 	else
 	{
 		Shunt_updateAccumulator(batt);
-		current_mA = -1*(batt->shuntCurrent_mA);
+		current_mA = -1 * (batt->shuntCurrent_mA);
 	}
 
 	/*if (batt->hvSensePackVoltage_cV <= 1000)
@@ -129,7 +122,7 @@ void SOC_updateCharge(AccumulatorData *batt, uint32_t elapsedTime_ms)
 	float delta_mAh = current_mA * (elapsedTime_ms / 3600000.0f);
 	int32_t deltaCharge_uAh = (int32_t)(delta_mAh * 1000.0f);
 	batt->soc += deltaCharge_uAh;
-	
+
 	SOC_saveToEEPROM(batt);
 }
 
@@ -138,7 +131,7 @@ float SOC_getPercent(AccumulatorData *batt)
 	return ((float)batt->soc / PACK_CAPACITY_UAH) * 100.0f;
 }
 
-static uint16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVoltage_mV, uint16_t ocvTableLength)
+static int16_t SOC_getCapacityFromOCV(uint16_t ocvTable[][2], uint16_t cellVoltage_mV, uint16_t ocvTableLength)
 {
 	// Get the two closest capacities
 	uint16_t left = 0;
@@ -194,7 +187,6 @@ static void SOC_saveToEEPROM(AccumulatorData *batt)
 	// Only write to EEPROM when SOC changes by atleast 1%
 	if (abs((int32_t)batt->soc - (int32_t)lastSavedSoc_uAh) >= SOC_SAVE_THRESHOLD_UAH)
 	{
-		printf("saved to EEPROM\n");
 		EEPROM_writeSOC(batt->soc);
 		lastSavedSoc_uAh = batt->soc;
 	}
@@ -205,7 +197,7 @@ static void SOC_saveToEEPROM(AccumulatorData *batt)
  *  - Input ‘data’ is an array of {voltage_mV, capacity_mAh}.
  *  - Returns nearest capacity for the provided per-cell voltage (mV).
  */
-static uint16_t SOC_getCapacity10C(uint16_t cellVoltage_mV)
+static int16_t SOC_getCapacity10C(uint16_t cellVoltage_mV)
 {
 	int ocvTableLength = 201;
 	uint16_t ocvTable[][2] = {
@@ -214,7 +206,7 @@ static uint16_t SOC_getCapacity10C(uint16_t cellVoltage_mV)
 	return SOC_getCapacityFromOCV(ocvTable, cellVoltage_mV, ocvTableLength);
 }
 
-static uint16_t SOC_getCapacity25C(uint16_t cellVoltage_mV)
+static int16_t SOC_getCapacity25C(uint16_t cellVoltage_mV)
 {
 	int ocvTableLength = 200;
 	uint16_t ocvTable[][2] = {
@@ -223,7 +215,7 @@ static uint16_t SOC_getCapacity25C(uint16_t cellVoltage_mV)
 	return SOC_getCapacityFromOCV(ocvTable, cellVoltage_mV, ocvTableLength);
 }
 
-static uint16_t SOC_getCapacity40C(uint16_t cellVoltage_mV)
+static int16_t SOC_getCapacity40C(uint16_t cellVoltage_mV)
 {
 	int ocvTableLength = 198;
 	uint16_t ocvTable[][2] = {

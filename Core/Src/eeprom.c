@@ -36,7 +36,7 @@ static void EEPROM_writeEnable(void)
 /**
  * @brief Saves the 32-bit SOC to the EEPROM
  */
-void EEPROM_writeSOC(uint32_t soc_uAh)
+void EEPROM_writeSOC(int32_t soc_uAh)
 {
 	uint32_t crc_value = HAL_CRC_Calculate(&hcrc, (uint32_t *)&soc_uAh, 1);
 
@@ -66,7 +66,7 @@ void EEPROM_writeSOC(uint32_t soc_uAh)
 /**
  * @brief Reads the 32-bit SOC from the EEPROM
  */
-uint32_t EEPROM_readSOC(void)
+int32_t EEPROM_readSOC(void)
 {
     uint8_t header[2];
     uint8_t dataBuffer[8] = {0};
@@ -82,7 +82,7 @@ uint32_t EEPROM_readSOC(void)
     EEPROM_csHigh();
 
     if (tx_status != HAL_OK || rx_status != HAL_OK) {
-        return 0xFFFFFFFF; 
+        return INT32_MAX; 
     }
 
     reconstructed_soc |= ((uint32_t)dataBuffer[0] << 24);
@@ -97,8 +97,8 @@ uint32_t EEPROM_readSOC(void)
 
     uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)&reconstructed_soc, 1);
     if (calculated_crc != stored_crc) {
-        return 0xFFFFFFFF; 
+        return INT32_MAX; 
     }
 
-    return reconstructed_soc;
+    return (int32_t)reconstructed_soc;
 }

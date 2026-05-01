@@ -346,15 +346,7 @@ void CAN_sendTemperatureData(CANMessage *message, ModuleData *mod)
 		canId++;
 	}
 }
-/* ===== High-Level TX: Cell Summary ==========================================
- * CAN_Send_Cell_Summary():
- *  - Payload:
- *      [0..1] = highest cell voltage (LSB..MSB)
- *      [2..3] = lowest  cell voltage
- *      [4]    = highest cell temperature (8-bit)
- *      [5]    = lowest  cell temperature (8-bit)
- *      [6..7] = (unused)
- */
+
 void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
 {
 	uint16_t maxCellVoltageScaled = (uint16_t)batt->maxCellVoltage_mV * 10; // Need to scale by 10 to keep backwards compatibility with SR-16 BMS
@@ -382,7 +374,7 @@ void CAN_sendPackSummary(CANMessage *message, AccumulatorData *batt)
 	byteNumber = 0;
 	canId++;
 	CAN_setId(message, canId);
-	uint16_t soc_mAh = batt->soc / 1000;
+	int16_t soc_mAh = batt->soc / 1000;
 	message->buffer[byteNumber++] = (uint8_t)faultMsg.FaultType;
 	message->buffer[byteNumber++] = (uint8_t)warningMsg.WarningType;
 	message->buffer[byteNumber++] = (uint8_t)(batt->cellImbalance_mV);
@@ -452,7 +444,7 @@ void CAN_sendSOC(CANMessage *message, AccumulatorData *batt)
 	int byteNumber = 0;
 	uint32_t canId = (uint32_t)CAN_ID_SOC;
 	uint8_t soc_percent = (uint8_t)(SOC_getPercent(batt) * 100.0f);
-	uint16_t soc_mAh = (uint16_t)(batt->soc / 1000);
+	int16_t soc_mAh = batt->soc / 1000;
 	CAN_setId(message, canId);
 	message->buffer[byteNumber++] = (uint8_t)soc_mAh;
 	message->buffer[byteNumber++] = (uint8_t)(soc_mAh >> 8);
