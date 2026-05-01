@@ -1,15 +1,8 @@
 VERSION ""
 
-NS_ :
-    NS_DESC_
-    CM_
-    BA_DEF_
-    BA_
-    VAL_
-
 BS_:
 
-BU_: Custom_BMS Vector__XXX
+BU_: 
 
 BO_ 1536 BMS_Safety_Checker: 8 Custom_BMS											
 SG_ BMS_Cell_High_Temp_Warning : 2|1@1+ (1,0) [0|1] "" Custom_BMS
